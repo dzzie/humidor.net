@@ -35,7 +35,7 @@ record it. This will be saved to the db as well.
 
 See screen shot for example web report.
 
-![screenshot](http://raw.github.com/dzzie/humidor.net/screenshot.png)
+![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/screenshot.png)
  
 
 Pins used and assembly:
@@ -45,19 +45,18 @@ dht22
     5V, GND, library default: digital pin #2
 
 wifi shield (solder pass through headers on and plug in)
-    SCK  pin #13
-    MISO pin #12
-    MOSI pin #11
-    CS for CC3000 pin #10
-    VBAT_EN pin #5
-    CS for SD Card pin #4
-    IRQ pin #3
+    |SCK  |pin #13|
+    |MISO |pin #12|
+    |MOSI |pin #11|
+    |CS for CC3000 |pin #10|
+    |VBAT_EN |pin #5|
+    |CS for SD Card |pin #4|
+    |IRQ |pin #3|
 
 lcd shield (soldered from kit and plug in)
- 5v, gnd 
- ic2 pins:
-   SCL Analog pin #4 
-   SDA Analog pin #5
+ 5v, gnd, ic2 pins:
+   |SCL |Analog pin #4| 
+   |SDA |Analog pin #5|
 
 
 Links:

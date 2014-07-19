@@ -1,3 +1,4 @@
 *.rar
 *.zip
 private_db.php
+private.h
