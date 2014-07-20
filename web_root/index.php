@@ -35,10 +35,14 @@
     $rr = mysql_fetch_assoc($r);
     $lastWatered = date("g:i a - D m.d.y",$rr['int_tstamp']);
     
+    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where powerevt > 0 order by autoid desc limit 1");
+    $rr = mysql_fetch_assoc($r);
+    $lastPowerEvent = date("g:i a - D m.d.y",$rr['int_tstamp']);
+    
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
     $lastUpdate = date("g:i a - D m.d.y",$rr['int_tstamp']);
-
+    
     //now we build the temp/humidity value arrays from the database
     $r = mysql_query("select * from humidor order by autoid desc limit $limit offset $offset");
 	
@@ -89,6 +93,7 @@
 	    				<tr><td>Avg Humidity: </td><td>$avgHumi</td></tr>
 	    				<tr><td>Last Watered: </td><td>$lastWatered</td></tr>
 	    				<tr><td>Last Update: </td><td>$lastUpdate</td></tr>
+	    				<tr><td>Last Reboot: </td><td>$lastPowerEvent</td></tr>
 	    				<!--tr><td></td><td></td></tr-->
 	    			</table>
 	    		</td>

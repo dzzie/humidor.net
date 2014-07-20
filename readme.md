@@ -2,7 +2,12 @@
 This code and hardware schmatics are for a
 temperature controlled web enabled humidor.  
 
-Status: in development
+Status: 
+----------------------------------------------
+ * web scripts: functional
+ * arduino code: complete
+ * hardware: operational
+ * todo: hardware picts, enclosure, installation
 
 Materials:
 ----------------------------------------------
@@ -30,8 +35,9 @@ you an email alert.
 Alerts must be manually cleared latter by logging into the 
 web site, so you are not spammed, before you get a chance to fix it.
 
-When you add water, push the watered button on the LCD sheild to
-record it. This will be saved to the db as well. 
+When you add water, push the select button on the LCD sheild to
+record it. This will be saved to the db as well. Power resets will 
+also be recorded to the database.
 
 See screen shot for example web report.
 
@@ -42,22 +48,29 @@ Pins used and assembly:
 ----------------------------------------------
 
 dht22
-    5V, GND, library default: digital pin #2
+
+    * 5V, GND, library default: digital pin #2
 
 wifi shield (solder pass through headers on and plug in)
-    |SCK  |pin #13|
-    |MISO |pin #12|
-    |MOSI |pin #11|
-    |CS for CC3000 |pin #10|
-    |VBAT_EN |pin #5|
-    |CS for SD Card |pin #4|
-    |IRQ |pin #3|
+
+    * SCK  |pin #13|
+    * MISO |pin #12|
+    * MOSI |pin #11|
+    * CS for CC3000 |pin #10|
+    * VBAT_EN |pin #5|
+    * CS for SD Card |pin #4|
+    * IRQ |pin #3|
 
 lcd shield (soldered from kit and plug in)
- 5v, gnd, ic2 pins:
-   |SCL |Analog pin #4| 
-   |SDA |Analog pin #5|
 
+   * 5v, gnd, ic2 pins:
+   * SCL |Analog pin #4| 
+   * SDA |Analog pin #5|
+
+    Note: The dht22 sensor will burn out if you hook it up backwards. 
+    It is a 4 pin component with one pin unused. I cut off the unused 
+    pin, and plugged the matching hole in the socket with hot glue. 
+    This makes it so that the sensor can only be inserted in the correct orientation.
 
 Links:
 ---------------------------------------------
