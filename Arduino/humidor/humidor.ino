@@ -94,18 +94,30 @@ void lcd_out(char* s, int row){
     lcd.print(s);
 }
 
-void delay_x_min(int minutes){  
+void delay_x_min(int minutes){
+  char buf[16];  
+     
   for(int i=0; i < minutes; i++){
-    for(int j=0; j < 120; j++){ //entire j loop = one minute 
-        delay(500);  
-        uint8_t buttons = lcd.readButtons();
-        if (buttons && (buttons & BUTTON_SELECT) ){
-            watered = 1;        
-            lcd.setCursor(15,1); 
-            lcd.print("W");
-        } 
-    }
+      
+      //re-read the sensor every minute to update display? thats allot of sensor reads.. whats its lifetime?
+      
+      sprintf(buf, "%d min", minutes - i);
+      lcd.setCursor(16 - strlen(buf),0); 
+      lcd.print(buf);
+
+      for(int j=0; j < 120; j++){ //entire j loop = one minute 
+          delay(500);  
+          uint8_t buttons = lcd.readButtons();
+          if (buttons && (buttons & BUTTON_SELECT) ){
+              watered = 1;        
+              lcd.setCursor(15,1); 
+              lcd.print("W");
+          } 
+          if(buttons && (buttons & BUTTON_LEFT) ) return; //break delay to do immediate upload test
+      }
+      
   }
+  
 }
 
 bool ReadSensor(double *temp, double *humi){

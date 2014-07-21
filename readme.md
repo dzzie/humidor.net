@@ -32,8 +32,8 @@ Status:
 ----------------------------------------------
  * web scripts: functional
  * arduino code: complete
- * hardware: operational
- * todo: hardware picts, enclosure, installation
+ * hardware: complete
+ * to do: final installation
 
 Materials:
 ----------------------------------------------
