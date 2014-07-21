@@ -2,25 +2,6 @@
 This code and hardware schmatics are for a
 temperature controlled web enabled humidor.  
 
-Status: 
-----------------------------------------------
- * web scripts: functional
- * arduino code: complete
- * hardware: operational
- * todo: hardware picts, enclosure, installation
-
-Materials:
-----------------------------------------------
-  * [1] Arduino Uno R3 - $24  
-  * [2] DHT22 Temperature/Humidity Sensor - $12
-  * [3] AdaFruit 16x2 LCD Shield - $20  
-  * [4] AdaFruit Wireless Ethernet Shield - $40 
-  * [5] Haier 8 bottle thermoelectric wine cooler - $100
-  * WebServer with Php and MySql support
-  * arduino power adapter 
-  * Total Cost: $200
-
-
 About:
 ----------------------------------------------
 The Dht22 sensor is installed in the humidor.
@@ -43,6 +24,27 @@ See screen shot for example web report.
 
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/screenshot.png)
  
+Build Videos:
+* Hardware: https://www.youtube.com/watch?v=eM54fs1qsvk&list=UUhIoXVvn4ViA3AL4FJW8Yzw
+* Enclosure: https://www.youtube.com/watch?v=YGUdR5WFM-Q&list=UUhIoXVvn4ViA3AL4FJW8Yzw
+
+Status: 
+----------------------------------------------
+ * web scripts: functional
+ * arduino code: complete
+ * hardware: operational
+ * todo: hardware picts, enclosure, installation
+
+Materials:
+----------------------------------------------
+  * [1] Arduino Uno R3 - $24  
+  * [2] DHT22 Temperature/Humidity Sensor - $12
+  * [3] AdaFruit 16x2 LCD Shield - $20  
+  * [4] AdaFruit Wireless Ethernet Shield - $40 
+  * [5] Haier 8 bottle thermoelectric wine cooler - $100
+  * WebServer with Php and MySql support
+  * arduino power adapter 
+  * Total Cost: $200
 
 Pins used and assembly:
 ----------------------------------------------
@@ -67,7 +69,8 @@ lcd shield (soldered from kit and plug in)
    * SCL |Analog pin #4| 
    * SDA |Analog pin #5|
 
-    Note: The dht22 sensor will burn out if you hook it up backwards. 
+
+Note: The dht22 sensor will burn out if you hook it up backwards. 
     It is a 4 pin component with one pin unused. I cut off the unused 
     pin, and plugged the matching hole in the socket with hot glue. 
     This makes it so that the sensor can only be inserted in the correct orientation.
