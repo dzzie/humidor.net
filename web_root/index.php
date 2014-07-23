@@ -10,7 +10,7 @@
 	$lastID = 0;
 	$cache_enabled = 0;
 	
-    if($limit < 1 || $limit > 1000) $limit = $default_limit;
+    if($limit < 1 || $limit > 13000) $limit = $default_limit;
     if($offset < 1) $offset = 0;
     
     ConnectDB();
@@ -77,23 +77,87 @@
 	$t = array_reverse($t); 
     $h = array_reverse($h);
     generateGraph($image_path);  	 
-	 
-    $report = "   
+	
+    $one_day = 3 * 24;
+    
+    $report = " 
+    	<html>  
+    	<head>
+    	<title>Humidor Temperature/Humidity Log</title>
+	    <style type='text/css'>
+		    .bb td, .bb th {
+		     border-bottom: 1px solid black !important;
+		    }
+		    TABLE{ font-family: verdana; font-size:10px;}
+		</style>
+		<script>
+			function doChange(limit){
+				location = 'index.php?limit='+limit+'&offset='+$offset
+			}
+		</script>
+		</head>
     	<center>
-    	<table border=1 bordercolor=#003300 cellspacing=0 cellpadding=6>
+    	<table border=1 bordercolor='#003300' cellspacing=0 cellpadding=6>
     		<tr>
-    			<td rowspan=2 valign=top><img src='$humi_img'></td>
+    			<td rowspan=2 valign=top>
+    				<img src='$humi_img'>
+    				<div style='position:relative;top:10px;right:-20px'>
+    				Interval: &nbsp; &nbsp;
+    				<select name=timeSpan id=timeSpan onchange='doChange(this.value)'>
+	    				<option value=$one_day>Day</option>
+	    				<option ".($limit==($one_day * 3) ? "SELECTED" : "")." value=".($one_day * 3).">3 day</option>
+	    				<option ".($limit==($one_day * 7) ? "SELECTED" : "")." value=".($one_day * 7).">Week</option>
+	    				<option ".($limit==($one_day * 30) ? "SELECTED" : "")." value=".($one_day * 30).">Month</option>
+	    				<!--option ".($limit==($one_day * 90) ? "SELECTED" : "")." value=".($one_day * 90).">3 Month</option-->
+	    				<!--option ".($limit==($one_day * 3) ? "SELECTED" : "")." value=".($one_day * 180).">6 Month</option-->
+    				</select>
+    				</div>
+    				<br>
+    			</td>
     			<td><img src='$image_path'></td>
     		</tr>
     		<tr>
     			<td align=left>
 	    			<table>
-	    				<tr><td width=120 align=left>Records: </td><td>$record_cnt</td></tr>
-	    				<tr><td>Avg Temperature: </td><td>$avgTemp</td></tr>
-	    				<tr><td>Avg Humidity: </td><td>$avgHumi</td></tr>
-	    				<tr><td>Last Watered: </td><td>$lastWatered</td></tr>
-	    				<tr><td>Last Update: </td><td>$lastUpdate</td></tr>
-	    				<tr><td>Last Reboot: </td><td>$lastPowerEvent</td></tr>
+	    				<tr class=bb>
+	    					<td width=120 align=left><font style='font-size:20px;color:blue'>Humidity:</font></td>
+	    					<td><font style='font-size:20px;color:blue'> &nbsp; $t[0]</font></td>
+	    				
+	    					<td width=60 &nbsp; </td>
+	    					
+	    					<td><font style='font-size:20px;color:blue'>Temperature:</font></td>
+	    					<td><font style='font-size:20px;color:blue'> &nbsp; $h[0]</font></td>
+	    				</tr>
+	    				
+	    				<tr>
+	    					<td>Avg Humidity: </td>
+	    					<td>$avgHumi</td>
+	    				
+	    					<td width=60 &nbsp; </td>
+	    					
+	    					<td>Avg Temperature: </td>
+	    					<td>$avgTemp</td>
+	    				</tr>
+	    				
+	    				<tr>
+	    					<td>Last Watered: </td>
+	    					<td>$lastWatered</td>
+	    				 
+	    					<td width=60 &nbsp; </td>
+	    					
+	    					<td width=120 align=left>Records: </td>
+	    					<td>$record_cnt</td>
+	    				</tr>
+	    				
+	    				<tr>
+	    					<td>Last Update: </td>
+	    					<td>$lastUpdate</td>
+	    				 
+	    					<td width=60 &nbsp; </td>
+	    					
+	    					<td>Last Reboot: </td>
+	    					<td>$lastPowerEvent</td>
+	    				</tr>
 	    				<!--tr><td></td><td></td></tr-->
 	    			</table>
 	    		</td>
