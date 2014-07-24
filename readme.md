@@ -28,12 +28,7 @@ Build Videos:
 * Hardware: https://www.youtube.com/watch?v=eM54fs1qsvk&list=UUhIoXVvn4ViA3AL4FJW8Yzw
 * Enclosure: https://www.youtube.com/watch?v=YGUdR5WFM-Q&list=UUhIoXVvn4ViA3AL4FJW8Yzw
 
-Status: 
-----------------------------------------------
- * web scripts: functional
- * arduino code: complete
- * hardware: complete
- * to do: final installation
+Status: complete
 
 Materials:
 ----------------------------------------------

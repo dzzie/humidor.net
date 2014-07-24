@@ -47,11 +47,16 @@
     $r = mysql_query("select * from humidor order by autoid desc limit $limit offset $offset");
 	
     $i=0;
-    $lowest = 200;
+    $lowest  = 200;
     $highest = 0;
-    $avgTemp=0;
-    $avgHumi=0;
+    $avgTemp = 0;
+    $avgHumi = 0;
     $records = 0;
+    
+    $highTemp= 0;
+    $highHumi= 0;
+    $lowTemp = 200;
+    $lowHumi = 200;
     
 	while($rr = mysql_fetch_assoc($r)){
 		
@@ -61,10 +66,16 @@
 		$avgTemp += $t[$i];
 		$avgHumi += $h[$i];
 		
+		if($h[$i] < $lowHumi) $lowHumi = $h[$i];
+		if($t[$i] < $lowTemp) $lowTemp = $t[$i];
+		if($h[$i] > $highHumi ) $highHumi = $h[$i];
+		if($t[$i] > $highTemp)  $highTemp = $t[$i];
+		
 		if($h[$i] < $lowest) $lowest = $h[$i];
 		if($t[$i] < $lowest) $lowest = $t[$i];
 		if($h[$i] > $highest) $highest = $h[$i];
 		if($t[$i] > $highest) $highest = $t[$i];
+		
 		
 		$i++;
 	}
@@ -130,6 +141,16 @@
 	    				</tr>
 	    				
 	    				<tr>
+	    					<td>Hum low/high</td>
+	    					<td>$lowHumi &nbsp; / &nbsp; $highHumi</td>
+	    				
+	    					<td width=60 &nbsp; </td>
+	    					
+	    					<td>Temp low/high</td>
+	    					<td>$lowTemp &nbsp; / &nbsp; $highTemp</td>
+	    				</tr>
+	    				
+	    				<tr>
 	    					<td>Avg Humidity: </td>
 	    					<td>$avgHumi</td>
 	    				
@@ -172,7 +193,14 @@
      
 function generateGraph($output_file){
 
-	global $t, $h, $lowest, $highest, $GRAPH_TITLE;
+	global $t, $h, $lowest, $highest, $GRAPH_TITLE, $record_cnt;
+	
+	$glow = $lowest-5;
+	$ghi =  $highest+5;
+	while( ($ghi-$glow) % 5 != 0) $ghi--; //this keeps y scale as whole numbers
+	
+	//should we filter the arrays since they may contain thousands of points all the same?
+	//the charts are kind of looking like flat lines here..maybe charting is dumb :)
 	
 	//now we generate the graph 
      include("pChart/pData.class");  
@@ -191,7 +219,7 @@ function generateGraph($output_file){
       
      // Initialise the graph  
      $Test = new pChart(700,230);  
-     $Test->setFixedScale($lowest-5, $highest+5);  
+     $Test->setFixedScale($glow, $ghi);
      $Test->setFontProperties("Fonts/tahoma.ttf",8);  
      $Test->setGraphArea(50,30,585,200);  
      $Test->drawFilledRoundedRectangle(7,7,693,223,5,240,240,240);  
@@ -202,7 +230,7 @@ function generateGraph($output_file){
       
      // Draw the 0 line  
      $Test->setFontProperties("Fonts/tahoma.ttf",6);  
-     $Test->drawTreshold(0,143,55,72,TRUE,TRUE);  
+     $Test->drawTreshold(0,143,55,72,TRUE,TRUE);  //drawTreshold($Value,$R,$G,$B,$ShowLabel=FALSE,$ShowOnRight=FALSE,$TickWidth=4,$FreeText=NULL)
       
      // Draw the cubic curve graph  
      $Test->drawCubicCurve($DataSet->GetData(),$DataSet->GetDataDescription());  
