@@ -132,12 +132,12 @@
 	    			<table>
 	    				<tr class=bb>
 	    					<td width=120 align=left><font style='font-size:20px;color:blue'>Humidity:</font></td>
-	    					<td><font style='font-size:20px;color:blue'> &nbsp; $t[0]</font></td>
+	    					<td><font style='font-size:20px;color:blue'> &nbsp; $h[0]</font></td>
 	    				
 	    					<td width=60 &nbsp; </td>
 	    					
 	    					<td><font style='font-size:20px;color:blue'>Temperature:</font></td>
-	    					<td><font style='font-size:20px;color:blue'> &nbsp; $h[0]</font></td>
+	    					<td><font style='font-size:20px;color:blue'> &nbsp; $t[0]</font></td>
 	    				</tr>
 	    				
 	    				<tr>
