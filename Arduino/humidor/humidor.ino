@@ -11,12 +11,17 @@
 #include "./settings.h"
 #include "./private.h"   //rename public.h to private.h and change settings to fit your setup 
 
+//note disabled serial.printlns to save space, seems to get buggy over 28k sketch size?
+
 bool useTestServerIP = true; //hardcoded in PostData to use 192.168.0.10 set to false to use WebSite
 
 char* WEBSITE = "sandsprite.com";
-char* WEBPAGE = "/humidor/logData.php?temp=%d&humi=%d&watered=%d&powerevt=%d&apikey=%s";
+char* WEBPAGE = "/humidor/logData.php?temp=%d&humi=%d&watered=%d&powerevt=%d&failure=%d&apikey=%s";
 int powerevt  = 1;
 int watered   = 0;
+int failure   = 0;
+double temp   = 0;
+double humi   = 0;
 
 dht22 DHT22;
 Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
@@ -24,8 +29,9 @@ Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
 void lcd_out(char*);
 void lcd_out(char*, int row);
 void delay_x_min(int minutes);
-bool ReadSensor(double *temp, double *humi);
-bool PostData(int temp, int humi, int watered);
+void show_readings();
+bool ReadSensor();
+bool PostData();
 
 void setup(void)
 {
@@ -35,14 +41,14 @@ void setup(void)
   lcd.setBacklight(WHITE);
   
   DHT22.attach(2);
-  Serial.print("DHT22 LIBRARY VERSION: "); Serial.println(DHT22LIB_VERSION);
+  //Serial.print("DHT22 LIBRARY VERSION: "); Serial.println(DHT22LIB_VERSION);
   
   lcd_out("Init Wifi...");
-  Serial.println(F("\nInitializing Wifi..."));
+  //Serial.println(F("\nInitializing Wifi..."));
   if (!cc3000.begin())
   {
     lcd_out("Wifi init Failed");
-    Serial.println(F("Wifi init failed..Check your wiring?"));
+    //Serial.println(F("Wifi init failed..Check your wiring?"));
     while(1);
   }
 
@@ -51,39 +57,54 @@ void setup(void)
 
 void loop(void)
 {
-   double temp, humi;
-   char buf[16];
+
+   int fail_cnt = 0;
+   int debug = 0; //for testing without dht22 attached..
    
-   while( !ReadSensor(&temp, &humi) ){
-      delay_x_min(1);
-      lcd_out("Delaying 1 min",1);
+   if(debug){
+       temp = 66; humi = 66;
+   }else{
+     while( !ReadSensor() ){
+        fail_cnt++;
+        if(fail_cnt > 10){
+            failure = 1;
+            lcd_out("Posting Failure!");
+            while( !PostData() ){
+               lcd_out("Delaying 1 min",1); 
+               delay_x_min(1,1);
+            }
+            lcd_out("DHT22 FailMode");
+            lcd_out("Stopped...",1);
+            while(1);
+        }
+        lcd_out("Delaying 1 min",1);
+        delay_x_min(1,1);
+     }
    }
+
+   show_readings();
+   delay(2500); //time to see immediate readings when I hit the button before submit..
    
-   while( !PostData(temp,humi) ){
-     delay_x_min(1);
+   while( !PostData() ){
      lcd_out("Delaying 1 min",1);
+     delay_x_min(1,1);
    }
    
-   sprintf(buf, "Temp: %d", (int)temp);
-   lcd_out(buf);
-   
-   sprintf(buf, "Humi: %d", (int)humi);
-   lcd_out(buf,1);
-     
-   /*if(watered){
-      lcd.setCursor(15,1); 
-      lcd.print("W"); 
-   }  
-   
-   if(powerevt){
-      lcd.setCursor(15,0); 
-      lcd.print("P"); 
-   }*/  
+   show_readings();
    
    powerevt = 0;
    watered = 0;
    delay_x_min(20);
    
+}
+
+void show_readings(){
+     char buf[16];
+     sprintf(buf, "Temp: %d", (int)temp);
+     lcd_out(buf);
+   
+     sprintf(buf, "Humi: %d", (int)humi);
+     lcd_out(buf,1);
 }
 
 void lcd_out(char* s){ lcd_out(s,0); }
@@ -95,18 +116,24 @@ void lcd_out(char* s, int row){
 }
 
 void delay_x_min(int minutes){
+    delay_x_min(minutes, 0);
+}
+
+void delay_x_min(int minutes, int silent){
   char buf[16];  
      
   for(int i=0; i < minutes; i++){
       
       //re-read the sensor every minute to update display? thats allot of sensor reads.. whats its lifetime?
       
-      sprintf(buf, "%d min", minutes - i);
-      lcd.setCursor(16 - strlen(buf),0); 
-      lcd.print(buf);
+      if(silent==0){
+          sprintf(buf, "%d min", minutes - i);
+          lcd.setCursor(16 - strlen(buf),0); 
+          lcd.print(buf);
+      }
 
       for(int j=0; j < 120; j++){ //entire j loop = one minute 
-          delay(500);  
+          delay(250);  
           uint8_t buttons = lcd.readButtons();
           if (buttons && (buttons & BUTTON_SELECT) ){
               watered = 1;        
@@ -120,28 +147,28 @@ void delay_x_min(int minutes){
   
 }
 
-bool ReadSensor(double *temp, double *humi){
+bool ReadSensor(){
   
   int chk = DHT22.read();
-  char* msgs[] = { "DHT22 Bad Checksum", "DHT22 TimeOut", "DHT22 Unknown Error" };
+  char* msgs[] = { "DHT22 Bad Chksum", "DHT22 TimeOut", "DHT22 UnkErr" };
   
   Serial.print("DHT22 Read sensor: ");
   switch (chk)
   {
-    case 0: Serial.println("OK"); break;
-    case -1: Serial.println(msgs[0]); lcd_out(msgs[0]); return false;
-    case -2: Serial.println(msgs[1]); lcd_out(msgs[1]); return false;
-    default: Serial.println(msgs[2]); lcd_out(msgs[2]); return false;
+    case 0: /*Serial.println("OK");*/ break;
+    case -1: /*Serial.println(msgs[0]);*/ lcd_out(msgs[0]); return false;
+    case -2: /*Serial.println(msgs[1]);*/ lcd_out(msgs[1]); return false;
+    default: /*Serial.println(msgs[2]);*/ lcd_out(msgs[2]); return false;
   }
 
-  *humi = DHT22.humidity;
-  *temp = DHT22.fahrenheit();
+  humi = DHT22.humidity;
+  temp = DHT22.fahrenheit();
   return true;
   
 }
 
 
-bool PostData(int temp, int humi)
+bool PostData()
 {
   int MAX_TICKS = 1000;
   int ticks = 0;
@@ -149,17 +176,17 @@ bool PostData(int temp, int humi)
   char buf[200];
   
   lcd_out("Connecting AP");
-  Serial.print(F("\nAttempting to connect to ")); Serial.println(WLAN_SSID);
+  //Serial.print(F("\nAttempting to connect to ")); Serial.println(WLAN_SSID);
   if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) {
-    Serial.println(F("Failed to connect to AP"));
+   //Serial.println(F("Failed to connect to AP"));
     lcd_out("No Ap Connect",1);
     return false;
   }
    
-  Serial.println(F("Connected!"));
+ // Serial.println(F("Connected!"));
   
   /* Wait for DHCP to complete */
-  Serial.println(F("Request DHCP"));
+  //Serial.println(F("Request DHCP"));
   lcd_out("DHCP REQ...");
   while (!cc3000.checkDHCP())
   {
@@ -183,14 +210,14 @@ bool PostData(int temp, int humi)
   }
   else{
       // Try looking up the website's IP address
-      Serial.print(WEBSITE); Serial.print(F(" -> "));
+      //Serial.print(WEBSITE); Serial.print(F(" -> "));
       lcd_out("GetHostName");
       lcd_out(WEBSITE, 1);
       
       ticks = 0;
       while (ip == 0) {
           if (! cc3000.getHostByName(WEBSITE, &ip)) {
-            Serial.println(F("Couldn't resolve!"));
+            //Serial.println(F("Couldn't resolve!"));
             lcd_out("GetHost Failed!", 0);
           }
           delay(500);
@@ -202,10 +229,10 @@ bool PostData(int temp, int humi)
   cc3000.printIPdotsRev(ip);
   Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 80);
   
-  sprintf(buf, WEBPAGE, temp, humi, watered, powerevt, APIKEY);
+  sprintf(buf, WEBPAGE, (int)temp, (int)humi, watered, powerevt, failure, APIKEY);
     
   if( www.connected() ) {
-    lcd_out("Submitting Data!");
+    lcd_out("Submitting Data");
     www.fastrprint(F("GET "));
     www.fastrprint(buf);
     www.fastrprint(F(" HTTP/1.1\r\n"));
@@ -215,23 +242,73 @@ bool PostData(int temp, int humi)
   } 
   else{
     lcd_out("Website Down?", 1);
-    Serial.println(F("Web Connection failed"));    
+    //Serial.println(F("Web Connection failed"));    
     return false;
   }
  
-  /* Read data until either the connection is closed, or the idle timeout is reached. */ 
+  //these are for our http parser, since we dont want to store the response in a buffer to parse latter
+  //we will parse it on the fly as its received character by character (limited memory, was glitching other way)
+  int nl_count = 0;
+  int rc_offset = 0;
+  int pr_offset = 0;
+  int recording = 0;
+  char respCode[18];
+  char pageResp[18];
+  
+  lcd_out("Reading Response");
+   /* Read data until either the connection is closed, or the idle timeout is reached. */ 
   unsigned long lastRead = millis();
-  while (www.connected() && (millis() - lastRead < IDLE_TIMEOUT_MS)) {
+  
+  while (www.connected()) {
+    
+    //this apparently happens every time.. can not use as a marker..
+    if( (millis() - lastRead) > IDLE_TIMEOUT_MS ) break;
+    
     while (www.available()) {
-      char c = www.read();
-      Serial.print(c);
-      lastRead = millis();
+        char c = www.read();
+        //Serial.print(c);
+      
+        //this accounts for \r\n or just \n, (debugged in visual studio..)
+        //we do a crude parse of the http headers to extract response code and first 
+        //16chars of web page response for display on lcd for visual confirmation..
+        if(c == 0x0A){ 
+            nl_count += 1; 
+	    recording=0;
+	}else{ 
+	    if(c != 0x0D) nl_count = 0; 
+	}
+
+        if(c == 0x20 && rc_offset == 0 && nl_count==0){
+             recording = 1;
+        }else{
+            if(recording == 1 && rc_offset >= 16) recording = 0;
+  	    if(recording == 1 && c == 0x0D) recording = 0;
+            if(recording == 1) respCode[rc_offset++] = c;
+        }
+        
+	if(nl_count==2 && pr_offset==0){
+		recording = 2; //end of http headers..turn copy on, starts next iter..
+	}else{
+		if(recording == 2 && pr_offset >= 16) recording = 0;
+                if(recording == 2 && c == 0x0D) recording = 0;
+		if(recording == 2) pageResp[pr_offset++] = c; 
+	}
+
+        lastRead = millis();
     }
   }
   www.close();
   
+  pageResp[pr_offset]=0;
+  respCode[rc_offset]=0;
+  //int rCode = atoi(respCode); //this is the 404 for not found, or 200 for ok as numeric..
+  if(rc_offset) lcd_out(respCode);
+  if(pr_offset) lcd_out(pageResp,1);
+  
+  delay(2500);
+  
   /* You need to make sure to clean up after yourself or the CC3000 can freak out next connect */
-  Serial.println(F("\n\nWeb Send Complete"));
+  //Serial.println(F("\n\nWeb Send Complete"));
   cc3000.disconnect();
   return true;
   
@@ -247,17 +324,17 @@ bool displayConnectionDetails(void)
   if(!cc3000.getIPAddress(&ipAddress, &netmask, &gateway, &dhcpserv, &dnsserv))
   {
     lcd_out("No IP", 1);
-    Serial.println(F("Unable to retrieve the IP Address!\r\n"));
+    //Serial.println(F("Unable to retrieve the IP Address!\r\n"));
     return false;
   }
   else
   {
-    Serial.print(F("\nIP Addr: ")); cc3000.printIPdotsRev(ipAddress);
+    /*Serial.print(F("\nIP Addr: ")); cc3000.printIPdotsRev(ipAddress);
     Serial.print(F("\nNetmask: ")); cc3000.printIPdotsRev(netmask);
     Serial.print(F("\nGateway: ")); cc3000.printIPdotsRev(gateway);
     Serial.print(F("\nDHCPsrv: ")); cc3000.printIPdotsRev(dhcpserv);
     Serial.print(F("\nDNSserv: ")); cc3000.printIPdotsRev(dnsserv);
-    Serial.println();
+    Serial.println();*/
     return true;
   }
 }

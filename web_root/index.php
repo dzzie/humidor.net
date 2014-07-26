@@ -195,8 +195,8 @@ function generateGraph($output_file){
 
 	global $t, $h, $lowest, $highest, $GRAPH_TITLE, $record_cnt;
 	
-	$glow = $lowest-5;
-	$ghi =  $highest+5;
+	$glow = $lowest-2;
+	$ghi =  $highest+4;
 	while( ($ghi-$glow) % 5 != 0) $ghi--; //this keeps y scale as whole numbers
 	
 	//should we filter the arrays since they may contain thousands of points all the same?
