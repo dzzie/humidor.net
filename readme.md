@@ -25,6 +25,7 @@ See screen shot for example web report.
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/screenshot.png)
  
 Build Videos:
+----------------------------------------------
 * Hardware: https://www.youtube.com/watch?v=eM54fs1qsvk&list=UUhIoXVvn4ViA3AL4FJW8Yzw
 * Enclosure: https://www.youtube.com/watch?v=YGUdR5WFM-Q&list=UUhIoXVvn4ViA3AL4FJW8Yzw
 

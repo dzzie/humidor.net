@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS humidor (
   tstamp timestamp NOT NULL DEFAULT 'CURRENT_TIMESTAMP' on update CURRENT_TIMESTAMP,
   watered tinyint(1) unsigned zerofill DEFAULT '0' ,
   powerevt tinyint(1) unsigned DEFAULT '0' ,
+  clientid tinyint(1) unsigned DEFAULT '0' ,
   PRIMARY KEY (autoid),
   UNIQUE KEY autoid (autoid),
    KEY autoid_2 (autoid)

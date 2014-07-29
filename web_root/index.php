@@ -3,6 +3,7 @@
     
     $limit  = (int)$_GET['limit'];
 	$offset = (int)$_GET['offset'];
+	$clientid   = (int)$_GET['id'];
 	$image_path = "humidor.png";
 	$last_report = "lastReport.html";
 	$last_graph_id = './lastGraph.txt';
@@ -20,7 +21,7 @@
     if($isStdReport == 0) $image_path = "historical.png";
     
     if($isStdReport && $cache_enabled){ 
-	    $r = mysql_query("select autoid from humidor order by autoid desc limit 1");
+	    $r = mysql_query("select autoid from humidor where clientid=$clientid order by autoid desc limit 1");
 	    $rr = mysql_fetch_assoc($r);
 	    $lastID = $rr['autoid'];
 	    $lastGraphID = (int)file_get_contents($last_graph_id);
@@ -31,20 +32,20 @@
 	}
     
     //get last watered time..
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where watered > 0 order by autoid desc limit 1");
+    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where watered > 0 and clientid=$clientid order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
     $lastWatered = date("g:i a - D m.d.y",$rr['int_tstamp']);
     
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where powerevt > 0 order by autoid desc limit 1");
+    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where powerevt > 0 and clientid=$clientid order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
     $lastPowerEvent = date("g:i a - D m.d.y",$rr['int_tstamp']);
     
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor order by autoid desc limit 1");
+    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where clientid=$clientid order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
     $lastUpdate = date("g:i a - D m.d.y",$rr['int_tstamp']);
     
     //now we build the temp/humidity value arrays from the database
-    $r = mysql_query("select * from humidor order by autoid desc limit $limit offset $offset");
+    $r = mysql_query("select * from humidor where clientid=$clientid order by autoid desc limit $limit offset $offset");
 	
     $i=0;
     $lowest  = 200;
@@ -185,7 +186,20 @@
 	    	</tr>
 	    </table>
     ";
-
+    
+    if( file_exists($alert_file) ){
+	    $report.= "
+	    	<script>
+	    		function clear_alert(){
+		    		var key = prompt('Enter the apikey to clear the alert:');
+		    		if(key.length==0) return;
+		    		window.open('logData.php?clear_alert=1&apikey='+key, '', 'width=200, height=100');
+	    		}
+	    	</script>
+	    	<center><font color=red size=+4><u><a onmouseover='this.style.cursor=\"pointer\"' onclick='clear_alert()'>Clear Alert</a></u></font></center>	    
+	    ";
+    }
+    
     echo $report;
     if($isStdReport) file_put_contents($last_report, $report);
      
@@ -210,12 +224,12 @@ function generateGraph($output_file){
      $DataSet = new pData;  
      //$DataSet->AddPoint(array(1,4,3,4,3,3,2,1,0,7,4,3,2,3,3,5,1,0),"Temperature");  
      //$DataSet->AddPoint(array(1,4,2,6,2,3,0,1,5,1,2,4,5,2,1,0,6,4),"Humidity");  
-     $DataSet->AddPoint($t,"Temperature");
      $DataSet->AddPoint($h,"Humidity"); 
+     $DataSet->AddPoint($t,"Temperature");
      $DataSet->AddAllSeries();  
      $DataSet->SetAbsciseLabelSerie();  
+     $DataSet->SetSerieName("Humidity","Humidity"); 
      $DataSet->SetSerieName("Temperature","Temperature");  
-     $DataSet->SetSerieName("Humidity","Humidity");  
       
      // Initialise the graph  
      $Test = new pChart(700,230);  

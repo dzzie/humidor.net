@@ -13,10 +13,12 @@
 
 //note disabled serial.printlns to save space, seems to get buggy over 28k sketch size?
 
-bool useTestServerIP = true; //hardcoded in PostData to use 192.168.0.10 set to false to use WebSite
+int client_id = 0;  //set this unique for each humidor so web page can display multiple ones. 66 is used for test data..
 
+bool useTestServerIP = true; //hardcoded in PostData to use 192.168.0.10, set to false to use WebSite
 char* WEBSITE = "sandsprite.com";
-char* WEBPAGE = "/humidor/logData.php?temp=%d&humi=%d&watered=%d&powerevt=%d&failure=%d&apikey=%s";
+char* WEBPAGE = "/humidor/logData.php?temp=%d&humi=%d&watered=%d&powerevt=%d&failure=%d&clientid=%d&apikey=%s";
+
 int powerevt  = 1;
 int watered   = 0;
 int failure   = 0;
@@ -26,12 +28,20 @@ double humi   = 0;
 dht22 DHT22;
 Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
 
-void lcd_out(char*);
+/*void lcd_out(char*);
 void lcd_out(char*, int row);
 void delay_x_min(int minutes);
 void show_readings();
 bool ReadSensor();
-bool PostData();
+bool PostData();*/
+
+//following will allow you to add conditional compilation of serial debugging code 
+//with single line statements. saves space when disabled..
+#ifdef WITH_SERIAL
+   #define IFS(x) x
+#else
+   #define IFS(x)
+#endif
 
 void setup(void)
 {
@@ -41,14 +51,14 @@ void setup(void)
   lcd.setBacklight(WHITE);
   
   DHT22.attach(2);
-  //Serial.print("DHT22 LIBRARY VERSION: "); Serial.println(DHT22LIB_VERSION);
+  IFS( Serial.print("DHT22 LIBRARY VERSION: "); Serial.println(DHT22LIB_VERSION); );
   
   lcd_out("Init Wifi...");
-  //Serial.println(F("\nInitializing Wifi..."));
+  IFS( Serial.println(F("\nInitializing Wifi...")); )
   if (!cc3000.begin())
   {
     lcd_out("Wifi init Failed");
-    //Serial.println(F("Wifi init failed..Check your wiring?"));
+    IFS( Serial.println(F("Wifi init failed..Check your wiring?")); )
     while(1);
   }
 
@@ -59,10 +69,10 @@ void loop(void)
 {
 
    int fail_cnt = 0;
-   int debug = 0; //for testing without dht22 attached..
+   int debug = 0; //for testing without dht22 attached..(data saved to diff clientid..)
    
    if(debug){
-       temp = 66; humi = 66;
+       temp = 66; humi = 66; client_id = 66;
    }else{
      while( !ReadSensor() ){
         fail_cnt++;
@@ -132,7 +142,7 @@ void delay_x_min(int minutes, int silent){
           lcd.print(buf);
       }
 
-      for(int j=0; j < 120; j++){ //entire j loop = one minute 
+      for(int j=0; j < 240; j++){ //entire j loop = one minute, using small delay so buttons responsive.. 
           delay(250);  
           uint8_t buttons = lcd.readButtons();
           if (buttons && (buttons & BUTTON_SELECT) ){
@@ -152,7 +162,7 @@ bool ReadSensor(){
   int chk = DHT22.read();
   char* msgs[] = { "DHT22 Bad Chksum", "DHT22 TimeOut", "DHT22 UnkErr" };
   
-  Serial.print("DHT22 Read sensor: ");
+  //IFS( Serial.print("DHT22 Read sensor: "); )
   switch (chk)
   {
     case 0: /*Serial.println("OK");*/ break;
@@ -176,7 +186,7 @@ bool PostData()
   char buf[200];
   
   lcd_out("Connecting AP");
-  //Serial.print(F("\nAttempting to connect to ")); Serial.println(WLAN_SSID);
+  IFS( Serial.print(F("\nAttempting to connect to ")); Serial.println(WLAN_SSID);)
   if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) {
    //Serial.println(F("Failed to connect to AP"));
     lcd_out("No Ap Connect",1);
@@ -229,7 +239,7 @@ bool PostData()
   cc3000.printIPdotsRev(ip);
   Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 80);
   
-  sprintf(buf, WEBPAGE, (int)temp, (int)humi, watered, powerevt, failure, APIKEY);
+  sprintf(buf, WEBPAGE, (int)temp, (int)humi, watered, powerevt, failure, client_id, APIKEY);
     
   if( www.connected() ) {
     lcd_out("Submitting Data");
@@ -266,7 +276,7 @@ bool PostData()
     
     while (www.available()) {
         char c = www.read();
-        //Serial.print(c);
+        IFS( Serial.print(c); )
       
         //this accounts for \r\n or just \n, (debugged in visual studio..)
         //we do a crude parse of the http headers to extract response code and first 

@@ -8,16 +8,21 @@ $humi = (int)$_GET['humi'];
 $watered = (int)$_GET['watered'];
 $powerevt = (int)$_GET['powerevt'];
 $hw_failure = (int)$_GET['failure'];
+$clientid   = (int)$_GET['clientid'];
 $clear_alert = (int)$_GET['clear_alert'];
 //$ip   = $_SERVER['REMOTE_ADDR'];
 
-if( strcmp($key, $API_KEY) !== 0 ) die("<h1>Invalid api key!");
-if($temp <= 0 || $humi <= 0)       die("<h1>Invalid data low");
-if($temp >= 120 || $humi >= 100)   die("<h1>Invalid data high");
+if( strcmp($key, $API_KEY) !== 0 ) die("Invalid api key!");
 
-if($clear_alert==1 && file_exists($alert_file)) unlink($alert_file);
+if($clear_alert==1 && file_exists($alert_file)){
+	 unlink($alert_file);
+	 die("Alert Cleared");
+ }
+ 
+if($temp <= 0 || $humi <= 0)       die("Invalid data low");
+if($temp >= 120 || $humi >= 100)   die("Invalid data high");
 
-$sql = "insert into humidor(temp,humidity,watered,powerevt) values($temp,$humi,$watered,$powerevt)";
+$sql = "insert into humidor(temp,humidity,watered,powerevt,clientid) values($temp,$humi,$watered,$powerevt,$clientid)";
 
 $sendEmail = 0;
 if($temp < 60 || $temp > 75) $sendEmail = 1;
@@ -36,7 +41,7 @@ if($sendEmail == 1){
 ConnectDB();
 
 if(!mysql_query($sql)){ echo "Error adding data to db"; }
- else{ echo "Ok"; }
+ else{ echo "Record Added!"; }
  
 ConnectDB(1);
 
