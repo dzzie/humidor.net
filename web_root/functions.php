@@ -20,6 +20,8 @@ $ALERT_EMAIL = 'DZZIE@YAHOO.COM';
 $GRAPH_TITLE = "Daves Humidor";
 //--------- end public comfig block --------------------
 
+//date_default_timezone_set('America/New_York'); //php5 only
+putenv("TZ=US/Eastern");
 
 if( strcasecmp($_SERVER['DOCUMENT_ROOT'], $dev_machine_webroot)!=0){ //NOT dev machine
 	if(file_exists("private_db.php")) include_once("private_db.php");

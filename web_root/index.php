@@ -186,9 +186,12 @@
 	    	</tr>
 	    </table>
     ";
+        
+    echo $report;
+    if($isStdReport) file_put_contents($last_report, $report);
     
-    if( file_exists($alert_file) ){
-	    $report.= "
+    if( file_exists($alert_file) ){ //we dont want the alert to get cached..
+	    echo "
 	    	<script>
 	    		function clear_alert(){
 		    		var key = prompt('Enter the apikey to clear the alert:');
@@ -199,9 +202,6 @@
 	    	<center><font color=red size=+4><u><a onmouseover='this.style.cursor=\"pointer\"' onclick='clear_alert()'>Clear Alert</a></u></font></center>	    
 	    ";
     }
-    
-    echo $report;
-    if($isStdReport) file_put_contents($last_report, $report);
      
  
      

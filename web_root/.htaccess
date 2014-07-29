@@ -1,3 +1,4 @@
 #disable chunked transfers and gzip since we parse from microcontroller
 SetEnv downgrade-1.0
 RewriteRule . - [E=no-gzip:1]
+#php_value date.timezone America/New_York

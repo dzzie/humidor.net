@@ -235,14 +235,17 @@ bool PostData()
           if(ticks > MAX_TICKS) return false;
       }
   }
-
+  
+  lcd_out("Submitting Data");
+  lcd_out( (char*)(useTestServerIP ? "192.168.0.10" : WEBSITE), 1);
+  delay(800);
+    
   cc3000.printIPdotsRev(ip);
   Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 80);
   
   sprintf(buf, WEBPAGE, (int)temp, (int)humi, watered, powerevt, failure, client_id, APIKEY);
     
   if( www.connected() ) {
-    lcd_out("Submitting Data");
     www.fastrprint(F("GET "));
     www.fastrprint(buf);
     www.fastrprint(F(" HTTP/1.1\r\n"));
@@ -252,6 +255,7 @@ bool PostData()
   } 
   else{
     lcd_out("Website Down?", 1);
+    delay(800);
     //Serial.println(F("Web Connection failed"));    
     return false;
   }
