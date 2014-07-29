@@ -9,7 +9,7 @@
 	$last_graph_id = './lastGraph.txt';
 	$humi_img = "daves_humi.jpg";
 	$lastID = 0;
-	$cache_enabled = 0;
+	$cache_enabled = 1;
 	
     if($limit < 1 || $limit > 13000) $limit = $default_limit;
     if($offset < 1) $offset = 0;
@@ -234,7 +234,7 @@ function generateGraph($output_file){
      // Initialise the graph  
      $Test = new pChart(700,230);  
      $Test->setFixedScale($glow, $ghi);
-     $Test->setFontProperties("Fonts/tahoma.ttf",8);  
+     $Test->setFontProperties("tahoma.ttf",8);  
      $Test->setGraphArea(50,30,585,200);  
      $Test->drawFilledRoundedRectangle(7,7,693,223,5,240,240,240);  
      $Test->drawRoundedRectangle(5,5,695,225,5,230,230,230);  
@@ -243,16 +243,16 @@ function generateGraph($output_file){
      $Test->drawGrid(4,TRUE,230,230,230,50);  
       
      // Draw the 0 line  
-     $Test->setFontProperties("Fonts/tahoma.ttf",6);  
+     $Test->setFontProperties("tahoma.ttf",6);  
      $Test->drawTreshold(0,143,55,72,TRUE,TRUE);  //drawTreshold($Value,$R,$G,$B,$ShowLabel=FALSE,$ShowOnRight=FALSE,$TickWidth=4,$FreeText=NULL)
       
      // Draw the cubic curve graph  
      $Test->drawCubicCurve($DataSet->GetData(),$DataSet->GetDataDescription());  
       
      // Finish the graph  
-     $Test->setFontProperties("Fonts/tahoma.ttf",8);  
+     $Test->setFontProperties("tahoma.ttf",8);  
      $Test->drawLegend(600,30,$DataSet->GetDataDescription(),255,255,255);  
-     $Test->setFontProperties("Fonts/tahoma.ttf",10);  
+     $Test->setFontProperties("tahoma.ttf",10);  
      $Test->drawTitle(50,22,$GRAPH_TITLE . date(' - m.d.y') ,50,50,50,585);  
      
      $Test->Render($output_file);

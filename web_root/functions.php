@@ -25,7 +25,27 @@ if( strcasecmp($_SERVER['DOCUMENT_ROOT'], $dev_machine_webroot)!=0){ //NOT dev m
 	if(file_exists("private_db.php")) include_once("private_db.php");
 }
 	
+if(!function_exists('file_put_contents')) {
+    function file_put_contents($filename, $data, $file_append = false) {
+      $fp = fopen($filename, (!$file_append ? 'w+' : 'a+'));
+        if(!$fp) {
+          trigger_error('file_put_contents cannot write in file.', E_USER_ERROR);
+          return;
+        }
+      fputs($fp, $data);
+      fclose($fp);
+    }
+}
 
+if(!function_exists('file_get_contents')) {
+	function file_get_contents( $filename ){// get contents of a file into a string
+		$handle = fopen($filename, "r");
+		$contents = fread($handle, filesize($filename));
+		fclose($handle);
+		return $contents;
+	} 
+}
+  
 /*
 session_start();
 

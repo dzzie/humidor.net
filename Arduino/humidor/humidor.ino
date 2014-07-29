@@ -15,7 +15,7 @@
 
 int client_id = 0;  //set this unique for each humidor so web page can display multiple ones. 66 is used for test data..
 
-bool useTestServerIP = true; //hardcoded in PostData to use 192.168.0.10, set to false to use WebSite
+bool useTestServerIP = false; //hardcoded in PostData to use 192.168.0.10, set to false to use WebSite
 char* WEBSITE = "sandsprite.com";
 char* WEBPAGE = "/humidor/logData.php?temp=%d&humi=%d&watered=%d&powerevt=%d&failure=%d&clientid=%d&apikey=%s";
 
