@@ -49,7 +49,7 @@ dht22
 
     * 5V, GND, library default: digital pin #2
 
-wifi shield (solder pass through headers on and plug in)
+SPI wifi shield (solder pass through headers on and plug in)
 
     * SCK  |pin #13|
     * MISO |pin #12|
@@ -59,7 +59,7 @@ wifi shield (solder pass through headers on and plug in)
     * CS for SD Card |pin #4|
     * IRQ |pin #3|
 
-lcd shield (soldered from kit and plug in)
+I2C lcd shield (soldered from kit and plug in)
 
    * 5v, gnd, ic2 pins:
    * SCL |Analog pin #4| 

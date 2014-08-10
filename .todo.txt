@@ -1,2 +1,3 @@
 
+support multisensors per user
 

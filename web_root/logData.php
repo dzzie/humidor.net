@@ -12,10 +12,19 @@ $clientid   = (int)$_GET['clientid'];
 $clear_alert = (int)$_GET['clear_alert'];
 //$ip   = $_SERVER['REMOTE_ADDR'];
 
+ConnectDB();
+
+$userr = mysql_query("select * from humiusers where autoid=$clientid");
+if(mysql_num_rows($userr)==0) die('Bad userid');
+$user = mysql_fetch_assoc($userr);
+    
+$API_KEY = $user['apikey'];
+$ALERT_EMAIL = $user['email'];
+
 if( strcmp($key, $API_KEY) !== 0 ) die("Invalid api key!");
 
-if($clear_alert==1 && file_exists($alert_file)){
-	 unlink($alert_file);
+if($clear_alert==1 && $user['alertsent']==1){
+	 mysql_query("update humiusers set alertsent=0 where autoid=$clientid");
 	 die("Alert Cleared");
  }
  
@@ -31,15 +40,14 @@ if($hw_failure==1) $sendEmail = 1;
 
 if($sendEmail == 1){
 	$alert = "Temp: $temp\r\nHumidity: $humi\r\nDate: " . date('l jS \of F Y h:i:s A');
-	if( !file_exists($alert_file) ){
+	if( $user['alertsent'] == 0 ){
 		$subj = "Humidor " . ($hw_failure==1 ? " Hardware Failure" : "") . " Alert!";
-		sendMail($ALERT_EMAIL, $subj, $alert );
-		file_put_contents($alert_file, $alert);
+		$sent = sendMail($ALERT_EMAIL, $subj, $alert );
+		mysql_query("update humiusers set alertsent=1 where autoid=$clientid");
+		echo "Alert Sent to $ALERT_EMAIL = $sent<br>";
 	}
 }		
  
-ConnectDB();
-
 if(!mysql_query($sql)){ echo "Error adding data to db"; }
  else{ echo "Record Added!"; }
  

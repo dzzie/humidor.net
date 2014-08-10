@@ -23,3 +23,23 @@ CREATE TABLE IF NOT EXISTS humidor (
    KEY autoid_2 (autoid)
 );
 
+
+
+#
+# Table structure for table 'humiusers'
+#
+
+DROP TABLE IF EXISTS humiusers;
+CREATE TABLE IF NOT EXISTS humiusers (
+  autoid tinyint(3) unsigned NOT NULL auto_increment,
+  username char(255) NOT NULL ,
+  img char(255) ,
+  apikey char(255) ,
+  email char(255) ,
+  alertsent tinyint(3) unsigned ,
+  lastid tinyint(3) unsigned ,
+  PRIMARY KEY (autoid),
+  UNIQUE KEY autoid (autoid),
+   KEY autoid_2 (autoid)
+);
+

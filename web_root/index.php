@@ -1,34 +1,51 @@
 <?php  
     include("functions.php");
     
-    $limit  = (int)$_GET['limit'];
-	$offset = (int)$_GET['offset'];
-	$clientid   = (int)$_GET['id'];
-	$image_path = "humidor.png";
-	$last_report = "lastReport.html";
-	$last_graph_id = './lastGraph.txt';
-	$humi_img = "daves_humi.jpg";
-	$lastID = 0;
+    $limit         = (int)$_GET['limit'];
+	$offset        = (int)$_GET['offset'];
+	$clientid      = (int)$_GET['id'];
+	$force         = (int)$_GET['force'];
+		
+	$lastID        = 0;
 	$cache_enabled = 1;
+	
+	if($force==1) $cache_enabled=0;
 	
     if($limit < 1 || $limit > 13000) $limit = $default_limit;
     if($offset < 1) $offset = 0;
     
     ConnectDB();
     
+    $userr = mysql_query("select * from humiusers where autoid=$clientid");
+    if(mysql_num_rows($userr)==0){ //list available users..
+	    $r = mysql_query("select * from humiusers");
+	    if(mysql_num_rows($r)==0) die("Log into <a href=admin.php>control panel</a> and create users..");    
+	    $report = "<b><br><br>Please select a user: <br><ul>\n";
+	    while($rr = mysql_fetch_assoc($r)){
+		     $report .= "<li><a href=index.php?id=".$rr['autoid'].">".$rr['username']."</a>\n";
+	    }
+	    die($report);
+    }
+    
+    $user = mysql_fetch_assoc($userr);
+    $last_report  = "./reports/lastReport_$clientid.html";
+    $image_path   = "./reports/graph_$clientid.png";
+    $humi_img     = "./images/".$user['img'];
+    $GRAPH_TITLE  = $user['username']." Humidor";
+    
     /* limit graph re-generation to only when new data available (unless special req)*/
     $isStdReport = ($limit == $default_limit && $offset==0) ? 1 : 0;
-    if($isStdReport == 0) $image_path = "historical.png";
+    if($isStdReport == 0) $image_path = "./reports/historical_$clientid.png";
     
     if($isStdReport && $cache_enabled){ 
 	    $r = mysql_query("select autoid from humidor where clientid=$clientid order by autoid desc limit 1");
 	    $rr = mysql_fetch_assoc($r);
 	    $lastID = $rr['autoid'];
-	    $lastGraphID = (int)file_get_contents($last_graph_id);
+	    $lastGraphID = (int)$user['lastid'];
 	    if($lastID == $lastGraphID && file_exists($image_path) && file_exists($last_report)){
 		 	   die( '<html><head><title>Cached results</title></head>'.file_get_contents($last_report) );
 	    }
-	    file_put_contents($last_graph_id,$lastID); 
+	    mysql_query("update humiusers set lastid=$lastID where clientid=$clientid");
 	}
     
     //get last watered time..
@@ -104,7 +121,7 @@
 		</style>
 		<script>
 			function doChange(limit){
-				location = 'index.php?limit='+limit+'&offset='+$offset
+				location = 'index.php?limit='+limit+'&offset=$offset&id=$clientid'
 			}
 		</script>
 		</head>
@@ -190,13 +207,13 @@
     echo $report;
     if($isStdReport) file_put_contents($last_report, $report);
     
-    if( file_exists($alert_file) ){ //we dont want the alert to get cached..
+    if( $user['alertsent']==1 ){ //we dont want the alert to get cached..
 	    echo "
 	    	<script>
 	    		function clear_alert(){
 		    		var key = prompt('Enter the apikey to clear the alert:');
 		    		if(key.length==0) return;
-		    		window.open('logData.php?clear_alert=1&apikey='+key, '', 'width=200, height=100');
+		    		window.open('logData.php?clear_alert=1&clientid=$clientid&apikey='+key, '', 'width=200, height=100');
 	    		}
 	    	</script>
 	    	<center><font color=red size=+4><u><a onmouseover='this.style.cursor=\"pointer\"' onclick='clear_alert()'>Clear Alert</a></u></font></center>	    
@@ -211,8 +228,13 @@ function generateGraph($output_file){
 	
 	$glow = $lowest-2;
 	$ghi =  $highest+4;
-	while( ($ghi-$glow) % 5 != 0) $ghi--; //this keeps y scale as whole numbers
+	while( ($ghi-$glow) % 5 != 0) $ghi--; //this keeps y scale as whole numbers try small side first..
 	
+	if($ghi==$highest){ //we dont want highest to be at top of graph..
+		$ghi = $highest+1;
+		while( ($ghi-$glow) % 5 != 0) $ghi++;
+	}
+	 
 	//should we filter the arrays since they may contain thousands of points all the same?
 	//the charts are kind of looking like flat lines here..maybe charting is dumb :)
 	
