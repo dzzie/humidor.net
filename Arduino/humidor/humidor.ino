@@ -5,6 +5,7 @@
 #include <Wire.h>
 #include <Adafruit_MCP23017.h>
 #include <Adafruit_RGBLCDShield.h>
+#include <utility/netapp.h>
 #include <string.h>
 #include "utility/debug.h"
 #include <stdio.h>
@@ -13,17 +14,38 @@
 
 //note disabled serial.printlns to save space, seems to get buggy over 28k sketch size?
 
+//todo multiple sensors
+/*
+#define sensorCount 1
+
+int pins[sensorCount] = {x,x,x};
+double temp[sensorCount];
+double humi[sensorCount];
+
+for(int i=0; i < sensorCount; i++){
+    sprintf(tmp,"temp_%d=%d&humi_%d=%d", i, temp[i], i, humi[i] );
+    if(strlen(buf)+strlen(tmp) < sizeof(buf)) strcat(buf, tmp) else display_dev_error();
+}
+
+*/
+
 int client_id = 0;  //set this unique for each humidor so web page can display multiple ones. 66 is used for test data..
 
 bool useTestServerIP = false; //hardcoded in PostData to use 192.168.0.10, set to false to use WebSite
 char* WEBSITE = "sandsprite.com";
 char* WEBPAGE = "/humidor/logData.php?temp=%d&humi=%d&watered=%d&powerevt=%d&failure=%d&clientid=%d&apikey=%s";
+char* firmware_ver = "v1.1 " __DATE__ ;
 
 int powerevt  = 1;
 int watered   = 0;
 int failure   = 0;
 double temp   = 0;
 double humi   = 0;
+
+double last_temp   = 0;
+double last_humi   = 0;
+uint32_t cached_ip = 0;
+bool inReadSensor  = false;
 
 dht22 DHT22;
 Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
@@ -50,18 +72,30 @@ void setup(void)
   lcd.begin(16, 2);     // set LCD columns and rows
   lcd.setBacklight(WHITE);
   
+  lcd_out("Daves WebHumidor");
+  lcd_out(firmware_ver,1);
+  delay(2000);  
+
   DHT22.attach(2);
-  IFS( Serial.print("DHT22 LIBRARY VERSION: "); Serial.println(DHT22LIB_VERSION); );
+  //IFS( Serial.print("DHT22 LIBRARY VERSION: "); Serial.println(DHT22LIB_VERSION); );
   
   lcd_out("Init Wifi...");
-  IFS( Serial.println(F("\nInitializing Wifi...")); )
+  //IFS( Serial.println(F("\nInitializing Wifi...")); )
   if (!cc3000.begin())
   {
     lcd_out("Wifi init Failed");
-    IFS( Serial.println(F("Wifi init failed..Check your wiring?")); )
+    //IFS( Serial.println(F("Wifi init failed..Check your wiring?")); )
     while(1);
   }
-
+  
+  unsigned long aucDHCP = 14400;
+  unsigned long aucARP = 3600;
+  unsigned long aucKeepalive = 10;
+  unsigned long aucInactivity = 20;
+  
+  if (netapp_timeout_values(&aucDHCP, &aucARP, &aucKeepalive, &aucInactivity) != 0) {
+    //IFS( Serial.println("Error setting inactivity timeout!"); )
+  }
   
 }
 
@@ -125,19 +159,26 @@ void lcd_out(char* s, int row){
     lcd.print(s);
 }
 
+void lcd_ip_out(uint32_t ip, int row){
+  char buf[20];
+  uint8_t* b = (uint8_t*)&ip;
+  sprintf(buf,"%d.%d.%d.%d", b[3], b[2], b[1], b[0] );
+  lcd_out(buf, row);
+}
+
 void delay_x_min(int minutes){
     delay_x_min(minutes, 0);
 }
 
 void delay_x_min(int minutes, int silent){
   char buf[16];  
-     
+
   for(int i=0; i < minutes; i++){
       
       //re-read the sensor every minute to update display? thats allot of sensor reads.. whats its lifetime?
       
       if(silent==0){
-          sprintf(buf, "%d min", minutes - i);
+          sprintf(buf, " %d min", minutes - i); //fixed display bug lcd not overwriting tens digit once <= 9
           lcd.setCursor(16 - strlen(buf),0); 
           lcd.print(buf);
       }
@@ -157,22 +198,50 @@ void delay_x_min(int minutes, int silent){
   
 }
 
-bool ReadSensor(){
-  
+bool DoReadSensor(){
+
   int chk = DHT22.read();
-  char* msgs[] = { "DHT22 Bad Chksum", "DHT22 TimeOut", "DHT22 UnkErr" };
+  if (chk == 0) return true;
+
+  char* msgs[] = { "DHT22 Bad Chksum", "DHT22 TimeOut", "DHT22 UnkErr"};
   
-  //IFS( Serial.print("DHT22 Read sensor: "); )
   switch (chk)
   {
-    case 0: /*Serial.println("OK");*/ break;
-    case -1: /*Serial.println(msgs[0]);*/ lcd_out(msgs[0]); return false;
-    case -2: /*Serial.println(msgs[1]);*/ lcd_out(msgs[1]); return false;
-    default: /*Serial.println(msgs[2]);*/ lcd_out(msgs[2]); return false;
+    case -1: lcd_out(msgs[0]); return false;
+    case -2: lcd_out(msgs[1]); return false;
+    default: lcd_out(msgs[2]); return false;
   }
+
+}
+
+bool ReadSensor(){
+  
+  if( !DoReadSensor() ) return false;
 
   humi = DHT22.humidity;
   temp = DHT22.fahrenheit();
+
+  if(last_humi == 0) last_humi = humi;
+  if(last_temp == 0) last_temp = temp;
+
+  int delta_h = abs((int)last_humi - (int)humi);
+  int delta_t = abs((int)last_temp - (int)temp);
+
+  //we may have gotten a bad sensor read as it varied more than expected from last..
+  //we will try again up to three more times with recursive call endless loop protection..
+  //if we still get an unexpected reading after all of this we will accept it
+  if(delta_h > 3 || delta_t > 5){
+       
+	   if(inReadSensor) return false; //delta still high, in recursive call, exit with fail..
+
+	   inReadSensor = true;
+	   for(int i=1; i <=3; i++){ if( ReadSensor() ) break; } //only done for top level call
+	   inReadSensor = false;
+  }
+
+  last_humi = humi;
+  last_temp = temp;
+
   return true;
   
 }
@@ -206,12 +275,12 @@ bool PostData()
   }  
 
   ticks = 0;
-  while ( !displayConnectionDetails() ) 
-  { /* Display the IP address DNS, Gateway, etc. */
+  /*while ( !displayConnectionDetails() ) 
+  { /*display IP address DNS, Gateway, etc. * /
     delay(1000);
     ticks++;
     if(ticks > MAX_TICKS) return false;
-  }
+  }*/
 
   ip = 0;
   
@@ -219,44 +288,62 @@ bool PostData()
       ip = cc3000.IP2U32(192,168,0,10); //direct ip connection..
   }
   else{
-      // Try looking up the website's IP address
-      //Serial.print(WEBSITE); Serial.print(F(" -> "));
-      lcd_out("GetHostName");
-      lcd_out(WEBSITE, 1);
       
-      ticks = 0;
-      while (ip == 0) {
-          if (! cc3000.getHostByName(WEBSITE, &ip)) {
-            //Serial.println(F("Couldn't resolve!"));
-            lcd_out("GetHost Failed!", 0);
-          }
-          delay(500);
-          ticks++;
-          if(ticks > MAX_TICKS) return false;
-      }
+	  if(cached_ip != 0){
+		  ip = cached_ip; //I have been having lots of hangs in this block..hence cache logic
+	  }
+	  else
+	  {
+		  // Try looking up the website's IP address
+		  //Serial.print(WEBSITE); Serial.print(F(" -> "));
+		  lcd_out("GetHostName");
+		  lcd_out(WEBSITE, 1);
+	      
+		  ticks = 0;
+		  while (ip == 0) {
+			  if (! cc3000.getHostByName(WEBSITE, &ip)) { //been having problems with this..not waiting for server response?
+				lcd_out("GetHost Failed!", 0);
+			  }
+			  
+			  ticks++;
+			  if(ticks > 60) return false;
+
+			  if(ticks > 2){
+                  delay(1000);
+				  sprintf(buf, "%d", ticks);
+				  lcd.setCursor(13,0); 
+				  lcd.print(buf);
+			  }
+
+		  }
+          
+		  cached_ip = ip;
+	  }
+
   }
   
   lcd_out("Submitting Data");
-  lcd_out( (char*)(useTestServerIP ? "192.168.0.10" : WEBSITE), 1);
-  delay(800);
+  lcd_ip_out(ip,1);  
+  delay(2000);
     
-  cc3000.printIPdotsRev(ip);
-  Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 80);
+  Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 80); //have been having occasional hang here...
   
   sprintf(buf, WEBPAGE, (int)temp, (int)humi, watered, powerevt, failure, client_id, APIKEY);
     
+  if ( !cc3000.checkConnected() ) return false;
+  
   if( www.connected() ) {
     www.fastrprint(F("GET "));
     www.fastrprint(buf);
     www.fastrprint(F(" HTTP/1.1\r\n"));
     www.fastrprint(F("Host: ")); www.fastrprint(WEBSITE); www.fastrprint(F("\r\n"));
     www.fastrprint(F("\r\n"));
+    if ( !cc3000.checkConnected() ) return false;
     www.println();
   } 
   else{
     lcd_out("Website Down?", 1);
-    delay(800);
-    //Serial.println(F("Web Connection failed"));    
+    delay(800); 
     return false;
   }
  
@@ -296,7 +383,7 @@ bool PostData()
              recording = 1;
         }else{
             if(recording == 1 && rc_offset >= 16) recording = 0;
-  	    if(recording == 1 && c == 0x0D) recording = 0;
+  			if(recording == 1 && c == 0x0D) recording = 0;
             if(recording == 1) respCode[rc_offset++] = c;
         }
         
@@ -304,7 +391,7 @@ bool PostData()
 		recording = 2; //end of http headers..turn copy on, starts next iter..
 	}else{
 		if(recording == 2 && pr_offset >= 16) recording = 0;
-                if(recording == 2 && c == 0x0D) recording = 0;
+        if(recording == 2 && c == 0x0D) recording = 0;
 		if(recording == 2) pageResp[pr_offset++] = c; 
 	}
 
@@ -330,7 +417,7 @@ bool PostData()
 
 
 
-
+/*
 bool displayConnectionDetails(void)
 {
   uint32_t ipAddress, netmask, gateway, dhcpserv, dnsserv;
@@ -341,14 +428,17 @@ bool displayConnectionDetails(void)
     //Serial.println(F("Unable to retrieve the IP Address!\r\n"));
     return false;
   }
-  else
-  {
-    /*Serial.print(F("\nIP Addr: ")); cc3000.printIPdotsRev(ipAddress);
-    Serial.print(F("\nNetmask: ")); cc3000.printIPdotsRev(netmask);
-    Serial.print(F("\nGateway: ")); cc3000.printIPdotsRev(gateway);
-    Serial.print(F("\nDHCPsrv: ")); cc3000.printIPdotsRev(dhcpserv);
-    Serial.print(F("\nDNSserv: ")); cc3000.printIPdotsRev(dnsserv);
-    Serial.println();*/
-    return true;
-  }
+  
+  /*
+  Serial.print(F("\nIP Addr: ")); cc3000.printIPdotsRev(ipAddress);
+  Serial.print(F("\nNetmask: ")); cc3000.printIPdotsRev(netmask);
+  Serial.print(F("\nGateway: ")); cc3000.printIPdotsRev(gateway);
+  Serial.print(F("\nDHCPsrv: ")); cc3000.printIPdotsRev(dhcpserv);
+  Serial.print(F("\nDNSserv: ")); cc3000.printIPdotsRev(dnsserv);
+  Serial.println();
+  * /
+  
+  return true;
+  
 }
+*/
