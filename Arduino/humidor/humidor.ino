@@ -104,7 +104,8 @@ void loop(void)
 
    int fail_cnt = 0;
    int debug = 0; //for testing without dht22 attached..(data saved to diff clientid..)
-   
+   char buf[10];
+
    if(debug){
        temp = 66; humi = 66; client_id = 66;
    }else{
@@ -128,14 +129,22 @@ void loop(void)
 
    show_readings();
    delay(2500); //time to see immediate readings when I hit the button before submit..
-   
+   fail_cnt = 0;
+
    while( !PostData() ){
      lcd_out("Delaying 1 min",1);
      delay_x_min(1,1);
+	 fail_cnt++;
    }
    
    show_readings();
    
+   if(fail_cnt > 2){
+		sprintf(buf, "%d Fails", fail_cnt);
+        lcd.setCursor(15-strlen(buf),1); 
+		lcd.print(buf);
+   }
+
    powerevt = 0;
    watered = 0;
    delay_x_min(20);
@@ -218,8 +227,8 @@ bool ReadSensor(){
   
   if( !DoReadSensor() ) return false;
 
-  humi = DHT22.humidity;
-  temp = DHT22.fahrenheit();
+  humi = DHT22.humidity + humi_shift;
+  temp = DHT22.fahrenheit() + temp_shift;
 
   if(last_humi == 0) last_humi = humi;
   if(last_temp == 0) last_temp = temp;
@@ -254,6 +263,18 @@ bool PostData()
   uint32_t ip;
   char buf[200];
   
+  //these are for our http parser, since we dont want to store the response in a buffer to parse latter
+  //we will parse it on the fly as its received character by character (limited memory, was glitching other way)
+  int nl_count = 0;
+  int rc_offset = 0;
+  int pr_offset = 0;
+  int recording = 0;
+  char respCode[18];
+  char pageResp[18];
+
+  unsigned long lastRead = 0;
+  Adafruit_CC3000_Client www;
+
   lcd_out("Connecting AP");
   IFS( Serial.print(F("\nAttempting to connect to ")); Serial.println(WLAN_SSID);)
   if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) {
@@ -261,27 +282,16 @@ bool PostData()
     lcd_out("No Ap Connect",1);
     return false;
   }
-   
- // Serial.println(F("Connected!"));
-  
-  /* Wait for DHCP to complete */
-  //Serial.println(F("Request DHCP"));
+ 
   lcd_out("DHCP REQ...");
   while (!cc3000.checkDHCP())
   {
     delay(100); 
     ticks++;
-    if(ticks > MAX_TICKS) return false;
+    if(ticks > MAX_TICKS) goto EXIT_FAIL;
   }  
 
   ticks = 0;
-  /*while ( !displayConnectionDetails() ) 
-  { /*display IP address DNS, Gateway, etc. * /
-    delay(1000);
-    ticks++;
-    if(ticks > MAX_TICKS) return false;
-  }*/
-
   ip = 0;
   
   if(useTestServerIP){
@@ -306,7 +316,7 @@ bool PostData()
 			  }
 			  
 			  ticks++;
-			  if(ticks > 60) return false;
+			  if(ticks > 60) goto EXIT_FAIL;
 
 			  if(ticks > 2){
                   delay(1000);
@@ -326,11 +336,11 @@ bool PostData()
   lcd_ip_out(ip,1);  
   delay(2000);
     
-  Adafruit_CC3000_Client www = cc3000.connectTCP(ip, 80); //have been having occasional hang here...
+  www = cc3000.connectTCP(ip, 80); //have been having occasional hang here...
   
   sprintf(buf, WEBPAGE, (int)temp, (int)humi, watered, powerevt, failure, client_id, APIKEY);
     
-  if ( !cc3000.checkConnected() ) return false;
+  if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
   
   if( www.connected() ) {
     www.fastrprint(F("GET "));
@@ -338,28 +348,19 @@ bool PostData()
     www.fastrprint(F(" HTTP/1.1\r\n"));
     www.fastrprint(F("Host: ")); www.fastrprint(WEBSITE); www.fastrprint(F("\r\n"));
     www.fastrprint(F("\r\n"));
-    if ( !cc3000.checkConnected() ) return false;
+    if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
     www.println();
   } 
   else{
     lcd_out("Website Down?", 1);
     delay(800); 
-    return false;
+    goto EXIT_FAIL;
   }
- 
-  //these are for our http parser, since we dont want to store the response in a buffer to parse latter
-  //we will parse it on the fly as its received character by character (limited memory, was glitching other way)
-  int nl_count = 0;
-  int rc_offset = 0;
-  int pr_offset = 0;
-  int recording = 0;
-  char respCode[18];
-  char pageResp[18];
   
   lcd_out("Reading Response");
+  lastRead = millis();
+
    /* Read data until either the connection is closed, or the idle timeout is reached. */ 
-  unsigned long lastRead = millis();
-  
   while (www.connected()) {
     
     //this apparently happens every time.. can not use as a marker..
@@ -413,6 +414,11 @@ bool PostData()
   cc3000.disconnect();
   return true;
   
+EXIT_FAIL:
+   cc3000.disconnect(); 
+   return false;
+  
+
 }
 
 

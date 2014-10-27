@@ -6,8 +6,12 @@
 
 #define WLAN_SSID       "AccessPoint Name"           // cannot be longer than 32 characters!
 #define WLAN_SECURITY   WLAN_SEC_WEP      // Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
+
 const char WLAN_PASS[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; //this is the WEP format for a key..
 char* APIKEY = "123456";
 
+//in case your sensor reading is continiously low or high from another calibrated trusted sensor
+int temp_shift = 0;  
+int humi_shift = 0;
 
 #endif // PRIVATE_H
