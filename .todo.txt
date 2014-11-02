@@ -1,3 +1,11 @@
 
+bug: - the timestamp in the sql db field..
+       if you do a manual update to your db records..
+       all the timestamps get reset! fuck 
+       i just wacked 6k records..
+       probably remove: on update CURRENT_TIMESTAMP
+
+break out one more button on enclosure to track smoke times
 support multisensors per user
+
 

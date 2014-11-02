@@ -20,6 +20,10 @@ When you add water, push the select button on the LCD sheild to
 record it. This will be saved to the db as well. Power resets will 
 also be recorded to the database.
 
+I already have the web backend setup for multiple users. If you would like
+to use sandsprite database/web scripts just send me an email and a picture 
+of your humi. I will set up an account with a clientID and apikey for you.
+
 See screen shot for example web report.
 
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/screenshot.png)

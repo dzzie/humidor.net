@@ -53,6 +53,13 @@
     $rr = mysql_fetch_assoc($r);
     $lastWatered = date("g:i a - D m.d.y",$rr['int_tstamp']);
     
+    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where watered > 0 and clientid=$clientid order by autoid desc limit 10");
+    $waterTable = "Last 10 Waterings:<ul>\r\n";
+    while($rr = mysql_fetch_assoc($r)){
+	    $waterTable.="<li>".date("g:i a - D m.d.y",$rr['int_tstamp'])."\r\n";
+    }
+    $waterTable.="</ul>\r\n";
+    
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where powerevt > 0 and clientid=$clientid order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
     $lastPowerEvent = date("g:i a - D m.d.y",$rr['int_tstamp']);
@@ -202,9 +209,11 @@
 	    		</td>
 	    	</tr>
 	    </table>
+	    </center>
+	    <br><br>
     ";
         
-    echo $report;
+    echo $report.$waterTable;
     if($isStdReport) file_put_contents($last_report, $report);
     
     if( $user['alertsent']==1 ){ //we dont want the alert to get cached..
