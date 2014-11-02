@@ -13,5 +13,6 @@ char* APIKEY = "123456";
 //in case your sensor reading is continiously low or high from another calibrated trusted sensor
 int temp_shift = 0;  
 int humi_shift = 0;
+int client_id  = 0;  //set this unique for each humidor so web page can display multiple ones. 66 is used for test data..
 
 #endif // PRIVATE_H

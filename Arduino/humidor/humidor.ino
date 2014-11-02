@@ -29,15 +29,15 @@ for(int i=0; i < sensorCount; i++){
 
 */
 
-int client_id = 0;  //set this unique for each humidor so web page can display multiple ones. 66 is used for test data..
-
-bool useTestServerIP = false; //hardcoded in PostData to use 192.168.0.10, set to false to use WebSite
+int debug = 0;               //for testing without dht22 attached..
+bool useTestServerIP = true; //hardcoded in PostData to use 192.168.0.10, set to false to use WebSite
 char* WEBSITE = "sandsprite.com";
-char* WEBPAGE = "/humidor/logData.php?temp=%d&humi=%d&watered=%d&powerevt=%d&failure=%d&clientid=%d&apikey=%s";
-char* firmware_ver = "v1.1 " __DATE__ ;
+char* WEBPAGE = "/humidor/logData.php?temp=%d&humi=%d&watered=%d&powerevt=%d&failure=%d&clientid=%d&smoked=%d&apikey=%s";
+char* firmware_ver = "v1.2 " __DATE__ ;
 
 int powerevt  = 1;
 int watered   = 0;
+int smoked    = 0;
 int failure   = 0;
 double temp   = 0;
 double humi   = 0;
@@ -103,11 +103,10 @@ void loop(void)
 {
 
    int fail_cnt = 0;
-   int debug = 0; //for testing without dht22 attached..(data saved to diff clientid..)
    char buf[10];
 
    if(debug){
-       temp = 66; humi = 66; client_id = 66;
+       temp = 66; humi = 66;
    }else{
      while( !ReadSensor() ){
         fail_cnt++;
@@ -147,6 +146,7 @@ void loop(void)
 
    powerevt = 0;
    watered = 0;
+   smoked = 0;
    delay_x_min(20);
    
 }
@@ -199,6 +199,11 @@ void delay_x_min(int minutes, int silent){
               watered = 1;        
               lcd.setCursor(15,1); 
               lcd.print("W");
+          } 
+		  if (buttons && (buttons & BUTTON_DOWN) ){
+              smoked = 1;        
+              lcd.setCursor(14,1); 
+              lcd.print("S");
           } 
           if(buttons && (buttons & BUTTON_LEFT) ) return; //break delay to do immediate upload test
       }
@@ -295,7 +300,11 @@ bool PostData()
   ip = 0;
   
   if(useTestServerIP){
-      ip = cc3000.IP2U32(192,168,0,10); //direct ip connection..
+      if(debug){
+			ip = cc3000.IP2U32(192,168,0,10); //direct ip connection..
+	  }else{
+			ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
+	  }
   }
   else{
       
@@ -338,7 +347,7 @@ bool PostData()
     
   www = cc3000.connectTCP(ip, 80); //have been having occasional hang here...
   
-  sprintf(buf, WEBPAGE, (int)temp, (int)humi, watered, powerevt, failure, client_id, APIKEY);
+  sprintf(buf, WEBPAGE, (int)temp, (int)humi, watered, powerevt, failure, client_id, smoked, APIKEY);
     
   if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
   

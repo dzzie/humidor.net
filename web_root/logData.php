@@ -6,6 +6,7 @@ $key  = $_GET['apikey'];
 $temp = (int)$_GET['temp'];
 $humi = (int)$_GET['humi'];
 $watered = (int)$_GET['watered'];
+$smoked = (int)$_GET['smoked'];
 $powerevt = (int)$_GET['powerevt'];
 $hw_failure = (int)$_GET['failure'];
 $clientid   = (int)$_GET['clientid'];
@@ -31,7 +32,7 @@ if($clear_alert==1 && $user['alertsent']==1){
 if($temp <= 0 || $humi <= 0)       die("Invalid data low");
 if($temp >= 120 || $humi >= 100)   die("Invalid data high");
 
-$sql = "insert into humidor(temp,humidity,watered,powerevt,clientid) values($temp,$humi,$watered,$powerevt,$clientid)";
+$sql = "insert into humidor(temp,humidity,watered,powerevt,clientid,smoked) values($temp,$humi,$watered,$powerevt,$clientid,$smoked)";
 
 $sendEmail = 0;
 if($temp < 60 || $temp > 75) $sendEmail = 1;

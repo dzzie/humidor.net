@@ -54,12 +54,25 @@
     $lastWatered = date("g:i a - D m.d.y",$rr['int_tstamp']);
     
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where watered > 0 and clientid=$clientid order by autoid desc limit 10");
-    $waterTable = "Last 10 Waterings:<ul>\r\n";
-    while($rr = mysql_fetch_assoc($r)){
-	    $waterTable.="<li>".date("g:i a - D m.d.y",$rr['int_tstamp'])."\r\n";
-    }
-    $waterTable.="</ul>\r\n";
-    
+    $cnt = mysql_num_rows($r);
+    if($cnt > 0){
+	    $waterTable = "<b>Last $cnt Waterings:</b><ul>\r\n";
+	    while($rr = mysql_fetch_assoc($r)){
+		    $waterTable.="<li>".date("g:i a - D m.d.y",$rr['int_tstamp'])."\r\n";
+	    }
+	    $waterTable.="</ul>\r\n";
+	}
+	
+    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where smoked > 0 and clientid=$clientid order by autoid desc limit 20");
+    $cnt = mysql_num_rows($r);
+    if($cnt > 0){
+	    $smokedTable = "<b>Last $cnt Smokes:</b><ul>\r\n";
+	    while($rr = mysql_fetch_assoc($r)){
+		    $smokedTable.="<li>".date("g:i a - D m.d.y",$rr['int_tstamp'])."\r\n";
+	    }
+	    $smokedTable.="</ul>\r\n";
+	}
+	    
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where powerevt > 0 and clientid=$clientid order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
     $lastPowerEvent = date("g:i a - D m.d.y",$rr['int_tstamp']);
@@ -208,12 +221,22 @@
 	    			</table>
 	    		</td>
 	    	</tr>
+	    	<tr>
+	    		<td colspan=2>
+	    			<table><tr>
+	    				<td width=185> &nbsp; </td>
+	    				<td width=320>$waterTable</td>
+	    				<td>$smokedTable</td>
+	    			</tr></table>
+	    		</td>
+	    	</tr>
 	    </table>
 	    </center>
 	    <br><br>
     ";
-        
-    echo $report.$waterTable;
+    
+    echo $report;
+    
     if($isStdReport) file_put_contents($last_report, $report);
     
     if( $user['alertsent']==1 ){ //we dont want the alert to get cached..

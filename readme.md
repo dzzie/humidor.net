@@ -17,12 +17,14 @@ Alerts must be manually cleared latter by logging into the
 web site, so you are not spammed, before you get a chance to fix it.
 
 When you add water, push the select button on the LCD sheild to
-record it. This will be saved to the db as well. Power resets will 
-also be recorded to the database.
+record it. When you have a smoke, press the down button. 
+These will be saved to the database and displayed in the report.
+Power resets will also be recorded to the database.
 
-I already have the web backend setup for multiple users. If you would like
-to use sandsprite database/web scripts just send me an email and a picture 
-of your humi. I will set up an account with a clientID and apikey for you.
+I already have the web backend setup for multiple users. If you dont have
+a public webserver and would like to use mine just send me an email and a 
+picture of your humidor. I will set you up with a clientID and api key you 
+can use.
 
 See screen shot for example web report.
 
@@ -69,6 +71,11 @@ I2C lcd shield (soldered from kit and plug in)
    * SCL |Analog pin #4| 
    * SDA |Analog pin #5|
 
+   Buttons Used:
+      * Left = force update
+      * Down = smoked
+      * select = watered
+      * reset
 
 Note: The dht22 sensor will burn out if you hook it up backwards. 
     It is a 4 pin component with one pin unused. I cut off the unused 
