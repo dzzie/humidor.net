@@ -47,7 +47,6 @@ void lcd_out(char* s, int row);
 void lcd_ip_out(uint32_t ip, int row);
 void delay_x_min(int minutes);
 void delay_x_min(int minutes, int silent);
-bool DoReadSensor();
 bool ReadSensor();
 bool PostData();
 

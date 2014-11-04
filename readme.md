@@ -26,6 +26,8 @@ a public webserver and would like to use mine just send me an email and a
 picture of your humidor. I will set you up with a clientID and api key you 
 can use.
 
+* Live feed: http://sandsprite.com/humidor/index.php?id=6
+
 See screen shot for example web report.
 
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/screenshot.png)
@@ -34,6 +36,8 @@ Build Videos:
 ----------------------------------------------
 * Hardware: https://www.youtube.com/watch?v=eM54fs1qsvk&list=UUhIoXVvn4ViA3AL4FJW8Yzw
 * Enclosure: https://www.youtube.com/watch?v=YGUdR5WFM-Q&list=UUhIoXVvn4ViA3AL4FJW8Yzw
+* Haier reset default temp: http://sandsprite.com/blogs/index.php?uid=10&pid=317
+* Vinotemp reset default temp: http://sandsprite.com/blogs/index.php?uid=10&pid=316
 
 Status: complete
 
