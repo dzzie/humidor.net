@@ -49,8 +49,11 @@ Materials:
   * [4] AdaFruit Wireless Ethernet Shield - $40 
   * [5] Haier 8 bottle thermoelectric wine cooler - $100
   * WebServer with Php and MySql support
-  * arduino power adapter 
+  * 9-12v 1 Amp DC center positive power adapter w/ 2.1mm plug 
   * Total Cost: $200
+
+Note: Make sure your Arduino is powered by a 1 amp or higher rated external power supply
+when using with the CC3000! Less will lead to unstable behavior and lockups!
 
 Pins used and assembly:
 ----------------------------------------------

@@ -12,7 +12,7 @@
 #define _VSARDUINO_H_
 #define __AVR_ATmega328p__
 #define __AVR_ATmega328P__
-#define ARDUINO 106
+#define ARDUINO 158
 #define ARDUINO_MAIN
 #define __AVR__
 #define __avr__
@@ -49,11 +49,12 @@ void delay_x_min(int minutes);
 void delay_x_min(int minutes, int silent);
 bool ReadSensor();
 bool PostData();
+double toFahrenheit(double dCelsius);
+int dht22_read(uint8_t pin);
 
-#include "c:\arduino\hardware\arduino\cores\arduino\arduino.h"
-#include "c:\arduino\hardware\arduino\variants\standard\pins_arduino.h" 
+#include "d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\arduino.h"
+#include "d:\arduino-1.5.8\hardware\arduino\avr\variants\standard\pins_arduino.h" 
 #include "d:\_code\humidor.net\Arduino\humidor\humidor.ino"
 #include "d:\_code\humidor.net\Arduino\humidor\private.h"
 #include "d:\_code\humidor.net\Arduino\humidor\public.h"
-#include "d:\_code\humidor.net\Arduino\humidor\settings.h"
 #endif

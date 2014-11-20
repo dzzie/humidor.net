@@ -1,56 +1,55 @@
-#include <dht22.h>
 #include <Adafruit_CC3000.h>
-#include <ccspi.h>
 #include <SPI.h>
 #include <Wire.h>
-#include <Adafruit_MCP23017.h>
 #include <Adafruit_RGBLCDShield.h>
-#include <utility/netapp.h>
 #include <string.h>
-#include "utility/debug.h"
 #include <stdio.h>
-#include "./settings.h"
 #include "./private.h"   //rename public.h to private.h and change settings to fit your setup 
 
 //note disabled serial.printlns to save space, seems to get buggy over 28k sketch size?
 
-//todo multiple sensors
-/*
-#define sensorCount 1
-
-int pins[sensorCount] = {x,x,x};
-double temp[sensorCount];
-double humi[sensorCount];
-
-for(int i=0; i < sensorCount; i++){
-    sprintf(tmp,"temp_%d=%d&humi_%d=%d", i, temp[i], i, humi[i] );
-    if(strlen(buf)+strlen(tmp) < sizeof(buf)) strcat(buf, tmp) else display_dev_error();
-}
-
-*/
-
-bool  debug   = false;                 //use test server, no dht22 required
-char* DOMAIN  = "sandsprite.com";      //server ip is hardcoded in setup (GetHostName has problems)
-char* WEBPAGE = "/humidor/logData.php";
-char* firmware_ver = "v1.2 " __DATE__ ;
+//use test server, no dht22 required
+//server ip is hardcoded in setup (GetHostName has problems)
+#define debug_local   0    
+#define dht22_pin     2
+#define DOMAIN        "sandsprite.com"      
+#define WEBPAGE       "/humidor/logData.php" 
+#define firmware_ver  "v1.2 " __DATE__  
 
 uint32_t ip;
-int powerevt  = 1;
-int watered   = 0;
-int smoked    = 0;
-int failure   = 0;
-double temp   = 0;
-double humi   = 0;
+uint8_t powerevt  = 1;
+uint8_t watered   = 0;
+uint8_t smoked    = 0;
+uint8_t failure   = 0;
+uint8_t inReadSensor  = 0;
 
-double last_temp   = 0;
-double last_humi   = 0;
-bool inReadSensor  = false;
-
-char buf[150];
+double temp      = 0;
+double humi      = 0;
+double last_temp = 0;
+double last_humi = 0;
 char tmp[55];
 
-dht22 DHT22;
 Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
+
+//------------------ wifi sheild --------------------
+
+// These are the interrupt and control pins
+#define ADAFRUIT_CC3000_IRQ   3  // MUST be an interrupt pin!
+// These can be any two pins
+#define ADAFRUIT_CC3000_VBAT  5
+#define ADAFRUIT_CC3000_CS    10
+// Use hardware SPI for the remaining pins
+// On an UNO, SCK = 13, MISO = 12, and MOSI = 11
+Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT, SPI_CLOCK_DIVIDER); 
+// you can change this clock speed
+
+#define IDLE_TIMEOUT_MS  7000      // Amount of time to wait (in milliseconds) with no data 
+                                   // received before closing the connection.  If you know the server
+                                   // you're accessing is quick to respond, you can reduce this value.
+
+//------------------ END wifi sheild --------------------                                   
+                                   
+#define WHITE 0x7 //for lcd backlight  
 
 //following will allow you to add conditional compilation of serial debugging code 
 //with single line statements. saves space when disabled..
@@ -71,17 +70,15 @@ void setup(void)
   lcd_out("Daves WebHumidor");
   lcd_out(firmware_ver,1);
   delay(2000);  
-
-  DHT22.attach(2);
   
   lcd_out("Init Wifi...");
   if (!cc3000.begin()) while(1);
   
-  if(debug){
+ if(debug_local)
 		ip = cc3000.IP2U32(192,168,0,10);   //test server
-  }else{
+ else
 		ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
-  }
+
 
   /*unsigned long aucDHCP = 14400;
   unsigned long aucARP = 3600;
@@ -99,7 +96,7 @@ void loop(void)
 
    int fail_cnt = 0;
 
-   if(debug){
+   if(debug_local){
        temp = 66; humi = 66;
    }else{
 	   for(fail_cnt=0; fail_cnt < 10; fail_cnt++){
@@ -200,7 +197,7 @@ void delay_x_min(int minutes, int silent){
 
 bool ReadSensor(){
   
-  int chk = DHT22.read(); //0= OK, -1 = Bad Chksum, -2 = Time Out
+  int chk = dht22_read(dht22_pin); //0= OK, -1 = Bad Chksum, -2 = Time Out
 
   if (chk != 0){
 	  sprintf(tmp,"DHT22 Fail: %d", chk);
@@ -209,8 +206,8 @@ bool ReadSensor(){
 	  return false;
   }
 
-  humi = DHT22.humidity + humi_shift;
-  temp = DHT22.fahrenheit() + temp_shift;
+  humi += humi_shift;
+  temp += temp_shift;
 
   if(last_humi == 0) last_humi = humi;
   if(last_temp == 0) last_temp = temp;
@@ -225,9 +222,9 @@ bool ReadSensor(){
        
 	   if(inReadSensor) return false; //delta still high, in recursive call, exit with fail..
 
-	   inReadSensor = true;
+	   inReadSensor = 1;
 	   for(int i=1; i <=3; i++){ if( ReadSensor() ) break; } //only done for top level call
-	   inReadSensor = false;
+	   inReadSensor = 0;
   }
 
   last_humi = humi;
@@ -242,6 +239,7 @@ bool PostData()
 {
   #define MAX_TICKS 1000
 
+  char buf[150];
   int ticks = 0;
 
   //these are for our http parser, since we dont want to store the response in a buffer to parse latter
@@ -368,6 +366,86 @@ EXIT_FAIL:
   
 
 }
+
+/*  - extracted from DHT22 library and put inline to save space -
+	FILE: dht22.cpp - Library for the Virtuabotix DHT22 Sensor.
+	VERSION: 1S0A
+	PURPOSE: Measure and return temperature & Humidity. Additionally provides conversions.
+	LICENSE: GPL v3 (http://www.gnu.org/licenses/gpl.html)
+	Joseph Dattilo (Virtuabotix LLC) - Version 1S0A (14 Sep 12)
+*/
+double toFahrenheit(double dCelsius)
+{
+	return 1.8 * dCelsius + 32;
+}
+
+int dht22_read(uint8_t pin)
+{
+	// BUFFER TO RECEIVE
+	uint8_t bits[5];
+	uint8_t cnt = 7;
+	uint8_t idx = 0;
+
+	// EMPTY BUFFER
+	for (uint8_t i=0; i< 5; i++) bits[i] = 0;
+
+	// REQUEST SAMPLE
+	pinMode(pin, OUTPUT);
+	digitalWrite(pin, LOW);
+	delay(18);
+	digitalWrite(pin, HIGH);
+	delayMicroseconds(40);
+	pinMode(pin, INPUT);
+
+	// ACKNOWLEDGE or TIMEOUT
+	unsigned int loopCnt = 10000;
+	while(digitalRead(pin) == LOW)
+		if (loopCnt-- == 0) return -2;
+
+	loopCnt = 10000;
+	while(digitalRead(pin) == HIGH)
+		if (loopCnt-- == 0) return -2;
+
+	// READ OUTPUT - 40 BITS => 5 BYTES or TIMEOUT
+	for (uint8_t i=0; i<40; i++)
+	{
+		loopCnt = 10000;
+		while(digitalRead(pin) == LOW)
+			if (loopCnt-- == 0) return -2;
+
+		unsigned long t = micros();
+
+		loopCnt = 10000;
+		while(digitalRead(pin) == HIGH)
+			if (loopCnt-- == 0) return -2;
+
+		if ((micros() - t) > 40) bits[idx] |= (1 << cnt);
+		if (cnt == 0)   // next byte?
+		{
+			cnt = 7;    // restart at MSB
+			idx++;      // next byte!
+		}
+		else cnt--;
+	}
+
+	// WRITE TO RIGHT VARS
+	humi = word(bits[0], bits[1]) *.1;//calculates and stores the humidity
+
+	 uint8_t sign = 1;
+     if (bits[2] & 0x80) // negative temperature
+     {
+            bits[2] = bits[2] & 0x7F;//negative temp adjustments
+            sign = -1;
+     }
+    
+	temp = toFahrenheit(sign * word(bits[2], bits[3]) * 0.1);//temp calculation and storage
+
+	uint8_t sum = bits[0] + bits[1] + bits[2] + bits[3];//sum values
+
+	if (bits[4] != sum) return -1;//failed checksum
+	return 0;//great success!
+}
+
 
 
 
