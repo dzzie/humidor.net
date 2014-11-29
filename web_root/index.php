@@ -4,12 +4,8 @@
     $limit         = (int)$_GET['limit'];
 	$offset        = (int)$_GET['offset'];
 	$clientid      = (int)$_GET['id'];
-	$force         = (int)$_GET['force'];
 		
 	$lastID        = 0;
-	$cache_enabled = 1;
-	
-	if($force==1) $cache_enabled=0;
 	
     if($limit < 1 || $limit > 13000) $limit = $default_limit;
     if($offset < 1) $offset = 0;
@@ -28,26 +24,9 @@
     }
     
     $user = mysql_fetch_assoc($userr);
-    $last_report  = "./reports/lastReport_$clientid.html";
-    $image_path   = "./reports/graph_$clientid.png";
     $humi_img     = "./images/".$user['img'];
     $GRAPH_TITLE  = $user['username']." Humidor";
-    
-    /* limit graph re-generation to only when new data available (unless special req)*/
-    $isStdReport = ($limit == $default_limit && $offset==0) ? 1 : 0;
-    if($isStdReport == 0) $image_path = "./reports/historical_$clientid.png";
-    
-    if($isStdReport && $cache_enabled){ 
-	    $r = mysql_query("select autoid from humidor where clientid=$clientid order by autoid desc limit 1");
-	    $rr = mysql_fetch_assoc($r);
-	    $lastID = $rr['autoid'];
-	    $lastGraphID = (int)$user['lastid'];
-	    if($lastID == $lastGraphID && file_exists($image_path) && file_exists($last_report)){
-		 	   die( '<html><head><title>Cached results</title></head>'.file_get_contents($last_report) );
-	    }
-	    mysql_query("update humiusers set lastid=$lastID where clientid=$clientid");
-	}
-    
+        
     //get last watered time..
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where watered > 0 and clientid=$clientid order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
@@ -82,7 +61,7 @@
     $lastUpdate = date("g:i a - D m.d.y",$rr['int_tstamp']);
     
     //now we build the temp/humidity value arrays from the database
-    $r = mysql_query("select * from humidor where clientid=$clientid order by autoid desc limit $limit offset $offset");
+    $r = mysql_query("select UNIX_TIMESTAMP(tstamp) as int_tstamp, humidity,temp from humidor where clientid=$clientid order by autoid desc limit $limit offset $offset");
 	
     $i=0;
     $lowest  = 200;
@@ -96,10 +75,17 @@
     $lowTemp = 200;
     $lowHumi = 200;
     
+	$modo = $limit / 20;
+	$d2 = '';
+	
 	while($rr = mysql_fetch_assoc($r)){
+		
+		if( ($i+1) == mysql_num_rows($r)) $d1 = date("D g:i a - m.d.y",$rr['int_tstamp']); //start date (will end at last)
+		if($d2 == '') $d2 = date("D g:i a - m.d.y",$rr['int_tstamp']); //end date (first)
 		
 		$h[$i] = $rr['humidity'];
 		$t[$i] = $rr['temp'];
+		if($i==0 || $i % $modo == 0 ) $d[$i] = date("D g:i a - m.d.y",$rr['int_tstamp']); else $d[$i] = '';
 		
 		$avgTemp += $t[$i];
 		$avgHumi += $h[$i];
@@ -114,21 +100,27 @@
 		if($h[$i] > $highest) $highest = $h[$i];
 		if($t[$i] > $highest) $highest = $t[$i];
 		
-		
 		$i++;
 	}
 	
+	//$d1 = date("D g:i a - m.d.y",$rr['int_tstamp']); //start date
 	$record_cnt = $i;
 	$avgTemp = round($avgTemp / $record_cnt,1);
 	$avgHumi = round($avgHumi / $record_cnt,1);
 	
-	//reverse because we ordered desc in sql..
+	//reverse because we ordered desc in sql to get last entries
 	$t = array_reverse($t); 
     $h = array_reverse($h);
-    generateGraph($image_path);  	 
+	$d = array_reverse($d);
+    $js = generateGraph(0, $t, $h, $d);  	 
 	
-    $one_day = 3 * 24;
+    $one_day = 2 * 24;
     
+	$links = "<table width=100%><tr><td>$d1</td><td align=center>";
+	$links .= "<a href='index.php?limit=$limit&offset=".($offset+$limit)."&id=$clientid'>Previous</a>";
+	if( ($offset-$limit) >= 0 ) $links .= " &nbsp; &nbsp; <a href='index.php?limit=$limit&offset=".($offset-$limit)."&id=$clientid'>Next</a>";
+	$links .= "</td><td align=right>$d2</td></tr></table>";
+	
     $report = " 
     	<html>  
     	<head>
@@ -139,7 +131,9 @@
 		    }
 		    TABLE{ font-family: verdana; font-size:10px;}
 		</style>
+		<script src='Chart.js'></script>
 		<script>
+			Chart.defaults.global.animation = false;
 			function doChange(limit){
 				location = 'index.php?limit='+limit+'&offset=$offset&id=$clientid'
 			}
@@ -163,7 +157,14 @@
     				</div>
     				<br>
     			</td>
-    			<td><img src='$image_path'></td>
+    			<td>
+					$links
+					<div st-yle='width:30%'>
+						<div>
+							<canvas id='canvas_0' height='450' width='600'></canvas>
+						</div>
+					</div>
+				</td>
     		</tr>
     		<tr>
     			<td align=left>
@@ -171,9 +172,7 @@
 	    				<tr class=bb>
 	    					<td width=120 align=left><font style='font-size:20px;color:blue'>Humidity:</font></td>
 	    					<td><font style='font-size:20px;color:blue'> &nbsp; $h[0]</font></td>
-	    				
-	    					<td width=60 &nbsp; </td>
-	    					
+	    					<td width=60 style='border-bottom: 0px solid white !important;'> &nbsp; </td>  					
 	    					<td><font style='font-size:20px;color:blue'>Temperature:</font></td>
 	    					<td><font style='font-size:20px;color:blue'> &nbsp; $t[0]</font></td>
 	    				</tr>
@@ -181,9 +180,7 @@
 	    				<tr>
 	    					<td>Hum low/high</td>
 	    					<td>$lowHumi &nbsp; / &nbsp; $highHumi</td>
-	    				
-	    					<td width=60 &nbsp; </td>
-	    					
+	    					<td width=60> &nbsp; </td>
 	    					<td>Temp low/high</td>
 	    					<td>$lowTemp &nbsp; / &nbsp; $highTemp</td>
 	    				</tr>
@@ -191,9 +188,7 @@
 	    				<tr>
 	    					<td>Avg Humidity: </td>
 	    					<td>$avgHumi</td>
-	    				
-	    					<td width=60 &nbsp; </td>
-	    					
+	    					<td width=60> &nbsp; </td>
 	    					<td>Avg Temperature: </td>
 	    					<td>$avgTemp</td>
 	    				</tr>
@@ -201,9 +196,7 @@
 	    				<tr>
 	    					<td>Last Watered: </td>
 	    					<td>$lastWatered</td>
-	    				 
-	    					<td width=60 &nbsp; </td>
-	    					
+	    					<td width=60> &nbsp; </td>
 	    					<td width=120 align=left>Records: </td>
 	    					<td>$record_cnt</td>
 	    				</tr>
@@ -211,9 +204,7 @@
 	    				<tr>
 	    					<td>Last Update: </td>
 	    					<td>$lastUpdate</td>
-	    				 
-	    					<td width=60 &nbsp; </td>
-	    					
+	    					<td width=60> &nbsp; </td>
 	    					<td>Last Reboot: </td>
 	    					<td>$lastPowerEvent</td>
 	    				</tr>
@@ -235,10 +226,8 @@
 	    <br><br>
     ";
     
-    echo $report;
-    
-    if($isStdReport) file_put_contents($last_report, $report);
-    
+    echo $report.$js;
+       
     if( $user['alertsent']==1 ){ //we dont want the alert to get cached..
 	    echo "
 	    	<script>
@@ -252,64 +241,61 @@
 	    ";
     }
      
+function arytocsv($ary, $isStr = 0){
+	$r='';
+	for($i=0; $i < count($ary); $i++){
+		if($isStr == 1) $r.= "'".$ary[$i]."'"; else $r.= $ary[$i];
+		if($i != count($ary)-1) $r.= ", ";
+	}
+	return $r;
+} 
  
      
-function generateGraph($output_file){
+function generateGraph($index, $t, $h, $d){
 
-	global $t, $h, $lowest, $highest, $GRAPH_TITLE, $record_cnt;
+	$temps = arytocsv($t);
+	$humis = arytocsv($h);
+	$dates = arytocsv($d,1);
 	
-	$glow = $lowest-2;
-	$ghi =  $highest+4;
-	while( ($ghi-$glow) % 5 != 0) $ghi--; //this keeps y scale as whole numbers try small side first..
+	$r = "
+	<script>
+			var lineChartData_$index = {
+				labels : [$dates],
+				datasets : [
+					{
+						label: 'Temps',
+						fillColor : 'rgba(255,255,255,0.2)',
+						strokeColor : 'red',
+						pointColor : 'red',
+						pointStrokeColor : '#fff',
+						pointHighlightFill : '#fff',
+						pointHighlightStroke : 'rgba(220,220,220,1)',
+						data : [$temps]
+					},
+					{
+						label: 'Humis',
+						fillColor : 'rgba(255,255,255,0.2)',
+						strokeColor : 'green',
+						pointColor : 'green',
+						pointStrokeColor : '#fff',
+						pointHighlightFill : '#fff',
+						pointHighlightStroke : 'rgba(151,187,205,1)',
+						data : [$humis]
+					}
+				]
+
+			}
+
+			window.onload = function(){
+				var ctx = document.getElementById('canvas_$index').getContext('2d');
+				window.myLine = new Chart(ctx).Line(lineChartData_$index, {
+					responsive: true, pointHitDetectionRadius: 1, datasetStrokeWidth: 1,
+					pointDotRadius: 1, pointDot: false 
+				});
+			}
+	</script>";
 	
-	if($ghi==$highest){ //we dont want highest to be at top of graph..
-		$ghi = $highest+1;
-		while( ($ghi-$glow) % 5 != 0) $ghi++;
-	}
-	 
-	//should we filter the arrays since they may contain thousands of points all the same?
-	//the charts are kind of looking like flat lines here..maybe charting is dumb :)
-	
-	//now we generate the graph 
-     include("pChart/pData.class");  
-     include("pChart/pChart.class");  
-      
-     // Dataset definition   
-     $DataSet = new pData;  
-     //$DataSet->AddPoint(array(1,4,3,4,3,3,2,1,0,7,4,3,2,3,3,5,1,0),"Temperature");  
-     //$DataSet->AddPoint(array(1,4,2,6,2,3,0,1,5,1,2,4,5,2,1,0,6,4),"Humidity");  
-     $DataSet->AddPoint($h,"Humidity"); 
-     $DataSet->AddPoint($t,"Temperature");
-     $DataSet->AddAllSeries();  
-     $DataSet->SetAbsciseLabelSerie();  
-     $DataSet->SetSerieName("Humidity","Humidity"); 
-     $DataSet->SetSerieName("Temperature","Temperature");  
-      
-     // Initialise the graph  
-     $Test = new pChart(700,230);  
-     $Test->setFixedScale($glow, $ghi);
-     $Test->setFontProperties("tahoma.ttf",8);  
-     $Test->setGraphArea(50,30,585,200);  
-     $Test->drawFilledRoundedRectangle(7,7,693,223,5,240,240,240);  
-     $Test->drawRoundedRectangle(5,5,695,225,5,230,230,230);  
-     $Test->drawGraphArea(255,255,255,TRUE);  
-     $Test->drawScale($DataSet->GetData(),$DataSet->GetDataDescription(),SCALE_NORMAL,150,150,150,TRUE,0,2);     
-     $Test->drawGrid(4,TRUE,230,230,230,50);  
-      
-     // Draw the 0 line  
-     $Test->setFontProperties("tahoma.ttf",6);  
-     $Test->drawTreshold(0,143,55,72,TRUE,TRUE);  //drawTreshold($Value,$R,$G,$B,$ShowLabel=FALSE,$ShowOnRight=FALSE,$TickWidth=4,$FreeText=NULL)
-      
-     // Draw the cubic curve graph  
-     $Test->drawCubicCurve($DataSet->GetData(),$DataSet->GetDataDescription());  
-      
-     // Finish the graph  
-     $Test->setFontProperties("tahoma.ttf",8);  
-     $Test->drawLegend(600,30,$DataSet->GetDataDescription(),255,255,255);  
-     $Test->setFontProperties("tahoma.ttf",10);  
-     $Test->drawTitle(50,22,$GRAPH_TITLE . date(' - m.d.y') ,50,50,50,585);  
-     
-     $Test->Render($output_file);
+	return $r;
 	
 }        
     
