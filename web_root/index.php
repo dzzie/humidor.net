@@ -6,8 +6,9 @@
 	$clientid      = (int)$_GET['id'];
 		
 	$lastID        = 0;
+	$one_day = 2 * 24; //30 minute intervals..
 	
-    if($limit < 1 || $limit > 13000) $limit = $default_limit;
+    if($limit < 1 || $limit > 13000) $limit = $one_day;
     if($offset < 1) $offset = 0;
     
     ConnectDB();
@@ -42,7 +43,7 @@
 	    $waterTable.="</ul>\r\n";
 	}
 	
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where smoked > 0 and clientid=$clientid order by autoid desc limit 20");
+    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where smoked > 0 and clientid=$clientid order by autoid desc limit 10");
     $cnt = mysql_num_rows($r);
     if($cnt > 0){
 	    $smokedTable = "<b>Last $cnt Smokes:</b><ul>\r\n";
@@ -85,7 +86,13 @@
 		
 		$h[$i] = $rr['humidity'];
 		$t[$i] = $rr['temp'];
-		if($i==0 || $i % $modo == 0 ) $d[$i] = date("D g:i a - m.d.y",$rr['int_tstamp']); else $d[$i] = '';
+		if($i==0 || $i % $modo == 0 ){
+			if($limit==$one_day)
+				$d[$i] = date("g:i a",$rr['int_tstamp']);
+			else
+			 	$d[$i] = date("D g:i a - m.d.y",$rr['int_tstamp']);
+		}	 
+		 else $d[$i] = '';
 		
 		$avgTemp += $t[$i];
 		$avgHumi += $h[$i];
@@ -113,8 +120,7 @@
     $h = array_reverse($h);
 	$d = array_reverse($d);
     $js = generateGraph(0, $t, $h, $d);  	 
-	
-    $one_day = 2 * 24;
+	$event_js = eventsGraph();
     
 	$links = "<table width=100%><tr><td>$d1</td><td align=center>";
 	$links .= "<a href='index.php?limit=$limit&offset=".($offset+$limit)."&id=$clientid'>Previous</a>";
@@ -161,7 +167,7 @@
 					$links
 					<div st-yle='width:30%'>
 						<div>
-							<canvas id='canvas_0' height='450' width='600'></canvas>
+							<canvas id='canvas_0' height='250' width='600'></canvas>
 						</div>
 					</div>
 				</td>
@@ -214,11 +220,28 @@
 	    	</tr>
 	    	<tr>
 	    		<td colspan=2>
-	    			<table><tr>
-	    				<td width=185> &nbsp; </td>
-	    				<td width=320>$waterTable</td>
-	    				<td>$smokedTable</td>
-	    			</tr></table>
+	    			<table>
+						<tr>
+		    				<td colspan=3 align=right>
+								<!--
+								<div style='position: relative; width: 0; height: 0;'>
+									<!-- outter div is so doesnt take up any space in document flow -- >
+									<div id='events_legendDiv' style='position:relative;top:20;back-ground-color:#e0e0e0;display:inline-block;white-space: nowrap;'>
+											&bull; <font style='background-color:rgba(151,187,205,1)'>Watered</font><br>
+											&bull; <font style='background-color:rgba(220,220,220,1)'>Smoked </font><br>
+									</div>
+								</div>
+								-->
+								<canvas id='event_canvas' height='50'></canvas>
+								<br><br>
+							</td>
+		    			</tr>
+						<tr>
+		    				<td width=185> &nbsp; </td>
+		    				<td width=320 valign=top>$waterTable</td>
+		    				<td valign=top>$smokedTable</td>
+		    			</tr>
+					</table>
 	    		</td>
 	    	</tr>
 	    </table>
@@ -226,7 +249,7 @@
 	    <br><br>
     ";
     
-    echo $report.$js;
+    echo $report.$js.$event_js;
        
     if( $user['alertsent']==1 ){ //we dont want the alert to get cached..
 	    echo "
@@ -241,6 +264,45 @@
 	    ";
     }
      
+
+//show rolling stats for last 12 mos, out args by ref 
+// month names csv, smoked events csv, water events csv 
+function eventsfor_last12Months(&$d,&$s,&$w){
+
+    $mname = array(0, 'Jan','Feb','Mar','Apr','May','June','July','Aug','Sept','Oct','Nov','Dec', 14);
+	$y=0; 
+	$year_index=0;
+	//$now   = new DateTime(); //(PHP 5 >= 5.2.0)
+    //$month = (int)$now->format("m"); //month index..
+	$month = date("m");
+	
+    for($i=12; $i>0; $i--){
+		$mi = $month - $y;
+		
+		if($mi <= 0){
+			 $mi += 12; 
+			 $year_index = -1; //we have crossed into previous year now...
+		}
+		
+		//echo $mi. ",";
+		$d[$i-1] = $mname[$mi];
+		
+		$r = mysql_query("SELECT count(autoid) as c FROM humidor WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and smoked=1");
+		$rr = mysql_fetch_assoc($r);
+		$s[$i-1] = $rr['c'];
+		
+		$r = mysql_query("SELECT count(autoid) as c FROM humidor WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and watered=1");
+		$rr = mysql_fetch_assoc($r);
+		$w[$i-1] = $rr['c'];
+		
+		$y+=1;
+	}
+	//echo var_dump($d);
+	$d = arytocsv( $d, 1 );
+	$s = arytocsv( $s );
+	$w = arytocsv( $w );
+}
+
 function arytocsv($ary, $isStr = 0){
 	$r='';
 	for($i=0; $i < count($ary); $i++){
@@ -250,7 +312,63 @@ function arytocsv($ary, $isStr = 0){
 	return $r;
 } 
  
-     
+function eventsGraph(){
+
+    $smoke_data = ''; $month_names=''; 	$water_data='';
+	eventsfor_last12Months($month_names, $smoke_data, $water_data);
+	
+	$r = "
+		<script>
+			  
+			var smokeChartData = {
+				labels : [$month_names],
+				datasets : [
+					{
+						label: 'Watered',
+						fillColor : 'rgba(151,187,205,0.5)',
+						strokeColor : 'rgba(151,187,205,0.8)',
+						highlightFill : 'rgba(151,187,205,0.75)',
+						highlightStroke : 'rgba(151,187,205,1)',
+						data : [$water_data]
+					},
+					{
+						label: 'Smoked',
+						fillColor : 'rgba(220,220,220,0.5)',
+						strokeColor : 'rgba(220,220,220,0.8)',
+						highlightFill: 'rgba(220,220,220,0.75)',
+						highlightStroke: 'rgba(220,220,220,1)',
+						data : [$smoke_data]
+					}
+				]
+			}
+			
+			var ctx = document.getElementById('event_canvas').getContext('2d');
+			window.myBar = new Chart(ctx).Bar(smokeChartData, {
+				responsive : true
+			});
+			
+			/*window.myBar.options.legendTemplate = 
+				'<span style=\"background-color:#ccffcc;\"><ul>'
+                  +'<% for (var i=0; i<datasets.length; i++) { %>'
+                    +'<li>'
+                    +'<font xx style=\"width:10;background-color:<%=datasets[i].fillColor%>\">'
+                    +'<% if (datasets[i].label) { %><%= datasets[i].label %><% } %>'
+                  +'</font></li>'
+                +'<% } %>'
+              +'</ul></span>'
+			
+			document.getElementById('events_legendDiv').innerHTML = window.myBar.generateLegend() ;
+			*/
+			
+		</script>
+		";
+			
+	return $r;
+
+
+}
+
+
 function generateGraph($index, $t, $h, $d){
 
 	$temps = arytocsv($t);
@@ -259,6 +377,7 @@ function generateGraph($index, $t, $h, $d){
 	
 	$r = "
 	<script>
+	
 			var lineChartData_$index = {
 				labels : [$dates],
 				datasets : [
@@ -285,15 +404,15 @@ function generateGraph($index, $t, $h, $d){
 				]
 
 			}
-
-			window.onload = function(){
-				var ctx = document.getElementById('canvas_$index').getContext('2d');
-				window.myLine = new Chart(ctx).Line(lineChartData_$index, {
-					responsive: true, pointHitDetectionRadius: 1, datasetStrokeWidth: 1,
-					pointDotRadius: 1, pointDot: false 
-				});
-			}
-	</script>";
+			
+			var ctx = document.getElementById('canvas_$index').getContext('2d');
+			window.myLine_$index = new Chart(ctx).Line(lineChartData_$index, {
+				responsive: true, pointHitDetectionRadius: 1, datasetStrokeWidth: 1,
+				pointDotRadius: 1, pointDot: false 
+			});
+			 
+	</script>
+	";
 	
 	return $r;
 	
