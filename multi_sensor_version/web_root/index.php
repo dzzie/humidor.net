@@ -1,7 +1,5 @@
 <?php  
     include("functions.php");
-    include("pChart/pData.class");  
-     include("pChart/pChart.class");  
 	 
     $limit         = (int)$_GET['limit'];
 	$offset        = (int)$_GET['offset'];
@@ -10,10 +8,11 @@
 		
 	$lastID        = 0;
 	$cache_enabled = 1;
+	$one_day = 2 * 24;
 	
 	if($force==1) $cache_enabled=0;
 	
-    if($limit < 1 || $limit > 13000) $limit = $default_limit;
+    if($limit < 1 || $limit > 13000) $limit = $one_day;
     if($offset < 1) $offset = 0;
     
     ConnectDB();
@@ -21,37 +20,27 @@
     $userr = mysql_query("select * from humiusers where autoid=$clientid");
     if(mysql_num_rows($userr)==0){ //list available users..
 	    $r = mysql_query("select * from humiusers");
-	    if(mysql_num_rows($r)==0) die("Log into <a href=admin.php>control panel</a> and create users..");    
-	    $report = "<b><br><br>Please select a user: <br><ul>\n";
-	    while($rr = mysql_fetch_assoc($r)){
-		     $report .= "<li><a href=index.php?id=".$rr['autoid'].">".$rr['username']."</a>\n";
-	    }
-	    die($report);
+	    
+		if(mysql_num_rows($r)==0) die("Log into <a href=admin.php>control panel</a> and create users.."); 
+		  
+		if(mysql_num_rows($r)==1){ 
+			$rr = mysql_fetch_assoc($r); //only one, so just display them..
+			$userr = mysql_query("select * from humiusers where autoid=".$rr['autoid']);
+		}
+		else{   
+		    $report = "<b><br><br>Please select a user: <br><ul>\n";
+		    while($rr = mysql_fetch_assoc($r)){
+			     $report .= "<li><a href=index.php?id=".$rr['autoid'].">".$rr['username']."</a>\n";
+		    }
+		    die($report);
+		}
     }
     
     $user = mysql_fetch_assoc($userr);
-    $last_report  = "./reports/lastReport_$clientid.html";
-    $image_path   = "./reports/graph_$clientid_";
     $humi_img     = "./images/".$user['img'];
     $GRAPH_TITLE  = $user['username']." Humidor";
     $scnt         = (int)$user['scnt'];
 	
-	 
-    /* limit graph re-generation to only when new data available (unless special req)*/
-    $isStdReport = ($limit == $default_limit && $offset==0) ? 1 : 0;
-    if($isStdReport == 0) $image_path = "./reports/historical_$clientid.png";
-    
-    if($isStdReport && $cache_enabled){ 
-	    $r = mysql_query("select autoid from humidor where clientid=$clientid order by autoid desc limit 1");
-	    $rr = mysql_fetch_assoc($r);
-	    $lastID = $rr['autoid'];
-	    $lastGraphID = (int)$user['lastid'];
-	    if($lastID == $lastGraphID && file_exists($image_path) && file_exists($last_report)){
-		 	   die( '<html><head><title>Cached results</title></head>'.file_get_contents($last_report) );
-	    }
-	    mysql_query("update humiusers set lastid=$lastID where clientid=$clientid");
-	}
-    
     //get last watered time..
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where watered > 0 and clientid=$clientid order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
@@ -95,7 +84,9 @@
 			    }
 			    TABLE{ font-family: verdana; font-size:10px;}
 			</style>
+			<script src='Chart.js'></script>
 			<script>
+				Chart.defaults.global.animation = false;
 				function doChange(limit){
 					location = 'index.php?limit='+limit+'&offset=$offset&id=$clientid'
 				}
@@ -114,20 +105,19 @@
 		    				<option ".($limit==($one_day * 7) ? "SELECTED" : "")." value=".($one_day * 7).">Week</option>
 		    				<option ".($limit==($one_day * 30) ? "SELECTED" : "")." value=".($one_day * 30).">Month</option>
 		    				<!--option ".($limit==($one_day * 90) ? "SELECTED" : "")." value=".($one_day * 90).">3 Month</option-->
-		    				<!--option ".($limit==($one_day * 3) ? "SELECTED" : "")." value=".($one_day * 180).">6 Month</option-->
+		    				<!--option ".($limit==($one_day * 180) ? "SELECTED" : "")." value=".($one_day * 180).">6 Month</option-->
 	    				</select>
 	    				</div>
 	    				<br>
 	    			</td>
-	    			<td><!--img src='$image_path'--></td>
 	    		</tr>
 	    		<tr>
 	    			<td align=left>
 		";
 		
-		//echo "<h1>$scnt</h1>";
-		for($i=0;$i<$scnt;$i++){
-			$report.=generate_report($i)."<br><br>";
+		$js='';
+		for($i=0;$i<$scnt;$i++){ //for each sensor 
+			$report.=generate_report($i,$js)."<br><br>";
 		}
 		
 		$report.="
@@ -157,11 +147,28 @@
 		    	</tr>
 		    	<tr>
 		    		<td colspan=2>
-		    			<table><tr>
+		    			<table>
+						<tr>
+		    				<td colspan=3 align=right>
+								<!--
+								<div style='position: relative; width: 0; height: 0;'>
+									<!-- outter div is so doesnt take up any space in document flow -- >
+									<div id='events_legendDiv' style='position:relative;top:20;back-ground-color:#e0e0e0;display:inline-block;white-space: nowrap;'>
+											&bull; <font style='background-color:rgba(151,187,205,1)'>Watered</font><br>
+											&bull; <font style='background-color:rgba(220,220,220,1)'>Smoked </font><br>
+									</div>
+								</div>
+								-->
+								<canvas id='event_canvas' height='50'></canvas>
+								<br><br>
+							</td>
+		    			</tr>
+						<tr>
 		    				<td width=185> &nbsp; </td>
-		    				<td width=320>$waterTable</td>
-		    				<td>$smokedTable</td>
-		    			</tr></table>
+		    				<td width=320 valign=top>$waterTable</td>
+		    				<td valign=top>$smokedTable</td>
+		    			</tr>
+					</table>
 		    		</td>
 		    	</tr>
 		    </table>
@@ -169,10 +176,25 @@
 		    <br><br>
 	    ";
 
-	echo $report;
+	$event_js = eventsGraph();
+	echo $report.$js.$event_js;
 	
-	function generate_report($sid){
-		global $image_path,$clientid,$limit,$offset,$GRAPH_TITLE, $record_cnt;
+	if( $user['alertsent']==1 ){ //we dont want the alert to get cached..
+	    echo "
+	    	<script>
+	    		function clear_alert(){
+		    		var key = prompt('Enter the apikey to clear the alert:');
+		    		if(key.length==0) return;
+		    		window.open('logData.php?clear_alert=1&clientid=$clientid&apikey='+key, '', 'width=200, height=100');
+	    		}
+	    	</script>
+	    	<center><font color=red size=+4><u><a onmouseover='this.style.cursor=\"pointer\"' onclick='clear_alert()'>Clear Alert</a></u></font></center>	    
+	    ";
+    }
+	
+	
+function generate_report($sid,&$js){
+		global $image_path,$clientid,$limit,$offset,$GRAPH_TITLE, $record_cnt,$one_day;
 	
 		//now we build the temp/humidity value arrays from the database
 	    $r = mysql_query("select * from humidor where clientid=$clientid and sid=$sid order by autoid desc limit $limit offset $offset");
@@ -188,12 +210,31 @@
 	    $highHumi= 0;
 	    $lowTemp = 200;
 	    $lowHumi = 200;
-	    
+	    $d2 = '';
+		$curday = -1;
+	
 		while($rr = mysql_fetch_assoc($r)){
 			
+			if( $i == (mysql_num_rows($r)-1) ) $d1 = date("D g:i a - m.d.y",$rr['int_tstamp']); //start date (will end at last)
+		    if($d2 == '') $d2 = date("D g:i a - m.d.y",$rr['int_tstamp']); //end date (first)
+		    
 			$h[$i] = $rr['humidity'];
 			$t[$i] = $rr['temp'];
 			
+			if($i==0 || $i % $modo == 0 ){
+				if($limit==$one_day)
+					$d[$i] = date("g:i a",$rr['int_tstamp']);
+				else{
+					if($curday == -1 || date( "w", $rr['int_tstamp']) != $curday){
+						$curday = date( "w", $rr['int_tstamp']);
+				 		$d[$i] = date("m.d",$rr['int_tstamp']);
+					}else{
+						$d[$i] = date("g:i a",$rr['int_tstamp']);
+					}
+				}
+			}	 
+			 else $d[$i] = '';
+		 
 			$avgTemp += $t[$i];
 			$avgHumi += $h[$i];
 			
@@ -207,7 +248,6 @@
 			if($h[$i] > $highest) $highest = $h[$i];
 			if($t[$i] > $highest) $highest = $t[$i];
 			
-			
 			$i++;
 		}
 		
@@ -218,15 +258,26 @@
 		//reverse because we ordered desc in sql..
 		$t = array_reverse($t); 
 	    $h = array_reverse($h);
-		$myimg=$image_path.$sid.".png";
-	    generateGraph($myimg,$t, $h, $lowest, $highest, $GRAPH_TITLE, $record_cnt);  	 
-		
-	    $one_day = 3 * 24;
-	    
+	    $d = array_reverse($d);
+	    $js .= generateGraph($sid, $t, $h, $d);  //byref out value return..	 
+			    
+		$links = "<table width=100%><tr><td>$d1</td><td align=center>";
+		$links .= "<a href='index.php?limit=$limit&offset=".($offset+$limit)."&id=$clientid'>Previous</a>";
+		if( ($offset-$limit) >= 0 ) $links .= " &nbsp; &nbsp; <a href='index.php?limit=$limit&offset=".($offset-$limit)."&id=$clientid'>Next</a>";
+		$links .= "</td><td align=right>$d2</td></tr></table>";
+	  
 	    $report = " 
-	    	
 		    			<table>
-							<tr><td colspan=5><img src='$myimg'></td></tr>
+							<tr>
+								<td colspan=5>
+									$links
+									<div st-yle='width:30%'>
+										<div>
+											<canvas id='canvas_$sid' height='250' width='600'></canvas>
+										</div>
+									</div>
+								</td>
+							</tr>
 		    				<tr class=bb>
 		    					<td width=120 align=left><font style='font-size:20px;color:blue'>Humidity:</font></td>
 		    					<td><font style='font-size:20px;color:blue'> &nbsp; $h[0]</font></td>
@@ -260,83 +311,159 @@
 		    			</table>";
 	    
 	    return $report;
-    }
-	
-	
-    if($isStdReport) file_put_contents($last_report, $report);
+}
     
-    if( $user['alertsent']==1 ){ //we dont want the alert to get cached..
-	    echo "
-	    	<script>
-	    		function clear_alert(){
-		    		var key = prompt('Enter the apikey to clear the alert:');
-		    		if(key.length==0) return;
-		    		window.open('logData.php?clear_alert=1&clientid=$clientid&apikey='+key, '', 'width=200, height=100');
-	    		}
-	    	</script>
-	    	<center><font color=red size=+4><u><a onmouseover='this.style.cursor=\"pointer\"' onclick='clear_alert()'>Clear Alert</a></u></font></center>	    
-	    ";
-    }
-     
- 
-     
-function generateGraph($output_file,$t, $h, $lowest, $highest, $GRAPH_TITLE, $record_cnt){
+//show rolling stats for last 12 mos, out args by ref 
+// month names csv, smoked events csv, water events csv 
+function eventsfor_last12Months(&$d,&$s,&$w){
 
+    $mname = array(0, 'Jan','Feb','Mar','Apr','May','June','July','Aug','Sept','Oct','Nov','Dec', 14);
+	$y=0; 
+	$year_index=0;
+	$month = date("m"); //start month number
 	
-	
-	$glow = $lowest-2;
-	$ghi =  $highest+4;
-	while( ($ghi-$glow) % 5 != 0) $ghi--; //this keeps y scale as whole numbers try small side first..
-	
-	if($ghi==$highest){ //we dont want highest to be at top of graph..
-		$ghi = $highest+1;
-		while( ($ghi-$glow) % 5 != 0) $ghi++;
+    for($i=12; $i>0; $i--){
+		$mi = $month - $y; //month index
+		
+		if($mi <= 0){
+			 $mi += 12; 
+			 $year_index = 1; //we have crossed into previous year now...
+		}
+		
+		//echo $mi. ",";
+		$d[$i-1] = $mname[$mi];
+		
+		$r = mysql_query("SELECT count(autoid) as c FROM humidor WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and smoked=1");
+		$rr = mysql_fetch_assoc($r);
+		$s[$i-1] = $rr['c'];
+		
+		$r = mysql_query("SELECT count(autoid) as c FROM humidor WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and watered=1");
+		$rr = mysql_fetch_assoc($r);
+		$w[$i-1] = $rr['c'];
+		
+		$y+=1;
 	}
-	 
-	//should we filter the arrays since they may contain thousands of points all the same?
-	//the charts are kind of looking like flat lines here..maybe charting is dumb :)
+	//echo var_dump($d);
+	$d = arytocsv( $d, 1 );
+	$s = arytocsv( $s );
+	$w = arytocsv( $w );
+}
+
+function arytocsv($ary, $isStr = 0){
+	$r='';
+	for($i=0; $i < count($ary); $i++){
+		if($isStr == 1) $r.= "'".$ary[$i]."'"; else $r.= $ary[$i];
+		if($i != count($ary)-1) $r.= ", ";
+	}
+	return $r;
+} 
+ 
+function eventsGraph(){
+
+    $smoke_data = ''; $month_names=''; 	$water_data='';
+	eventsfor_last12Months($month_names, $smoke_data, $water_data);
 	
-	//now we generate the graph 
-     
-      
-     // Dataset definition   
-     $DataSet = new pData;  
-     //$DataSet->AddPoint(array(1,4,3,4,3,3,2,1,0,7,4,3,2,3,3,5,1,0),"Temperature");  
-     //$DataSet->AddPoint(array(1,4,2,6,2,3,0,1,5,1,2,4,5,2,1,0,6,4),"Humidity");  
-     $DataSet->AddPoint($h,"Humidity"); 
-     $DataSet->AddPoint($t,"Temperature");
-     $DataSet->AddAllSeries();  
-     $DataSet->SetAbsciseLabelSerie();  
-     $DataSet->SetSerieName("Humidity","Humidity"); 
-     $DataSet->SetSerieName("Temperature","Temperature");  
-      
-     // Initialise the graph  
-     $Test = new pChart(700,230);  
-     $Test->setFixedScale($glow, $ghi);
-     $Test->setFontProperties("tahoma.ttf",8);  
-     $Test->setGraphArea(50,30,585,200);  
-     $Test->drawFilledRoundedRectangle(7,7,693,223,5,240,240,240);  
-     $Test->drawRoundedRectangle(5,5,695,225,5,230,230,230);  
-     $Test->drawGraphArea(255,255,255,TRUE);  
-     $Test->drawScale($DataSet->GetData(),$DataSet->GetDataDescription(),SCALE_NORMAL,150,150,150,TRUE,0,2);     
-     $Test->drawGrid(4,TRUE,230,230,230,50);  
-      
-     // Draw the 0 line  
-     $Test->setFontProperties("tahoma.ttf",6);  
-     $Test->drawTreshold(0,143,55,72,TRUE,TRUE);  //drawTreshold($Value,$R,$G,$B,$ShowLabel=FALSE,$ShowOnRight=FALSE,$TickWidth=4,$FreeText=NULL)
-      
-     // Draw the cubic curve graph  
-     $Test->drawCubicCurve($DataSet->GetData(),$DataSet->GetDataDescription());  
-      
-     // Finish the graph  
-     $Test->setFontProperties("tahoma.ttf",8);  
-     $Test->drawLegend(600,30,$DataSet->GetDataDescription(),255,255,255);  
-     $Test->setFontProperties("tahoma.ttf",10);  
-     $Test->drawTitle(50,22,$GRAPH_TITLE . date(' - m.d.y') ,50,50,50,585);  
-     
-     $Test->Render($output_file);
+	$r = "
+		<script>
+			  
+			var smokeChartData = {
+				labels : [$month_names],
+				datasets : [
+					{
+						label: 'Watered',
+						fillColor : 'rgba(151,187,205,0.5)',
+						strokeColor : 'rgba(151,187,205,0.8)',
+						highlightFill : 'rgba(151,187,205,0.75)',
+						highlightStroke : 'rgba(151,187,205,1)',
+						data : [$water_data]
+					},
+					{
+						label: 'Smoked',
+						fillColor : 'rgba(220,220,220,0.5)',
+						strokeColor : 'rgba(220,220,220,0.8)',
+						highlightFill: 'rgba(220,220,220,0.75)',
+						highlightStroke: 'rgba(220,220,220,1)',
+						data : [$smoke_data]
+					}
+				]
+			}
+			
+			var ctx = document.getElementById('event_canvas').getContext('2d');
+			window.myBar = new Chart(ctx).Bar(smokeChartData, {
+				responsive : true
+			});
+			
+			/*window.myBar.options.legendTemplate = 
+				'<span style=\"background-color:#ccffcc;\"><ul>'
+                  +'<% for (var i=0; i<datasets.length; i++) { %>'
+                    +'<li>'
+                    +'<font xx style=\"width:10;background-color:<%=datasets[i].fillColor%>\">'
+                    +'<% if (datasets[i].label) { %><%= datasets[i].label %><% } %>'
+                  +'</font></li>'
+                +'<% } %>'
+              +'</ul></span>'
+			
+			document.getElementById('events_legendDiv').innerHTML = window.myBar.generateLegend() ;
+			*/
+			
+		</script>
+		";
+			
+	return $r;
+
+
+}
+
+
+function generateGraph($index, $t, $h, $d){
+
+	$temps = arytocsv($t);
+	$humis = arytocsv($h);
+	$dates = arytocsv($d,1);
+	
+	$r = "
+	<script>
+	
+			var lineChartData_$index = {
+				labels : [$dates],
+				datasets : [
+					{
+						label: 'Temps',
+						fillColor : 'rgba(255,255,255,0.2)',
+						strokeColor : 'red',
+						pointColor : 'red',
+						pointStrokeColor : '#fff',
+						pointHighlightFill : '#fff',
+						pointHighlightStroke : 'rgba(220,220,220,1)',
+						data : [$temps]
+					},
+					{
+						label: 'Humis',
+						fillColor : 'rgba(255,255,255,0.2)',
+						strokeColor : 'green',
+						pointColor : 'green',
+						pointStrokeColor : '#fff',
+						pointHighlightFill : '#fff',
+						pointHighlightStroke : 'rgba(151,187,205,1)',
+						data : [$humis]
+					}
+				]
+
+			}
+			
+			var ctx = document.getElementById('canvas_$index').getContext('2d');
+			window.myLine_$index = new Chart(ctx).Line(lineChartData_$index, {
+				responsive: true, pointHitDetectionRadius: 1, datasetStrokeWidth: 1,
+				pointDotRadius: 1, pointDot: false 
+			});
+			 
+	</script>
+	";
+	
+	return $r;
 	
 }        
+            
     
  
 ?>

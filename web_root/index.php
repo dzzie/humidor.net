@@ -78,19 +78,27 @@
     
 	$modo = $limit / 20;
 	$d2 = '';
+	$curday = -1;
 	
 	while($rr = mysql_fetch_assoc($r)){
 		
-		if( ($i+1) == mysql_num_rows($r)) $d1 = date("D g:i a - m.d.y",$rr['int_tstamp']); //start date (will end at last)
+		if( $i == (mysql_num_rows($r)-1) ) $d1 = date("D g:i a - m.d.y",$rr['int_tstamp']); //start date (will end at last)
 		if($d2 == '') $d2 = date("D g:i a - m.d.y",$rr['int_tstamp']); //end date (first)
 		
 		$h[$i] = $rr['humidity'];
 		$t[$i] = $rr['temp'];
+		
 		if($i==0 || $i % $modo == 0 ){
 			if($limit==$one_day)
 				$d[$i] = date("g:i a",$rr['int_tstamp']);
-			else
-			 	$d[$i] = date("D g:i a - m.d.y",$rr['int_tstamp']);
+			else{
+				if($curday == -1 || date( "w", $rr['int_tstamp']) != $curday){
+					$curday = date( "w", $rr['int_tstamp']);
+			 		$d[$i] = date("m.d",$rr['int_tstamp']);
+				}else{
+					$d[$i] = date("g:i a",$rr['int_tstamp']);
+				}
+			}
 		}	 
 		 else $d[$i] = '';
 		
@@ -272,16 +280,14 @@ function eventsfor_last12Months(&$d,&$s,&$w){
     $mname = array(0, 'Jan','Feb','Mar','Apr','May','June','July','Aug','Sept','Oct','Nov','Dec', 14);
 	$y=0; 
 	$year_index=0;
-	//$now   = new DateTime(); //(PHP 5 >= 5.2.0)
-    //$month = (int)$now->format("m"); //month index..
-	$month = date("m");
+	$month = date("m"); //start month number
 	
     for($i=12; $i>0; $i--){
-		$mi = $month - $y;
+		$mi = $month - $y; //month index
 		
 		if($mi <= 0){
 			 $mi += 12; 
-			 $year_index = -1; //we have crossed into previous year now...
+			 $year_index = 1; //we have crossed into previous year now...
 		}
 		
 		//echo $mi. ",";
