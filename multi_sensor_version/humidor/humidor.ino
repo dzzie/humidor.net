@@ -8,6 +8,12 @@
 #include "./settings.h"
 #include "./private.h"   //rename public.h to private.h and change settings to fit your setup 
 
+/*
+Copyright David Zimmer <dzzie@yahoo.com>
+WebSite:  http://sandsprite.com
+All rights reserved, no portion of this code is authorized for sale or redistribution
+*/
+
 //switched to arduino 1.5.x because it optimizes better and saves us more space (were pretty full up for an uno!)
 
 //note disabled serial.printlns to save space, seems to get buggy over 28k sketch size?

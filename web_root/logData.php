@@ -1,5 +1,11 @@
 <?php
 
+/*
+	Copyright David Zimmer <dzzie@yahoo.com>
+	WebSite:  http://sandsprite.com
+	All rights reserved, no portion of this code is authorized for sale or redistribution
+*/
+	
 include("functions.php");
     
 $key  = $_GET['apikey'];
