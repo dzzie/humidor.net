@@ -21,7 +21,7 @@ All rights reserved, no portion of this code is authorized for sale or redistrib
  
 #define sensorCount 2
 
-int pins[sensorCount] = {2,6}; //free digital pins for dht22(s): 2,6,7,8
+int pins[sensorCount] = {2,6}; //(uno) free digital pins for dht22(s): 2,6,7,8 - 0 value will ignore that element
 double temp[sensorCount] = {0,0};
 double humi[sensorCount] = {0,0};
 double last_temp[sensorCount] = {0,0};
@@ -33,6 +33,13 @@ double last_humi[sensorCount] = {0,0};
 #define DOMAIN          "sandsprite.com"       
 #define WEBPAGE         "/humidor/logData.php?" 
 #define firmware_ver    "v1.2 " __DATE__  
+
+#define autowater 1
+#ifdef autowater
+	uint8_t pumppin    = 22; //mega digital pin 22
+	uint8_t lastPumped = 0;
+	uint8_t sprayFor   = 3;  //in seconds
+#endif
 
 uint32_t ip;
 uint8_t powerevt  = 1;
@@ -76,6 +83,11 @@ void setup(void)
   }else{
 		ip = ips2ip(live_server_ip);
   }
+
+  #ifdef autowater
+	  pinMode(pumppin, OUTPUT);
+	  digitalWrite(pumppin, LOW);
+  #endif
  
   /*
   unsigned long aucDHCP = 14400;
@@ -135,6 +147,26 @@ void loop(void)
    watered = 0;
    smoked = 0;
    delay_x_min(30); //todo cycle through sensor readings if multiple during delay..
+
+   #ifdef autowater
+	   //do we need to support multiple pumps based on which sensor? are the sensors in diff humis? -> pumpPin[i], lastPumped[i]
+	   //or are they at multiple levels of same one..most users will be this..
+       //waters a max of once every 2 hours (6 updates / 30 min interval)
+       if(lastPumped > 250) lastPumped = 7; else lastPumped++;
+	   for(uint8_t i=0; i < sensorCount; i++){ 
+		   if(humi[i] <= 66 && lastPumped >= 6){
+			   lcd_out("Autowater Mode");
+			   sprintf(tmp, "humi[%d]=%d s=%d", i, humi[i],sprayFor);
+			   lcd_out(tmp,1);
+			   digitalWrite(pumppin, HIGH);
+			   delay(sprayFor * 1000); 
+			   digitalWrite(pumppin, LOW);
+			   lastPumped=0;
+			   watered = 1;
+			   break;
+		   }
+	   }
+   #endif
    
 }
 
@@ -186,6 +218,11 @@ void delay_x_min(uint8_t minutes, uint8_t silent){
 
 bool ReadSensor(uint8_t i /* sensorIndex */){
   
+	if( pins[i]==0 ){ //no sensor hooked up use test data
+		humi[i] = 66; temp[i] = 66;
+		return true; 
+	}
+
   uint8_t chk = dht22_read(i); //0= OK, -1 = Bad Chksum, -2 = Time Out
 
   if (chk != 0){
