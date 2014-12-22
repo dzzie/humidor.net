@@ -129,6 +129,8 @@
 	$record_cnt = $i;
 	$avgTemp = round($avgTemp / $record_cnt,1);
 	$avgHumi = round($avgHumi / $record_cnt,1);
+	$curh = $h[0];
+	$curt = $t[0];
 	
 	//reverse because we ordered desc in sql to get last entries
 	$t = array_reverse($t); 
@@ -192,10 +194,10 @@
 	    			<table>
 	    				<tr class=bb>
 	    					<td width=120 align=left><font style='font-size:20px;color:blue'>Humidity:</font></td>
-	    					<td><font style='font-size:20px;color:blue'> &nbsp; $h[0]</font></td>
+	    					<td><font style='font-size:20px;color:blue'> &nbsp; $curh</font></td>
 	    					<td width=60 style='border-bottom: 0px solid white !important;'> &nbsp; </td>  					
 	    					<td><font style='font-size:20px;color:blue'>Temperature:</font></td>
-	    					<td><font style='font-size:20px;color:blue'> &nbsp; $t[0]</font></td>
+	    					<td><font style='font-size:20px;color:blue'> &nbsp; $curt</font></td>
 	    				</tr>
 	    				
 	    				<tr>
@@ -284,6 +286,8 @@
 // month names csv, smoked events csv, water events csv 
 function eventsfor_last12Months(&$d,&$s,&$w){
 
+    global $clientid;
+	
     $mname = array(0, 'Jan','Feb','Mar','Apr','May','June','July','Aug','Sept','Oct','Nov','Dec', 14);
 	$y=0; 
 	$year_index=0;
@@ -300,11 +304,11 @@ function eventsfor_last12Months(&$d,&$s,&$w){
 		//echo $mi. ",";
 		$d[$i-1] = $mname[$mi];
 		
-		$r = mysql_query("SELECT count(autoid) as c FROM humidor WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and smoked=1");
+		$r = mysql_query("SELECT count(autoid) as c FROM humidor WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and smoked=1 and clientid=$clientid");
 		$rr = mysql_fetch_assoc($r);
 		$s[$i-1] = $rr['c'];
 		
-		$r = mysql_query("SELECT count(autoid) as c FROM humidor WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and watered=1");
+		$r = mysql_query("SELECT count(autoid) as c FROM humidor WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and watered=1 and clientid=$clientid");
 		$rr = mysql_fetch_assoc($r);
 		$w[$i-1] = $rr['c'];
 		

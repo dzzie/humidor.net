@@ -4,6 +4,8 @@
 #include <Adafruit_RGBLCDShield.h>
 #include <string.h>
 #include <stdio.h>
+
+#define autowater 1
 #include "./private.h"   //rename public.h to private.h and change settings to fit your setup 
 
 /*
@@ -21,8 +23,16 @@ All rights reserved, no portion of this code is authorized for sale or redistrib
 #define DOMAIN        "sandsprite.com"      
 #define WEBPAGE       "/humidor/logData.php" 
 #define firmware_ver  "v1.2 " __DATE__  
+#define MAX_TICKS 1000
+
+#ifdef autowater
+    #define pumppin  6 
+    uint8_t lastPumped = 0; // set to 7 to let it pump on startup (normally 3hr delay from power event is first possible water)
+	uint8_t sprayFor   = 2; // in seconds
+#endif
 
 uint32_t ip;
+int speedMode = 0;
 uint8_t powerevt  = 1;
 uint8_t watered   = 0;
 uint8_t smoked    = 0;
@@ -77,6 +87,7 @@ void setup(void)
   lcd_out(firmware_ver,1);
   delay(2000);  
   
+  pinMode(pumppin, OUTPUT);
   lcd_out("Init Wifi...");
   if (!cc3000.begin()) while(1);
   
@@ -84,7 +95,6 @@ void setup(void)
 		ip = cc3000.IP2U32(192,168,0,10);   //test server
  else
 		ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
-
 
   /*unsigned long aucDHCP = 14400;
   unsigned long aucARP = 3600;
@@ -131,16 +141,38 @@ void loop(void)
    show_readings();
    
    if(fail_cnt > 2){
-		sprintf(tmp, "%d Fails", fail_cnt);
-        lcd.setCursor(15-strlen(tmp),1); 
-		lcd.print(tmp);
+	sprintf(tmp, "%d Fails", fail_cnt);
+    lcd.setCursor(15-strlen(tmp),1); 
+	lcd.print(tmp);
+    delay(1200);
    }
-
+  
    powerevt = 0;
    watered = 0;
    smoked = 0;
-   delay_x_min(30);
    
+   #ifdef autowater
+       //do we need to support multiple pumps based on which sensor? are the sensors in diff humis? -> pumpPin[i], lastPumped[i]
+       //or are they at multiple levels of same one..most users will be this..
+       //waters a max of once every 2 hours (6 updates / 30 min interval)
+       if(lastPumped > 250) lastPumped = 7; else lastPumped++;
+	   if(humi <= 66 && lastPumped > 6){
+		   lcd_out("Autowater Mode");
+		   //sprintf(tmp, "humi=%d s=%d", (int)humi,sprayFor);
+		   //lcd_out(tmp,1);
+		   digitalWrite(pumppin, HIGH);
+		   delay(sprayFor * 1000); 
+		   digitalWrite(pumppin, LOW);
+		   lastPumped=0;
+		   watered = 1;
+		   show_readings();
+		   lcd.setCursor(14,1); 
+           lcd.print("AW");
+	   } 
+   #endif
+
+   delay_x_min(30);
+
 }
 
 void show_readings(){
@@ -182,7 +214,7 @@ void delay_x_min(int minutes, int silent){
       }
 
       for(int j=0; j < 240; j++){ //entire j loop = one minute, using small delay so buttons responsive.. 
-          delay(250);  
+		  delay( (speedMode==1 ? 1 : 250) );  
           uint8_t buttons = lcd.readButtons();
           if (buttons && (buttons & BUTTON_SELECT) ){
               watered = 1;        
@@ -193,7 +225,18 @@ void delay_x_min(int minutes, int silent){
               smoked = 1;        
               lcd.setCursor(14,1); 
               lcd.print("S");
-          } 
+          }  
+		  /*if (buttons && (buttons & BUTTON_RIGHT) ){ //speed up clock to test 6x pump delay..
+              lcd.setCursor(14,1); 
+			  if(speedMode==1){
+				  speedMode = 0; 
+				  lcd.print(" ");
+			  }else{
+				  speedMode = 1;
+                  lcd.print("F");
+			  }     
+			  delay(500); //if you are toggling a field, you NEED the delay..
+          }*/ 
           if(buttons && (buttons & BUTTON_LEFT) ) return; //break delay to do immediate upload test
       }
       
@@ -243,7 +286,7 @@ bool ReadSensor(){
 
 bool PostData()
 {
-  #define MAX_TICKS 1000
+  
 
   char buf[150];
   int ticks = 0;
@@ -256,6 +299,7 @@ bool PostData()
   int recording = 0;
   char respCode[18];
   char pageResp[18];
+  int rLeng=0;
 
   unsigned long lastRead = 0;
   Adafruit_CC3000_Client www;
@@ -314,11 +358,16 @@ bool PostData()
    /* Read data until either the connection is closed, or the idle timeout is reached. */ 
   while (www.connected()) {
     
-    //this apparently happens every time.. can not use as a marker..
+	//this apparently happens every time? can not use as a marker..
     if( (millis() - lastRead) > IDLE_TIMEOUT_MS ) break;
-    
+
     while (www.available()) {
+
+        if( (millis() - lastRead) > IDLE_TIMEOUT_MS ) break;
+
         char c = www.read();
+		if(c != 0) rLeng++;
+
         //IFS( Serial.print(c); )
       
         //this accounts for \r\n or just \n, (debugged in visual studio..)
@@ -354,8 +403,13 @@ bool PostData()
   pageResp[pr_offset]=0;
   respCode[rc_offset]=0;
   //int rCode = atoi(respCode); //this is the 404 for not found, or 200 for ok as numeric..
-  if(rc_offset) lcd_out(respCode); else lcd_out("Bad RC ");
-  if(pr_offset) lcd_out(pageResp,1); else lcd_out("Bad PR ",1);
+
+  if(rLeng <= 1){ 
+	  lcd_out("No response"); 
+  }else{
+	  if(rc_offset) lcd_out(respCode); else lcd_out("Bad RC ");
+	  if(pr_offset) lcd_out(pageResp,1); else lcd_out("Bad PR ",1);
+  }
   
   delay(2500);
   

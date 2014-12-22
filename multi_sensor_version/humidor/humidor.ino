@@ -38,7 +38,7 @@ double last_humi[sensorCount] = {0,0};
 #ifdef autowater
 	uint8_t pumppin    = 22; //mega digital pin 22
 	uint8_t lastPumped = 0;
-	uint8_t sprayFor   = 3;  //in seconds
+	uint8_t sprayFor   = 2;  //in seconds
 #endif
 
 uint32_t ip;
@@ -142,31 +142,35 @@ void loop(void)
         lcd.setCursor(15-strlen(tmp),1); 
 		lcd.print(tmp);
    }
-
+   
    powerevt = 0;
    watered = 0;
-   smoked = 0;
-   delay_x_min(30); //todo cycle through sensor readings if multiple during delay..
-
+   smoked = 0; 
+   
    #ifdef autowater
 	   //do we need to support multiple pumps based on which sensor? are the sensors in diff humis? -> pumpPin[i], lastPumped[i]
 	   //or are they at multiple levels of same one..most users will be this..
        //waters a max of once every 2 hours (6 updates / 30 min interval)
        if(lastPumped > 250) lastPumped = 7; else lastPumped++;
 	   for(uint8_t i=0; i < sensorCount; i++){ 
-		   if(humi[i] <= 66 && lastPumped >= 6){
+		   if(humi[i] <= 66 && lastPumped > 6){
 			   lcd_out("Autowater Mode");
-			   sprintf(tmp, "humi[%d]=%d s=%d", i, humi[i],sprayFor);
-			   lcd_out(tmp,1);
+			   //sprintf(tmp, "humi[%d]=%d s=%d", i, humi[i],sprayFor);
+			   //lcd_out(tmp,1);
 			   digitalWrite(pumppin, HIGH);
 			   delay(sprayFor * 1000); 
 			   digitalWrite(pumppin, LOW);
 			   lastPumped=0;
 			   watered = 1;
+			   show_readings();
+		   	   lcd.setCursor(14,1); 
+               lcd.print("AW");
 			   break;
 		   }
 	   }
    #endif
+  
+   delay_x_min(30); //todo cycle through sensor readings if multiple during delay..
    
 }
 
@@ -352,6 +356,9 @@ bool PostData()
     if( (millis() - lastRead) > IDLE_TIMEOUT_MS ) break;
     
     while (www.available()) {
+    
+        if( (millis() - lastRead) > IDLE_TIMEOUT_MS ) break;
+    
         char c = www.read();
         //IFS( Serial.print(c); )
       
