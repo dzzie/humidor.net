@@ -27,8 +27,12 @@ All rights reserved, no portion of this code is authorized for sale or redistrib
 
 #ifdef autowater
     #define pumppin  6 
+    #define pumpSwitchIn   A0   
+    #define pumpSwitchOut  A1 
+    bool first = true;
     uint8_t lastPumped = 0; // set to 7 to let it pump on startup (normally 3hr delay from power event is first possible water)
 	uint8_t sprayFor   = 2; // in seconds
+	uint8_t autoWaterAt = 63;
 #endif
 
 uint32_t ip;
@@ -87,7 +91,12 @@ void setup(void)
   lcd_out(firmware_ver,1);
   delay(2000);  
   
-  pinMode(pumppin, OUTPUT);
+  #ifdef autowater
+	  pinMode(pumppin, OUTPUT);
+	  pinMode(pumpSwitchOut, OUTPUT); 
+	  pinMode(pumpSwitchIn, INPUT); 
+  #endif
+
   lcd_out("Init Wifi...");
   if (!cc3000.begin()) while(1);
   
@@ -112,6 +121,20 @@ void loop(void)
 
    int fail_cnt = 0;
 
+	#ifdef autowater
+	   if(first){
+		  digitalWrite(pumpSwitchOut, LOW);
+		  digitalWrite(pumpSwitchIn, HIGH); //turn on internal pullup resistor 
+		  lcd_out("Autowater:");
+		  if( digitalRead(pumpSwitchIn) == LOW ){
+			  lcd_out("  PUMP ENABLED",1);
+		  }else{
+			  lcd_out("  PUMP DISABLED",1);
+		  }
+		  delay(2000);
+		  first=false;
+	   }
+	#endif
    if(debug_local){
        temp = 66; humi = 66;
    }else{
@@ -156,19 +179,25 @@ void loop(void)
        //or are they at multiple levels of same one..most users will be this..
        //waters a max of once every 2 hours (6 updates / 30 min interval)
        if(lastPumped > 250) lastPumped = 7; else lastPumped++;
-	   if(humi <= 66 && lastPumped > 6){
-		   lcd_out("Autowater Mode");
-		   //sprintf(tmp, "humi=%d s=%d", (int)humi,sprayFor);
-		   //lcd_out(tmp,1);
-		   digitalWrite(pumppin, HIGH);
-		   delay(sprayFor * 1000); 
-		   digitalWrite(pumppin, LOW);
-		   lastPumped=0;
-		   watered = 1;
-		   show_readings();
-		   lcd.setCursor(14,1); 
-           lcd.print("AW");
-	   } 
+	   if(humi <= autoWaterAt && lastPumped > 6){
+		   if( digitalRead(pumpSwitchIn) == LOW ){ 
+			   lcd_out("Autowater Mode");
+			   //sprintf(tmp, "humi=%d s=%d", (int)humi,sprayFor);
+			   //lcd_out(tmp,1);
+			   digitalWrite(pumppin, HIGH);
+			   delay(sprayFor * 1000); 
+			   digitalWrite(pumppin, LOW);
+			   lastPumped=0;
+			   watered = 1;
+			   show_readings();
+			   lcd.setCursor(14,1); 
+			   lcd.print("AW");
+		   } 
+		   else{
+               lcd.setCursor(8,1); 
+			   lcd.print(" Pump OFF");
+		   }
+	   }
    #endif
 
    delay_x_min(30);

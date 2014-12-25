@@ -21,6 +21,10 @@ record it. When you have a smoke, press the down button.
 These will be saved to the database and displayed in the report.
 Power resets will also be recorded to the database.
 
+If using the autowater feature you will additionally need a
+parastolic pump, and a motor driver board, this feature is still in
+testing.
+
 I already have the web backend setup for multiple users. If you dont have
 a public webserver and would like to use mine just send me an email and a 
 picture of your humidor. I will set you up with a clientID and api key you 
@@ -60,7 +64,7 @@ Pins used and assembly:
 
 dht22
 
-    * 5V, GND, library default: digital pin #2
+    * 5V, GND, digital pin #2
 
 SPI wifi shield (solder pass through headers on and plug in)
 
@@ -84,6 +88,12 @@ I2C lcd shield (soldered from kit and plug in)
       * select = watered
       * reset
 
+autowater
+
+   * pump activation d6
+   * switchIn A0
+   * switchOut A1
+	
 Note: The dht22 sensor will burn out if you hook it up backwards. 
     It is a 4 pin component with one pin unused. I cut off the unused 
     pin, and plugged the matching hole in the socket with hot glue. 
