@@ -255,6 +255,9 @@ void delay_x_min(int minutes, int silent){
               lcd.setCursor(14,1); 
               lcd.print("S");
           }  
+		  if (buttons && (buttons & BUTTON_UP) ){
+			  if( ReadSensor() ) show_readings(); else lcd_out("Read Fail?");
+		  }
 		  /*if (buttons && (buttons & BUTTON_RIGHT) ){ //speed up clock to test 6x pump delay..
               lcd.setCursor(14,1); 
 			  if(speedMode==1){
@@ -275,7 +278,7 @@ void delay_x_min(int minutes, int silent){
 
 bool ReadSensor(){
   
-  int chk = dht22_read(dht22_pin); //0= OK, -1 = Bad Chksum, -2 = Time Out
+  int chk = dht22_read(dht22_pin); //OK: 0, Bad Chksum: -1, Time Out: -2
 
   if (chk != 0){
 	  sprintf(tmp,"DHT22 Fail: %d", chk);

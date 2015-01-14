@@ -85,6 +85,7 @@
 	<html>  
 	    	<head>
 	    	<title>Humidor Temperature/Humidity Log</title>
+			<link rel='stylesheet' type='text/css' href='dropdown.css'>
 		    <style type='text/css'>
 			    .bb td, .bb th {
 			     border-bottom: 1px solid black !important;
@@ -92,11 +93,22 @@
 			    TABLE{ font-family: verdana; font-size:10px;}
 			</style>
 			<script src='Chart.js'></script>
+			<script src='dropdown.js'></script>
 			<script>
 				Chart.defaults.global.animation = false;
 				function doChange(limit){
 					location = 'index.php?limit='+limit+'&offset=$offset&id=$clientid'
 				}
+	    		function wasWatered(){
+		    		var key = prompt('Enter the apikey to proceed');
+		    		if(key.length==0) return;
+		    		window.open('logData.php?wasWatered=1&clientid=$clientid&apikey='+key, '', 'width=200, height=100');
+	    		}
+				function wasSmoked(){
+		    		var key = prompt('Enter the apikey to proceed');
+		    		if(key.length==0) return;
+		    		window.open('logData.php?wasSmoked=1&clientid=$clientid&apikey='+key, '', 'width=200, height=100');
+	    		}
 			</script>
 			</head>
 	    	<center>
@@ -104,16 +116,35 @@
 	    		<tr>
 	    			<td rowspan=2 valign=top>
 	    				<img src='$humi_img'>
-	    				<div style='position:relative;top:10px;right:-20px'>
-	    				Interval: &nbsp; &nbsp;
-	    				<select name=timeSpan id=timeSpan onchange='doChange(this.value)'>
-		    				<option value=$one_day>Day</option>
-		    				<option ".($limit==($one_day * 3) ? "SELECTED" : "")." value=".($one_day * 3).">3 day</option>
-		    				<option ".($limit==($one_day * 7) ? "SELECTED" : "")." value=".($one_day * 7).">Week</option>
-		    				<option ".($limit==($one_day * 30) ? "SELECTED" : "")." value=".($one_day * 30).">Month</option>
-		    				<!--option ".($limit==($one_day * 90) ? "SELECTED" : "")." value=".($one_day * 90).">3 Month</option-->
-		    				<!--option ".($limit==($one_day * 180) ? "SELECTED" : "")." value=".($one_day * 180).">6 Month</option-->
-	    				</select>
+	    				<div style='position:relative;top:10px;'>
+						<table border=0>
+						<tr>
+							<td>
+			    				<ul id='sddm'>
+									<li><a href='#' onmouseover=\"mopen('m1')\" onmouseout='mclosetime()'>Menu</a>
+										<div style='visibility:hidden' id='m1' onmouseover='mcancelclosetime()' onmouseout='mclosetime()'>
+											<a href='#' onclick='wasWatered()'>Watered</a>
+											<a href='#' onclick='wasSmoked()'>Smoked</a>
+											<!--a href='#'>Add Note</a>
+											<a href='#'>Clear db</a-->
+										</div>
+									</li>
+								</ul>
+							</td>
+							<td valign=top>
+								Interval:&nbsp;
+			    				<select name=timeSpan id=timeSpan onchange='doChange(this.value)'>
+				    				<option value=$one_day>Day</option>
+				    				<option ".($limit==($one_day * 3) ? "SELECTED" : "")." value=".($one_day * 3).">3 day</option>
+				    				<option ".($limit==($one_day * 7) ? "SELECTED" : "")." value=".($one_day * 7).">Week</option>
+									<option ".($limit==($one_day * 14) ? "SELECTED" : "")." value=".($one_day * 14).">2 Week</option>
+				    				<option ".($limit==($one_day * 30) ? "SELECTED" : "")." value=".($one_day * 30).">Month</option>
+				    				<!--option ".($limit==($one_day * 90) ? "SELECTED" : "")." value=".($one_day * 90).">3 Month</option-->
+				    				<!--option ".($limit==($one_day * 180) ? "SELECTED" : "")." value=".($one_day * 180).">6 Month</option-->
+			    				</select>
+							</td>
+						</tr>
+						</table>
 	    				</div>
 	    				<br>
 	    			</td>

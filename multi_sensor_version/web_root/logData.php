@@ -32,6 +32,9 @@ $clientid   = (int)$_GET['clientid'];
 $clear_alert = (int)$_GET['clear_alert'];
 //$ip   = $_SERVER['REMOTE_ADDR'];
 
+$wasWatered = (int)$_GET['wasWatered'];
+$wasSmoked = (int)$_GET['wasSmoked'];
+
 ConnectDB();
 
 $userr = mysql_query("select * from humiusers where autoid=$clientid");
@@ -42,12 +45,34 @@ $API_KEY = $user['apikey'];
 $ALERT_EMAIL = $user['email'];
 
 if( strcmp($key, $API_KEY) !== 0 ) die("Invalid api key!");
-if( $user['scnt'] != $cnt ) die("Scnt != cnt");
 
+if($wasWatered==1){
+	 $r = mysql_query("select * from humidor where clientid=$clientid order by autoid desc limit 1");
+	 $rr = mysql_fetch_assoc($r);
+	 if($rr){
+	 	 mysql_query("update humidor set watered=1 where autoid=" . $rr['autoid']);
+		 die("Updated record " . $rr['autoid']);
+	 }
+	 die("Error No Record");
+ }
+ 
+ if($wasSmoked==1){
+	 $r = mysql_query("select * from humidor where clientid=$clientid order by autoid desc limit 1");
+	 $rr = mysql_fetch_assoc($r);
+	 if($rr){
+	 	 mysql_query("update humidor set smoked=1 where autoid=" . $rr['autoid']);
+		 die("Updated record " . $rr['autoid']);
+	 }
+	 die("Error No Record");
+ }
+ 
+ 
 if($clear_alert==1 && $user['alertsent']==1){
 	 mysql_query("update humiusers set alertsent=0 where autoid=$clientid");
 	 die("Alert Cleared");
  }
+ 
+//if( $user['scnt'] != $cnt ) die("Scnt != cnt");
  
 $hadErr = 0;  
 
