@@ -5,7 +5,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#define autowater 0
+
+//#define autowater 0    
 #include "./private.h"   //rename public.h to private.h and change settings to fit your setup 
 
 /*
@@ -25,7 +26,7 @@ All rights reserved, no portion of this code is authorized for sale or redistrib
 #define firmware_ver  "v1.2 " __DATE__  
 #define MAX_TICKS 1000
 
-#ifdef autowater
+/*#if autowater
     #define pumppin  6 
     #define pumpSwitchIn   A0   
     #define pumpSwitchOut  A1 
@@ -33,7 +34,7 @@ All rights reserved, no portion of this code is authorized for sale or redistrib
     uint8_t lastPumped = 0; // set to 7 to let it pump on startup (normally 3hr delay from power event is first possible water)
 	uint8_t sprayFor   = 2; // in seconds
 	uint8_t autoWaterAt = 63;
-#endif
+#endif*/
 
 uint32_t ip;
 int speedMode = 0;
@@ -92,11 +93,11 @@ void setup(void)
   lcd_out(firmware_ver,1);
   delay(2000);  
   
-  #ifdef autowater
+  /*#if autowater
 	  pinMode(pumppin, OUTPUT);
 	  pinMode(pumpSwitchOut, OUTPUT); 
 	  pinMode(pumpSwitchIn, INPUT); 
-  #endif
+  #endif*/
 
   lcd_out("Init Wifi...");
   if (!cc3000.begin()) while(1);
@@ -122,7 +123,7 @@ void loop(void)
 
    int fail_cnt = 0;
 
-	#ifdef autowater
+	/*#if autowater
 	   if(first){
 		  digitalWrite(pumpSwitchOut, LOW);
 		  digitalWrite(pumpSwitchIn, HIGH); //turn on internal pullup resistor 
@@ -135,7 +136,8 @@ void loop(void)
 		  delay(2000);
 		  first=false;
 	   }
-	#endif
+	#endif*/
+
    if(debug_local){
        temp = 66; humi = 66;
    }else{
@@ -175,7 +177,8 @@ void loop(void)
    watered = 0;
    smoked = 0;
    
-   #ifdef autowater
+   /*
+   #if autowater
        //do we need to support multiple pumps based on which sensor? are the sensors in diff humis? -> pumpPin[i], lastPumped[i]
        //or are they at multiple levels of same one..most users will be this..
        //waters a max of once every 2 hours (6 updates / 30 min interval)
@@ -200,6 +203,7 @@ void loop(void)
 		   }
 	   }
    #endif
+   */
 
    delay_x_min(30);
 
@@ -406,10 +410,14 @@ bool PostData()
         char c = www.read();
 		if(c != 0) rLeng++;
 
-		if(rLeng % 100 == 0){ //(http headers have some length to them..)
-			if(progressBar==15) progressBar=0;
-			progressBar++;
-			showProgress();
+		int remaining = (IDLE_TIMEOUT_MS - (millis() - startTime)) / 1000 ;
+		if(rLeng % 50 == 0){ //(http headers have some length to them..) switch to timeout countdown better think..
+			if(remaining > 15) remaining = 15;
+			if(remaining < 0) remaining = 0;
+			if(remaining != progressBar){
+				progressBar = remaining; //only update when changed eliminate refresh flicker...
+				showProgress();
+			}
 		}
 
         //IFS( Serial.print(c); )
