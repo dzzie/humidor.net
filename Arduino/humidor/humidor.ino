@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define autowater 1
+#define autowater 0
 #include "./private.h"   //rename public.h to private.h and change settings to fit your setup 
 
 /*
@@ -42,6 +42,7 @@ uint8_t watered   = 0;
 uint8_t smoked    = 0;
 uint8_t failure   = 0;
 uint8_t inReadSensor  = 0;
+uint8_t progressBar  = 0;
 
 double temp      = 0;
 double humi      = 0;
@@ -63,9 +64,9 @@ Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
 Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT, SPI_CLOCK_DIVIDER); 
 // you can change this clock speed
 
-#define IDLE_TIMEOUT_MS  7000      // Amount of time to wait (in milliseconds) with no data 
+#define IDLE_TIMEOUT_MS  10000      // Amount of time to wait (in milliseconds) with no data (10 seconds)
                                    // received before closing the connection.  If you know the server
-                                   // you're accessing is quick to respond, you can reduce this value.
+                                   // you're accessing is quick to respond, you can reduce this value. 
 
 //------------------ END wifi sheild --------------------                                   
                                    
@@ -315,6 +316,11 @@ bool ReadSensor(){
   
 }
 
+void showProgress(void){
+	char* d = "****************";
+	d[progressBar+1]=0;
+	lcd_out(d);
+}
 
 bool PostData()
 {
@@ -333,7 +339,7 @@ bool PostData()
   char pageResp[18];
   int rLeng=0;
 
-  unsigned long lastRead = 0;
+  unsigned long startTime = 0;
   Adafruit_CC3000_Client www;
 
   lcd_out("AP Connect");
@@ -385,20 +391,26 @@ bool PostData()
   }
   
   lcd_out("Reading Response");
-  lastRead = millis();
+  startTime = millis();
+  progressBar = 0;
 
    /* Read data until either the connection is closed, or the idle timeout is reached. */ 
   while (www.connected()) {
     
-	//this apparently happens every time? can not use as a marker..
-    if( (millis() - lastRead) > IDLE_TIMEOUT_MS ) break;
+    if( (millis() - startTime) > IDLE_TIMEOUT_MS ) break;
 
     while (www.available()) {
 
-        if( (millis() - lastRead) > IDLE_TIMEOUT_MS ) break;
-
+        if( (millis() - startTime) > IDLE_TIMEOUT_MS ) break;
+		
         char c = www.read();
 		if(c != 0) rLeng++;
+
+		if(rLeng % 100 == 0){ //(http headers have some length to them..)
+			if(progressBar==15) progressBar=0;
+			progressBar++;
+			showProgress();
+		}
 
         //IFS( Serial.print(c); )
       
@@ -427,9 +439,11 @@ bool PostData()
 			if(recording == 2 && c == 0x0D) recording = 0;
 			if(recording == 2) pageResp[pr_offset++] = c; 
 		}
-			lastRead = millis();
+			//lastRead = millis(); //getting long long hangs maybe because of this switching to absolute delay allowed..
 		}
   }
+
+  lcd_out("Closing Connection");
   www.close();
   
   pageResp[pr_offset]=0;

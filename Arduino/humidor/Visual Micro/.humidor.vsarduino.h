@@ -48,6 +48,7 @@ void lcd_ip_out(uint32_t ip, int row);
 void delay_x_min(int minutes);
 void delay_x_min(int minutes, int silent);
 bool ReadSensor();
+void showProgress(void);
 bool PostData();
 double toFahrenheit(double dCelsius);
 int dht22_read(uint8_t pin);

@@ -46,6 +46,11 @@ $ALERT_EMAIL = $user['email'];
 
 if( strcmp($key, $API_KEY) !== 0 ) die("Invalid api key!");
 
+if($clear_alert==1 && $user['alertsent']==1){
+	 mysql_query("update humiusers set alertsent=0 where autoid=$clientid");
+	 die("Alert Cleared");
+ }
+ 
 if($wasWatered==1){
 	 $r = mysql_query("select * from humidor where clientid=$clientid order by autoid desc limit 1");
 	 $rr = mysql_fetch_assoc($r);

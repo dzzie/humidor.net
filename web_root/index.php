@@ -144,6 +144,14 @@
 	if( ($offset-$limit) >= 0 ) $links .= " &nbsp; &nbsp; <a href='index.php?limit=$limit&offset=".($offset-$limit)."&id=$clientid'>Next</a>";
 	$links .= "</td><td align=right>$d2</td></tr></table>";
 	
+	$mcolor = "#898989";
+	$clearAlert = '';
+	
+	if($user['alertsent'] == 1){
+		$clearAlert = "<a href='#' onclick='clear_alert()'><font color=red>Clear Alert</font></a>";
+		$mcolor =  "#F50713";
+	} 
+	
     $report = " 
     	<html>  
     	<head>
@@ -172,6 +180,11 @@
 	    		if(key.length==0) return;
 	    		window.open('logData.php?wasSmoked=1&clientid=$clientid&apikey='+key, '', 'width=200, height=100');
     		}
+			function clear_alert(){
+		    		var key = prompt('Enter the apikey to clear the alert:');
+		    		if(key.length==0) return;
+		    		window.open('logData.php?clear_alert=1&clientid=$clientid&apikey='+key, '', 'width=200, height=100');
+    		}			
 		</script>
 		</head>
     	<center>
@@ -184,10 +197,11 @@
 						<tr>
 							<td>
 			    				<ul id='sddm'>
-									<li><a href='#' onmouseover=\"mopen('m1')\" onmouseout='mclosetime()'>Menu</a>
+									<li><a href='#' onmouseover=\"mopen('m1')\" onmouseout='mclosetime()'><font color=$mcolor>Menu</font></a>
 										<div style='visibility:hidden' id='m1' onmouseover='mcancelclosetime()' onmouseout='mclosetime()'>
 											<a href='#' onclick='wasWatered()'>Watered</a>
 											<a href='#' onclick='wasSmoked()'>Smoked</a>
+											$clearAlert
 											<!--a href='#'>Add Note</a>
 											<a href='#'>Clear db</a-->
 										</div>
@@ -299,19 +313,7 @@
     
     echo $report.$js.$event_js;
        
-    if( $user['alertsent']==1 ){ //we dont want the alert to get cached..
-	    echo "
-	    	<script>
-	    		function clear_alert(){
-		    		var key = prompt('Enter the apikey to clear the alert:');
-		    		if(key.length==0) return;
-		    		window.open('logData.php?clear_alert=1&clientid=$clientid&apikey='+key, '', 'width=200, height=100');
-	    		}
-	    	</script>
-	    	<center><font color=red size=+4><u><a onmouseover='this.style.cursor=\"pointer\"' onclick='clear_alert()'>Clear Alert</a></u></font></center>	    
-	    ";
-    }
-     
+
 
 //show rolling stats for last 12 mos, out args by ref 
 // month names csv, smoked events csv, water events csv 
