@@ -18,26 +18,67 @@
 #define __avr__
 #define F_CPU 16000000L
 #define __cplusplus
+#define GCC_VERSION 40801
+#define ARDUINO_ARCH_AVR
+#define ARDUINO_AVR_UNO
 #define __inline__
 #define __asm__(x)
 #define __extension__
-#define __ATTR_PURE__
-#define __ATTR_CONST__
+//#define __ATTR_PURE__
+//#define __ATTR_CONST__
 #define __inline__
-#define __asm__ 
+//#define __asm__ 
 #define __volatile__
+#define GCC_VERSION 40301
+#define volatile(va_arg) 
 
-#define __builtin_va_list
+typedef void *__builtin_va_list;
 #define __builtin_va_start
 #define __builtin_va_end
-#define __DOXYGEN__
+//#define __DOXYGEN__
 #define __attribute__(x)
 #define NOINLINE __attribute__((noinline))
 #define prog_void
 #define PGM_VOID_P int
-            
+#define NEW_H
+/*
+#ifndef __ATTR_CONST__
+#define __ATTR_CONST__ __attribute__((__const__))
+#endif
+
+#ifndef __ATTR_MALLOC__
+#define __ATTR_MALLOC__ __attribute__((__malloc__))
+#endif
+
+#ifndef __ATTR_NORETURN__
+#define __ATTR_NORETURN__ __attribute__((__noreturn__))
+#endif
+
+#ifndef __ATTR_PURE__
+#define __ATTR_PURE__ __attribute__((__pure__))
+#endif            
+*/
 typedef unsigned char byte;
 extern "C" void __cxa_pure_virtual() {;}
+
+
+
+#include <arduino.h>
+#include <pins_arduino.h> 
+#undef F
+#define F(string_literal) ((const PROGMEM char *)(string_literal))
+#undef cli
+#define cli()
+#define pgm_read_byte(address_short)
+#define pgm_read_word(address_short)
+#define pgm_read_word2(address_short)
+#define digitalPinToPort(P)
+#define digitalPinToBitMask(P) 
+#define digitalPinToTimer(P)
+#define analogInPinToBit(P)
+#define portOutputRegister(P)
+#define portInputRegister(P)
+#define portModeRegister(P)
 
 void setup(void);
 void loop(void);
@@ -53,9 +94,7 @@ bool PostData();
 double toFahrenheit(double dCelsius);
 int dht22_read(uint8_t pin);
 
-#include "d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\arduino.h"
-#include "d:\arduino-1.5.8\hardware\arduino\avr\variants\standard\pins_arduino.h" 
-#include "d:\_code\humidor.net\Arduino\humidor\humidor.ino"
-#include "d:\_code\humidor.net\Arduino\humidor\private.h"
-#include "d:\_code\humidor.net\Arduino\humidor\public.h"
+#include <humidor.ino>
+#include <private.h>
+#include <public.h>
 #endif

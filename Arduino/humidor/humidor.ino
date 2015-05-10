@@ -410,15 +410,12 @@ bool PostData()
         char c = www.read();
 		if(c != 0) rLeng++;
 
-		int remaining = (IDLE_TIMEOUT_MS - (millis() - startTime)) / 1000 ;
-		if(rLeng % 50 == 0){ //(http headers have some length to them..) switch to timeout countdown better think..
-			if(remaining > 15) remaining = 15;
-			if(remaining < 0) remaining = 0;
-			if(remaining != progressBar){
-				progressBar = remaining; //only update when changed eliminate refresh flicker...
-				showProgress();
-			}
+		if(rLeng % 100 == 0){ //(http headers have some length to them..)
+			if(progressBar==15) progressBar=0;
+			progressBar++;
+			showProgress();
 		}
+
 
         //IFS( Serial.print(c); )
       
