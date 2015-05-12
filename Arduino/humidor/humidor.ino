@@ -4,7 +4,7 @@
 #include <Adafruit_RGBLCDShield.h>
 #include <string.h>
 #include <stdio.h>
-
+#include <avr/wdt.h>
 
 //#define autowater 0    
 #include "./private.h"   //rename public.h to private.h and change settings to fit your setup 
@@ -44,6 +44,7 @@ uint8_t smoked    = 0;
 uint8_t failure   = 0;
 uint8_t inReadSensor  = 0;
 uint8_t progressBar  = 0;
+int uploads  = 0;
 
 double temp      = 0;
 double humi      = 0;
@@ -65,7 +66,7 @@ Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
 Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT, SPI_CLOCK_DIVIDER); 
 // you can change this clock speed
 
-#define IDLE_TIMEOUT_MS  10000      // Amount of time to wait (in milliseconds) with no data (10 seconds)
+#define IDLE_TIMEOUT_MS  7000      // Amount of time to wait (in milliseconds) with no data (7 seconds)
                                    // received before closing the connection.  If you know the server
                                    // you're accessing is quick to respond, you can reduce this value. 
 
@@ -148,7 +149,9 @@ void loop(void)
        }
        if(fail_cnt >= 10){
             failure = 1;
+			wdt_enable(WDTO_8S);
             PostData();
+			wdt_disable();
             lcd_out("DHT22 FailMode");
             while(1);
        }
@@ -158,11 +161,15 @@ void loop(void)
    delay(2500); //time to see immediate readings when I hit the button before submit..
    fail_cnt = 0;
 
+   wdt_enable(WDTO_8S);
    while( !PostData() ){
+	 wdt_disable();
      lcd_out("Delaying 1 min",1);
      delay_x_min(1,1);
 	 fail_cnt++;
+	 wdt_enable(WDTO_8S);
    }
+   wdt_disable();
    
    show_readings();
    
@@ -172,7 +179,12 @@ void loop(void)
 	lcd.print(tmp);
     delay(1200);
    }
-  
+   
+   //track # successful uploads since last reset (watch watchdog)
+   sprintf(tmp, "%d", uploads);
+   lcd.setCursor(15-strlen(tmp),1); 
+   lcd.print(tmp);
+
    powerevt = 0;
    watered = 0;
    smoked = 0;
@@ -343,27 +355,34 @@ bool PostData()
   char pageResp[18];
   int rLeng=0;
 
+  wdt_reset();
   unsigned long startTime = 0;
   Adafruit_CC3000_Client www;
 
   lcd_out("AP Connect");
   if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) return false;
- 
+  wdt_reset();
+
   lcd_out("DHCP");
   for(ticks=0; ticks < MAX_TICKS; ticks++)
   {
     if( cc3000.checkDHCP() ) break;
     delay(100); 
+	wdt_reset();
   }  
 
   if(ticks >= MAX_TICKS) goto EXIT_FAIL;
 
   lcd_out("Submit");
   lcd_ip_out(ip,1);  
+
+  wdt_reset();
   delay(2000);
-    
+  wdt_reset();
+
   www = cc3000.connectTCP(ip, 80); //have been having occasional hang here...
-  
+  wdt_reset(); //is 8 seconds reasonable to connect to an internet site? should be..
+
   //breaking this up so no one sprintf takes up to much memory..
   strcpy(buf, WEBPAGE);
   sprintf(tmp, "?temp=%d&humi=%d&watered=%d&powerevt=%d", (int)temp, (int)humi, watered, powerevt);
@@ -376,8 +395,11 @@ bool PostData()
   if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
   
   sprintf(tmp, "%d bytes     ", strlen(buf) );
-  lcd_out(tmp,1); 
+  lcd_out(tmp,1);
+
+  wdt_reset();
   delay(1200);
+  wdt_reset();
 
   if( www.connected() ) {
     www.fastrprint(F("GET "));
@@ -387,6 +409,7 @@ bool PostData()
     www.fastrprint(F("\r\n"));
     if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
     www.println();
+	wdt_reset();
   } 
   else{
     //lcd_out("Website Down?", 1);
@@ -448,6 +471,7 @@ bool PostData()
 		}
   }
 
+  wdt_reset();
   lcd_out("Closing Connection");
   www.close();
   
@@ -459,15 +483,22 @@ bool PostData()
 	  lcd_out("No response"); 
   }else{
 	  if(rc_offset) lcd_out(respCode); else lcd_out("Bad RC ");
-	  if(pr_offset) lcd_out(pageResp,1); else lcd_out("Bad PR ",1);
+	  if(pr_offset){
+		  lcd_out(pageResp,1); 
+		  uploads++;
+	  }
+	  else lcd_out("Bad PR ",1);
   }
   
+  wdt_reset();
   delay(2500);
-  
+  wdt_reset();
+
   cc3000.disconnect(); /* must clean up or CC3000 can freak out next connect */
   return true;
   
 EXIT_FAIL:
+   wdt_reset();
    cc3000.disconnect(); 
 
    lcd_out("Exit Fail?", 1);

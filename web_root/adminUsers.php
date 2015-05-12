@@ -23,7 +23,7 @@ $state  = (int)$_POST['state'];
 $pid    = (int)$_GET['pid'];
 $edit   = (int)$_POST['edit'];
 $euid   = (int)$_POST['euid'];
-
+$cleardb= (int)$_POST['cleardb'];
 
 ConnectDB();
 
@@ -34,7 +34,13 @@ if(strlen($username) > 0 && $edit==0){
 	echo $msg;
 	$username='';$email='';$apikey='';$img='';
 }else{
-	
+	if($cleardb==1 && $euid > 0){
+		$sql = "Delete from humidor where clientid=$euid";
+		$msg = "Clear Records successful<br>"; 	
+		if(!mysql_query($sql)) $msg = "Clear Records failed! ".mysql_error();
+		echo $msg;	
+		$uid=0;$edit=0;
+	}
 	if($delete==1 && $euid > 0){
 		$sql = "Delete from humiusers where autoid=$euid";
 		$msg = "Delete successful<br>"; 	
@@ -63,11 +69,36 @@ if(strlen($username) > 0 && $edit==0){
 
 ?>
  
+<script>
+
+	function ChangeUser(){
+		cbo=document.getElementById('users')
+		uid=cbo[cbo.selectedIndex].value
+		location = 'adminUsers.php?uid='+uid
+	}
+
+	function doDelete(){
+		frm=document.getElementById('frmMain')
+		frm.delete.value=1;
+		frm.submit();
+	}
+
+	function doClearDB(){
+	    if( confirm("are you sure you want to delete all of this user's records?") )
+		{
+			frm=document.getElementById('frmMain')
+			frm.cleardb.value=1;
+			frm.submit();
+		}
+	}
+	
+</script>
 
 <form method=post id=frmMain action=adminUsers.php?uid=<?=$uid?>>
 <input type=hidden name=edit value=<?=$edit?>>
 <input type=hidden name=euid value=<?=$uid?>>
 <input type=hidden name=delete value=0>
+<input type=hidden name=cleardb value=0>
 <table>
 
  
@@ -79,23 +110,13 @@ if(strlen($username) > 0 && $edit==0){
 <tr><td align=center colspan=2>
 	<input class=btn type=submit value="<?=($edit==1 ? "Update":"Create")?> User">
 	<?if($edit==1){?><input class=btn type=button value="Delete User" onclick='doDelete()'><?}?>
+	<?if($edit==1){?><input class=btn type=button value="Clear Records" onclick='doClearDB()'><?}?>
 </td></tr>
 </table>
 </form>
 
 
-<script>
-function ChangeUser(){
-	cbo=document.getElementById('users')
-	uid=cbo[cbo.selectedIndex].value
-	location = 'adminUsers.php?uid='+uid
-}
-function doDelete(){
-	frm=document.getElementById('frmMain')
-	frm.delete.value=1;
-	frm.submit();
-}
-</script>
+
 
  
 <?
