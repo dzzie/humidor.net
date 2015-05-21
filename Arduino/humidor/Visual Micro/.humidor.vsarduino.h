@@ -82,6 +82,7 @@ extern "C" void __cxa_pure_virtual() {;}
 
 void setup(void);
 void loop(void);
+void watchdogEnable();
 void show_readings();
 void lcd_out(char* s);
 void lcd_out(char* s, int row);
