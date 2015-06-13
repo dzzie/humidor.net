@@ -188,7 +188,7 @@ void loop(void)
    
    //track # successful uploads since last reset (watch watchdog)
    sprintf(tmp, "%d", uploads);
-   lcd.setCursor(15-strlen(tmp),1); 
+   lcd.setCursor(16-strlen(tmp),1); 
    lcd.print(tmp);
 
    powerevt = 0;
@@ -310,6 +310,13 @@ void delay_x_min(int minutes){
     delay_x_min(minutes, 0);
 }
 
+void displayFlags(){
+	lcd.setCursor(13,1); 
+    lcd.print("   "); //overwrite uploads count
+	if(watered){ lcd.setCursor(15,1); lcd.print("W"); }
+    if(smoked){  lcd.setCursor(14,1); lcd.print("S"); }
+}
+
 void delay_x_min(int minutes, int silent){
 
   for(int i=0; i < minutes; i++){
@@ -327,13 +334,11 @@ void delay_x_min(int minutes, int silent){
           uint8_t buttons = lcd.readButtons();
           if (buttons && (buttons & BUTTON_SELECT) ){
               watered = 1;        
-              lcd.setCursor(15,1); 
-              lcd.print("W");
+              displayFlags();
           } 
 		  if (buttons && (buttons & BUTTON_DOWN) ){
               smoked = 1;        
-              lcd.setCursor(14,1); 
-              lcd.print("S");
+              displayFlags();
           }  
 		  if (buttons && (buttons & BUTTON_UP) ){
 			  if( ReadSensor() ) show_readings(); else lcd_out("Read Fail?");
@@ -549,6 +554,7 @@ bool PostData()
 	  if(pr_offset){
 		  lcd_out(pageResp,1); 
 		  uploads++;
+		  if(uploads == 999) uploads = 1; //dont take up to much lcd space..
 	  }
 	  else lcd_out("Bad PR ",1);
   }

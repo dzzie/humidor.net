@@ -30,6 +30,10 @@ a public webserver and would like to use mine just send me an email and a
 picture of your humidor. I will set you up with a clientID and api key you 
 can use.
 
+If you build one of these, I would love to see your setup. Please email a 
+picture of the humidor and enclosure to dzzie@yahoo.com. I will add a 
+users folder to showcase them. 
+
 * Live feed: http://sandsprite.com/humidor/index.php?id=6
 
 See screen shot for example web report.

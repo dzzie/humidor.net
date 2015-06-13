@@ -88,6 +88,7 @@ void lcd_out(char* s);
 void lcd_out(char* s, int row);
 void lcd_ip_out(uint32_t ip, int row);
 void delay_x_min(int minutes);
+void displayFlags();
 void delay_x_min(int minutes, int silent);
 bool ReadSensor();
 void showProgress(void);
