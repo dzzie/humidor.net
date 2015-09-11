@@ -91,7 +91,6 @@ void delay_x_min(int minutes);
 void displayFlags();
 void delay_x_min(int minutes, int silent);
 bool ReadSensor();
-void showProgress(void);
 bool PostData();
 double toFahrenheit(double dCelsius);
 int dht22_read(uint8_t pin);

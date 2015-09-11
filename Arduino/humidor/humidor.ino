@@ -5,8 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <avr/wdt.h>
-
-//#define autowater 0    
+ 
 #include "./private.h"   //rename public.h to private.h and change settings to fit your setup 
 
 /*
@@ -23,22 +22,11 @@ All rights reserved, no portion of this code is authorized for sale or redistrib
 #define dht22_pin     2
 #define DOMAIN        "sandsprite.com"      
 #define WEBPAGE       "/humidor/logData.php" 
-#define firmware_ver  "v1.2 " __DATE__  
+#define firmware_ver  "v1.3 " __DATE__  
 #define MAX_TICKS 1000
-
 
 volatile int counter;      // Count number of times ISR is called.
 volatile int countmax = 8; // Timer expires after about 64 secs (using 8 sec interval)
-
-/*#if autowater
-    #define pumppin  6 
-    #define pumpSwitchIn   A0   
-    #define pumpSwitchOut  A1 
-    bool first = true;
-    uint8_t lastPumped = 0; // set to 7 to let it pump on startup (normally 3hr delay from power event is first possible water)
-	uint8_t sprayFor   = 2; // in seconds
-	uint8_t autoWaterAt = 63;
-#endif*/
 
 uint32_t ip;
 int speedMode = 0;
@@ -47,8 +35,8 @@ uint8_t watered   = 0;
 uint8_t smoked    = 0;
 uint8_t failure   = 0;
 uint8_t inReadSensor  = 0;
-uint8_t progressBar  = 0;
 int uploads  = 0;
+int fail_cnt = 0;
 
 double temp      = 0;
 double humi      = 0;
@@ -98,12 +86,6 @@ void setup(void)
   lcd_out(firmware_ver,1);
   delay(2000);  
   
-  /*#if autowater
-	  pinMode(pumppin, OUTPUT);
-	  pinMode(pumpSwitchOut, OUTPUT); 
-	  pinMode(pumpSwitchIn, INPUT); 
-  #endif*/
-
   lcd_out("Init Wifi...");
   if (!cc3000.begin()) while(1);
   
@@ -126,104 +108,59 @@ void setup(void)
 void loop(void)
 {
 
-   int fail_cnt = 0;
-
-	/*#if autowater
-	   if(first){
-		  digitalWrite(pumpSwitchOut, LOW);
-		  digitalWrite(pumpSwitchIn, HIGH); //turn on internal pullup resistor 
-		  lcd_out("Autowater:");
-		  if( digitalRead(pumpSwitchIn) == LOW ){
-			  lcd_out("  PUMP ENABLED",1);
-		  }else{
-			  lcd_out("  PUMP DISABLED",1);
-		  }
-		  delay(2000);
-		  first=false;
-	   }
-	#endif*/
 
    if(debug_local){
        temp = 66; humi = 66;
    }else{
-	   for(fail_cnt=0; fail_cnt < 10; fail_cnt++){
+	   lcd_out("Reading sensor",1);
+	   for(int i=0; i <= 10; i++){
 			if( ReadSensor() ) break;
-			lcd_out("Delaying 1 min",1);
-			delay_x_min(1,1);
-       }
-       if(fail_cnt >= 10){
-            failure = 1;
-			watchdogEnable();
-            PostData();
-			wdt_disable();
-            lcd_out("DHT22 FailMode");
-            while(1);
+			delay(1000);
+			if(i == 10){
+				failure = 1;
+				watchdogEnable();
+				PostData();
+				wdt_disable();
+				lcd_out("DHT22 FailMode");
+				while(1);
+		   }
        }
    }
 
    show_readings();
    delay(2500); //time to see immediate readings when I hit the button before submit..
-   fail_cnt = 0;
 
    wdt_reset();
    watchdogEnable();
-   while( !PostData() ){
-	 wdt_disable();
-     lcd_out("Delaying 1 min",1);
-     delay_x_min(1,1);
-	 fail_cnt++;
-	 wdt_reset();
-	 watchdogEnable();
+
+   if( PostData() ){
+	   fail_cnt = 0;
+	   watered = 0;
+	   smoked = 0;
    }
+   else{
+		lcd_out("Upload failed",1);
+		delay(1200);
+		fail_cnt++;
+   }
+
    wdt_disable();
    
    show_readings();
    
    if(fail_cnt > 2){
-	sprintf(tmp, "%d Fails", fail_cnt);
-    lcd.setCursor(15-strlen(tmp),1); 
-	lcd.print(tmp);
-    delay(1200);
+		sprintf(tmp, "%d Fails", fail_cnt);
    }
-   
-   //track # successful uploads since last reset (watch watchdog)
-   sprintf(tmp, "%d", uploads);
-   lcd.setCursor(16-strlen(tmp),1); 
-   lcd.print(tmp);
+   else{//track # successful uploads since last reset (watch watchdog)
+		sprintf(tmp, "%d", uploads);
+   }
+
+	lcd.setCursor(15-strlen(tmp),1); 
+	lcd.print(tmp);
+	delay(1200);
 
    powerevt = 0;
-   watered = 0;
-   smoked = 0;
-   
-   /*
-   #if autowater
-       //do we need to support multiple pumps based on which sensor? are the sensors in diff humis? -> pumpPin[i], lastPumped[i]
-       //or are they at multiple levels of same one..most users will be this..
-       //waters a max of once every 2 hours (6 updates / 30 min interval)
-       if(lastPumped > 250) lastPumped = 7; else lastPumped++;
-	   if(humi <= autoWaterAt && lastPumped > 6){
-		   if( digitalRead(pumpSwitchIn) == LOW ){ 
-			   lcd_out("Autowater Mode");
-			   //sprintf(tmp, "humi=%d s=%d", (int)humi,sprayFor);
-			   //lcd_out(tmp,1);
-			   digitalWrite(pumppin, HIGH);
-			   delay(sprayFor * 1000); 
-			   digitalWrite(pumppin, LOW);
-			   lastPumped=0;
-			   watered = 1;
-			   show_readings();
-			   lcd.setCursor(14,1); 
-			   lcd.print("AW");
-		   } 
-		   else{
-               lcd.setCursor(8,1); 
-			   lcd.print(" Pump OFF");
-		   }
-	   }
-   #endif
-   */
-
-   delay_x_min(30);
+   delay_x_min(30); //webui expects 30min delay for stat gen
 
 }
 
@@ -400,12 +337,6 @@ bool ReadSensor(){
   
 }
 
-void showProgress(void){
-	char* d = "****************";
-	d[progressBar+1]=0;
-	lcd_out(d);
-}
-
 bool PostData()
 {
   
@@ -419,9 +350,9 @@ bool PostData()
   int rc_offset = 0;
   int pr_offset = 0;
   int recording = 0;
-  char respCode[18];
-  char pageResp[18];
-  int rLeng=0;
+  char respCode[20];
+  char pageResp[20];
+  uint32_t rLeng=0;
 
   wdt_reset();
   unsigned long startTime = 0;
@@ -486,8 +417,8 @@ bool PostData()
   }
   
   lcd_out("Reading Response");
+  lcd_out("      Recv: ",1);
   startTime = millis();
-  progressBar = 0;
 
    /* Read data until either the connection is closed, or the idle timeout is reached. */ 
   while (www.connected()) {
@@ -501,12 +432,10 @@ bool PostData()
         char c = www.read();
 		if(c != 0) rLeng++;
 
-		if(rLeng % 100 == 0){ //(http headers have some length to them..)
-			if(progressBar==15) progressBar=0;
-			progressBar++;
-			showProgress();
+		if(rLeng % 25 == 0){ //(http headers have some length to them..)
+			lcd.setCursor(13,1); 
+			lcd.print(rLeng);
 		}
-
 
         //IFS( Serial.print(c); )
       
@@ -550,13 +479,13 @@ bool PostData()
   if(rLeng <= 1){ 
 	  lcd_out("No response"); 
   }else{
-	  if(rc_offset) lcd_out(respCode); else lcd_out("Bad RC ");
+	  if(rc_offset) lcd_out(respCode); else lcd_out("Bad RespCode ");
 	  if(pr_offset){
 		  lcd_out(pageResp,1); 
 		  uploads++;
 		  if(uploads == 999) uploads = 1; //dont take up to much lcd space..
 	  }
-	  else lcd_out("Bad PR ",1);
+	  else lcd_out("Bad PageResp ",1);
   }
   
   wdt_reset();
