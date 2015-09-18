@@ -3,6 +3,7 @@
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/sensor wiring.jpg)
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/sensor_connector.jpg)
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/sensor_installed.jpg)
+![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/external_watchdog.JPG)
 
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/enclosure_back.jpg)
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/enclosure_buttons.jpg)

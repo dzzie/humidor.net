@@ -20,6 +20,7 @@ All rights reserved, no portion of this code is authorized for sale or redistrib
 //server ip is hardcoded in setup (GetHostName has problems)
 #define debug_local   0    
 #define dht22_pin     2
+#define EXT_WATCHDOG_PIN 6
 #define DOMAIN        "sandsprite.com"      
 #define WEBPAGE       "/humidor/logData.php" 
 #define firmware_ver  "v1.3 " __DATE__  
@@ -58,9 +59,9 @@ Adafruit_RGBLCDShield lcd = Adafruit_RGBLCDShield();
 Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT, SPI_CLOCK_DIVIDER); 
 // you can change this clock speed
 
-#define IDLE_TIMEOUT_MS  7000      // Amount of time to wait (in milliseconds) with no data (7 seconds)
-                                   // received before closing the connection.  If you know the server
-                                   // you're accessing is quick to respond, you can reduce this value. 
+unsigned long IDLE_TIMEOUT_MS = 7000; // Amount of time to wait (in milliseconds) with no data (7 seconds)
+                                      // received before closing the connection.  If you know the server
+                                      // you're accessing is quick to respond, you can reduce this value. 
 
 //------------------ END wifi sheild --------------------                                   
                                    
@@ -87,11 +88,12 @@ void setup(void)
   delay(2000);  
   
   lcd_out("Init Wifi...");
+
   if (!cc3000.begin()) while(1);
   
- if(debug_local)
+  if(debug_local)
 		ip = cc3000.IP2U32(192,168,0,10);   //test server
- else
+  else
 		ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
 
   /*unsigned long aucDHCP = 14400;
@@ -108,7 +110,6 @@ void setup(void)
 void loop(void)
 {
 
-
    if(debug_local){
        temp = 66; humi = 66;
    }else{
@@ -120,7 +121,7 @@ void loop(void)
 				failure = 1;
 				watchdogEnable();
 				PostData();
-				wdt_disable();
+				watchdogDisable();
 				lcd_out("DHT22 FailMode");
 				while(1);
 		   }
@@ -129,14 +130,13 @@ void loop(void)
 
    show_readings();
    delay(2500); //time to see immediate readings when I hit the button before submit..
-
-   wdt_reset();
    watchdogEnable();
-
+   
    if( PostData() ){
 	   fail_cnt = 0;
 	   watered = 0;
 	   smoked = 0;
+	   powerevt = 0;
    }
    else{
 		lcd_out("Upload failed",1);
@@ -144,7 +144,7 @@ void loop(void)
 		fail_cnt++;
    }
 
-   wdt_disable();
+   watchdogDisable();
    
    show_readings();
    
@@ -157,13 +157,28 @@ void loop(void)
 
 	lcd.setCursor(15-strlen(tmp),1); 
 	lcd.print(tmp);
-	delay(1200);
-
-   powerevt = 0;
-   delay_x_min(30); //webui expects 30min delay for stat gen
-
+	delay_x_min(30); //webui expects 30min delay for stat gen
 }
 
+void watchdogReset()
+{
+#if USE_EXT_WATCHDOG
+	pinMode(EXT_WATCHDOG_PIN, OUTPUT);
+	delay(200);
+	pinMode(EXT_WATCHDOG_PIN, INPUT);
+#else
+	wdt_reset();
+#endif
+}
+
+void watchdogDisable()
+{
+#if USE_EXT_WATCHDOG
+	pinMode(EXT_WATCHDOG_PIN, OUTPUT);
+#else
+	wdt_disable();
+#endif
+}
 
 //updated code to extend watch dog to 24 seconds.
 //special thanks to Philip Allagas for bringing this post to my attention
@@ -172,7 +187,11 @@ void loop(void)
 
 void watchdogEnable()
 {
+#if USE_EXT_WATCHDOG
+	watchdogReset();
+#else
 	 counter=0;
+	 wdt_reset();
 	 cli();                              // disable interrupts
 
 	 MCUSR = 0;                          // reset status register flags
@@ -195,31 +214,35 @@ void watchdogEnable()
 	 //  2 seconds: 0b000111
 	 //  4 seconds: 0b100000
 	 //  8 seconds: 0b100001
+#endif
+
 }
 
-ISR(WDT_vect) // watchdog timer interrupt service routine
-{
-	 counter+=1;
+#if USE_EXT_WATCHDOG == 0
+	ISR(WDT_vect) // watchdog timer interrupt service routine
+	{
+		 counter+=1;
 
-	 if (counter < countmax)
-	 {
-	   wdt_reset(); // start timer again (still in interrupt-only mode)
+		 if (counter < countmax)
+		 {
+		   wdt_reset(); // start timer again (still in interrupt-only mode)
+		 }
+		 else             // then change timer to reset-only mode with short (16 ms) fuse
+		 {
+		   
+		   MCUSR = 0;                          // reset flags
+
+											   // Put timer in reset-only mode:
+		   WDTCSR |= 0b00011000;               // Enter config mode.
+		   WDTCSR =  0b00001000 | 0b000000;    // clr WDIE (interrupt enable...7th from left)
+											   // set WDE (reset enable...4th from left), and set delay interval
+											   // reset system in 16 ms...
+											   // unless wdt_disable() in loop() is reached first
+
+		   //wdt_reset(); // not needed
+		 }
 	 }
-	 else             // then change timer to reset-only mode with short (16 ms) fuse
-	 {
-	   
-	   MCUSR = 0;                          // reset flags
-
-										   // Put timer in reset-only mode:
-	   WDTCSR |= 0b00011000;               // Enter config mode.
-	   WDTCSR =  0b00001000 | 0b000000;    // clr WDIE (interrupt enable...7th from left)
-										   // set WDE (reset enable...4th from left), and set delay interval
-										   // reset system in 16 ms...
-										   // unless wdt_disable() in loop() is reached first
-
-	   //wdt_reset(); // not needed
-	 }
- }
+#endif
 
 void show_readings(){
      sprintf(tmp, "Temp: %d", (int)temp);
@@ -248,8 +271,8 @@ void delay_x_min(int minutes){
 }
 
 void displayFlags(){
-	lcd.setCursor(13,1); 
-    lcd.print("   "); //overwrite uploads count
+	lcd.setCursor(12,1); 
+    lcd.print("    "); //overwrite uploads count
 	if(watered){ lcd.setCursor(15,1); lcd.print("W"); }
     if(smoked){  lcd.setCursor(14,1); lcd.print("S"); }
 }
@@ -337,6 +360,10 @@ bool ReadSensor(){
   
 }
 
+unsigned long timeDiff(unsigned long startTime){
+	return millis() - startTime;
+}
+
 bool PostData()
 {
   
@@ -354,33 +381,26 @@ bool PostData()
   char pageResp[20];
   uint32_t rLeng=0;
 
-  wdt_reset();
   unsigned long startTime = 0;
   Adafruit_CC3000_Client www;
 
   lcd_out("AP Connect");
   if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) return false;
-  wdt_reset();
 
   lcd_out("DHCP");
   for(ticks=0; ticks < MAX_TICKS; ticks++)
   {
     if( cc3000.checkDHCP() ) break;
     delay(100); 
-	wdt_reset();
   }  
 
   if(ticks >= MAX_TICKS) goto EXIT_FAIL;
 
   lcd_out("Submit");
   lcd_ip_out(ip,1);  
-
-  wdt_reset();
   delay(2000);
-  wdt_reset();
 
   www = cc3000.connectTCP(ip, 80); //have been having occasional hang here...
-  wdt_reset(); //is 8 seconds reasonable to connect to an internet site? should be..
 
   //breaking this up so no one sprintf takes up to much memory..
   strcpy(buf, WEBPAGE);
@@ -396,9 +416,7 @@ bool PostData()
   sprintf(tmp, "%d bytes     ", strlen(buf) );
   lcd_out(tmp,1);
 
-  wdt_reset();
   delay(1200);
-  wdt_reset();
 
   if( www.connected() ) {
     www.fastrprint(F("GET "));
@@ -408,7 +426,6 @@ bool PostData()
     www.fastrprint(F("\r\n"));
     if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
     www.println();
-	wdt_reset();
   } 
   else{
     //lcd_out("Website Down?", 1);
@@ -423,11 +440,11 @@ bool PostData()
    /* Read data until either the connection is closed, or the idle timeout is reached. */ 
   while (www.connected()) {
     
-    if( (millis() - startTime) > IDLE_TIMEOUT_MS ) break;
+    if( timeDiff(startTime) > IDLE_TIMEOUT_MS ) break;
 
     while (www.available()) {
 
-        if( (millis() - startTime) > IDLE_TIMEOUT_MS ) break;
+        if( timeDiff(startTime) > IDLE_TIMEOUT_MS ) break;
 		
         char c = www.read();
 		if(c != 0) rLeng++;
@@ -442,7 +459,7 @@ bool PostData()
         //this accounts for \r\n or just \n, (debugged in visual studio..)
         //we do a crude parse of the http headers to extract response code and first 
         //16chars of web page response for display on lcd for visual confirmation..
-        if(c == 0x0A){ 
+		if(c == 0x0A){ 
             nl_count += 1; 
 			recording=0;
 		}else{ 
@@ -463,19 +480,16 @@ bool PostData()
 			if(recording == 2 && pr_offset >= 16) recording = 0;
 			if(recording == 2 && c == 0x0D) recording = 0;
 			if(recording == 2) pageResp[pr_offset++] = c; 
-		}
-			//lastRead = millis(); //getting long long hangs maybe because of this switching to absolute delay allowed..
-		}
+		}	
+	 }
   }
 
-  wdt_reset();
   lcd_out("Closing Connection");
   www.close();
   
   pageResp[pr_offset]=0;
   respCode[rc_offset]=0;
-  //int rCode = atoi(respCode); //this is the 404 for not found, or 200 for ok as numeric..
-
+ 
   if(rLeng <= 1){ 
 	  lcd_out("No response"); 
   }else{
@@ -488,15 +502,11 @@ bool PostData()
 	  else lcd_out("Bad PageResp ",1);
   }
   
-  wdt_reset();
   delay(2500);
-  wdt_reset();
-
   cc3000.disconnect(); /* must clean up or CC3000 can freak out next connect */
   return true;
   
 EXIT_FAIL:
-   wdt_reset();
    cc3000.disconnect(); 
 
    lcd_out("Exit Fail?", 1);

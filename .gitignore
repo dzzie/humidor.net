@@ -2,8 +2,10 @@
 *.zip
 *.mp4
 *.ncb
+*.suo
 private_db.php
 private.h
 *web_root/images/*
 *web_root/reports/*
 */docs/*
+/Arduino/humidor/Visual Micro/*
