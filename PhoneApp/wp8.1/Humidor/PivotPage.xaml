@@ -10,7 +10,7 @@
     SizeChanged="Current_SizeChanged"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
  >
-    
+
     <Page.Transitions>
         <TransitionCollection>
             <NavigationThemeTransition>
@@ -22,15 +22,13 @@
     </Page.Transitions>
 
     <Grid>
-        <Pivot x:Uid="Pivot" Title="Sandsprite Web Humidor" x:Name="pivot" CommonNavigationTransitionInfo.IsStaggerElement="True">
-            <!--Pivot item one-->
+        <Pivot x:Uid="Pivot" Title="Sandsprite IoT Humidor" x:Name="pivot" CommonNavigationTransitionInfo.IsStaggerElement="True">
             <PivotItem
                 x:Uid="PivotItem1"
                 Margin="19,14.5,0,0"
                 Header="Stats"
                 x:Name="pgStats"
                 CommonNavigationTransitionInfo.IsStaggerElement="True">
-                <!--Double line list with text wrapping-->
                 <Grid>
                     <WebView x:Name="wb" HorizontalAlignment="Left" Height="439" Margin="-14,10,0,0" VerticalAlignment="Top" Width="385"/>
                 </Grid>
@@ -42,23 +40,20 @@
                 Header="Graph"
                 x:Name="pgGraph"
                 CommonNavigationTransitionInfo.IsStaggerElement="True">
-                <!--Double line list with text wrapping-->
                 <Grid>
                     <WebView x:Name="wb2" HorizontalAlignment="Left" Height="312" Margin="10,10,0,0" VerticalAlignment="Top" Width="380"/>
                 </Grid>
             </PivotItem>
 
-            
-            <!--Pivot item two-->
             <PivotItem
                  x:Name="pgConfig"
                 x:Uid="PivotItem3"
                 Margin="19,0,0,14.5"
                 Header="Config"
                 >
-                
-                <Grid Margin="0,0,-0.167,0.333">
 
+                <Grid Margin="0,0,-0.167,0.333">
+                    
                     <TextBlock HorizontalAlignment="Left" Margin="21,54,0,0" TextWrapping="Wrap" Text="UserID" VerticalAlignment="Top" Height="24" FontSize="20"/>
                     <TextBox x:Name="txtUserID" HorizontalAlignment="Left" Margin="97,46,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="35"/>
 
@@ -69,9 +64,40 @@
                     <TextBox x:Name="txtServer" HorizontalAlignment="Left" Margin="97,160,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="180"/>
 
                     <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="238,354,0,0" VerticalAlignment="Top" Click="Button_Click"/>
- 
-               </Grid>
-              
+                   
+                </Grid>
+
+            </PivotItem>
+
+            <PivotItem
+                x:Name="pgActions"
+                x:Uid="PivotItem4"
+                Margin="19,0,0,14.5"
+                Header="Actions"
+                >
+                <Grid Margin="0,0,-0.167,0.333">
+                    <Button Content="Smoked" Click="btnSmoked_Click" HorizontalAlignment="Left" Margin="45,50,0,0" VerticalAlignment="Top" Width="290"/>
+                    <Button Content="Watered" Click="btnWatered_Click" HorizontalAlignment="Left" Margin="45,110,0,0" VerticalAlignment="Top" Width="290"/>
+                    <Button Content="Clear Alert" Click="btnClearAlert_Click" HorizontalAlignment="Left" Margin="45,170,0,0" VerticalAlignment="Top" Width="290"/>
+                </Grid>
+            </PivotItem>
+
+            <PivotItem
+                 x:Name="pgAbout"
+                x:Uid="PivotItem4"
+                Margin="19,0,0,14.5"
+                Header="About"
+                >
+                <Grid Margin="0,0,-0.167,0.333">
+                    <TextBlock HorizontalAlignment="Left" Margin="21,54,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="338" FontSize="20" Width="326">
+                        This IoT Humidor App is designed to integrate with the open source humidor project developed by David Zimmer.
+                        <LineBreak/><LineBreak/>
+                        This app can be used with the free hosting on Sandsprite or with your own server. For more details please visit:
+                        <LineBreak/><LineBreak/>
+                        http://sandsprite.com/blogs/index.php?uid=10&amp;pid=315
+                    </TextBlock>
+                </Grid>
+
             </PivotItem>
         </Pivot>
 

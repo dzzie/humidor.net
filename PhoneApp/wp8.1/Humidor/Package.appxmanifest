@@ -16,7 +16,7 @@
   </Resources>
   <Applications>
     <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="Humidor.App">
-      <m3:VisualElements DisplayName="Humidor" Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\SmallLogo.png" Description="Web Humidor integrates with the Sandsprite IoT humidor backend to display your current statistics on your Windows  Phone." ForegroundText="light" BackgroundColor="transparent">
+      <m3:VisualElements DisplayName="IoT Humidor" Square150x150Logo="Assets\Logo.png" Square44x44Logo="Assets\SmallLogo.png" Description="Web Humidor integrates with the Sandsprite IoT humidor backend to display your current statistics on your Windows  Phone." ForegroundText="light" BackgroundColor="transparent">
         <m3:DefaultTile Wide310x150Logo="Assets\WideLogo.png" Square71x71Logo="Assets\Square71x71Logo.png">
         </m3:DefaultTile>
         <m3:SplashScreen Image="Assets\SplashScreen.png" />
