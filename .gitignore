@@ -8,3 +8,5 @@ private.h
 *web_root/images/*
 *web_root/reports/*
 /Arduino/humidor/Visual Micro/*
+/PhoneApp/wp8.1/Humidor/obj/*
+/PhoneApp/wp8.1/Humidor/bin/*

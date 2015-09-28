@@ -91,8 +91,10 @@ void setup(void)
 
   if (!cc3000.begin()) while(1);
   
-  if(debug_local)
+  if(debug_local){
 		ip = cc3000.IP2U32(192,168,0,10);   //test server
+		speedMode = 1;
+  }
   else
 		ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
 
@@ -303,20 +305,22 @@ void delay_x_min(int minutes, int silent){
 		  if (buttons && (buttons & BUTTON_UP) ){
 			  if( ReadSensor() ) show_readings(); else lcd_out("Read Fail?");
 		  }
-		  /*if (buttons && (buttons & BUTTON_RIGHT) ){ //speed up clock to test 6x pump delay..
-              lcd.setCursor(14,1); 
-			  if(speedMode==1){
-				  speedMode = 0; 
-				  lcd.print(" ");
-			  }else{
-				  speedMode = 1;
-                  lcd.print("F");
-			  }     
-			  delay(500); //if you are toggling a field, you NEED the delay..
-          }*/ 
+		  #if debug_local
+				  if (buttons && (buttons & BUTTON_RIGHT) ){ //speed up clock to test 6x pump delay..
+					  lcd.setCursor(14,1); 
+					  if(speedMode==1){
+						  speedMode = 0; 
+						  lcd.print(" ");
+					  }else{
+						  speedMode = 1;
+						  lcd.print("F");
+					  }     
+					  delay(500); //if you are toggling a field, you NEED the delay..
+				  }
+		  #endif
           if(buttons && (buttons & BUTTON_LEFT) ) return; //break delay to do immediate upload test
       }
-      
+       
   }
   
 }
