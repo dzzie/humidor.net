@@ -23,7 +23,7 @@ using Windows.UI.Notifications;
 using Windows.Data.Xml.Dom;
 using Windows.ApplicationModel.Background;
 using System.Threading.Tasks;
-
+using Windows.ApplicationModel;
 /*notes: 
  * in general live tile will update every 30 min from background task, but on first start of it we autoupdate it immediatly from within this code.
    if emulator is detected default settings are used and timer speedup for refresh
@@ -34,7 +34,7 @@ namespace Humidor
     
     public static class DeviceInfo
     {
-        //http://igrali.com/2014/07/17/get-device-information-windows-phone-8-1-winrt/
+        // igrali.com/2014/07/17/get-device-information-windows-phone-8-1-winrt/
         private static EasClientDeviceInformation deviceInfo = new EasClientDeviceInformation();
         
         public static bool IsRunningOnEmulator
@@ -54,6 +54,11 @@ namespace Humidor
         private string content;
         private bool _debug = true;
 
+        private string strNavFailed = @"<html><body bgcolor=black><br>
+				       			        <font style='font-family: Segoe WP; font-size:80px; color: gray'>
+                                        Server not Reachable
+                                        </body></html>";
+
         public PivotPage()
         {
             this.InitializeComponent();
@@ -71,6 +76,10 @@ namespace Humidor
 
             setLiveTile(App.settings.liveTile == "true" ? true : false);
             
+            var myPackage = Windows.ApplicationModel.Package.Current;
+            PackageVersion ver = myPackage.Id.Version;
+            txtVersion.Text = "Version: " + ver.Major.ToString() + "." + ver.Minor.ToString() + "." + ver.Build.ToString() + "." + ver.Revision.ToString();
+
             //they havent saved a config yet..so lets jump to it
             if (this.pivot.SelectedIndex == 0 && App.settings.uid == "") {
                 this.pivot.SelectedIndex = 2;
@@ -91,6 +100,23 @@ namespace Humidor
             btnLiveTile.Content = liveTileEnabled ? "disable" : "enable";
         }
 
+        private string getXML(string msg)
+        {
+
+            if (msg == null) msg = "[null]";
+            if (msg.Length == 0) msg = "[Empty]";
+
+            string xml = String.Format(@"<tile>
+                                          <visual>
+                                            <binding template='TileSquareText04'>
+                                              <text id='1'>{0}</text>
+                                            </binding>  
+                                          </visual>
+                                        </tile>", msg);
+
+            return xml;
+        }
+
         async private void UpdateTile()
         {
             string server = App.settings.server;
@@ -104,14 +130,7 @@ namespace Humidor
 
             if (content == null || content.Length == 0) return;
 
-            string xml = String.Format(@"<tile>
-                                          <visual>
-                                            <binding template='TileSquareText04'>
-                                              <text id='1'>{0}</text>
-                                            </binding>  
-                                          </visual>
-                                        </tile>", content);
-
+            string xml = getXML(content);
             XmlDocument x = new XmlDocument();
             try
             {
@@ -120,7 +139,7 @@ namespace Humidor
             catch (Exception ex)
             {
                 if (!_debug) return;
-                x.LoadXml("Error Parsing WebXml");
+                x.LoadXml(getXML("Error parsing XML"));
             }
 
             var tileNotification = new TileNotification(x);
@@ -132,11 +151,18 @@ namespace Humidor
 
             string myTaskName = "FirstTask";
 
+            if (!enable)
+            {
+                //reset live tile back to original icon
+                TileUpdater updater = TileUpdateManager.CreateTileUpdaterForApplication();
+                updater.Clear();
+            }
+
             foreach (var cur in BackgroundTaskRegistration.AllTasks)
             {
                 if (cur.Value.Name == myTaskName)
                 {
-                    if (!enable) cur.Value.Unregister(true); 
+                    if (!enable) cur.Value.Unregister(true);  
                     return;
                 }
             }
@@ -151,7 +177,7 @@ namespace Humidor
                 UpdateTile();
                 justEnabledTile = false;
             }
-            
+           
             await BackgroundExecutionManager.RequestAccessAsync();
             BackgroundTaskBuilder taskBuilder = new BackgroundTaskBuilder { Name = "First Task", TaskEntryPoint = "MyTask.FirstTask" };
             taskBuilder.SetTrigger(new TimeTrigger(30,false));
@@ -172,10 +198,19 @@ namespace Humidor
         }
 
         //refresh our webviews on interval
-        async void timer_Tick(object sender, object e)
+        void timer_Tick(object sender, object e)
         {
             ShowStats();
-            btnSave.Content = String.Format("{0:M.d h:mm}", App.settings.LastUpdate);
+            if(_debug) btnSave.Content = String.Format("{0:M.d h:mm}", App.settings.LastUpdate);
+        }
+
+        void wb_NavigationFailed(object sender,  WebViewNavigationFailedEventArgs e){
+            wb.NavigateToString(strNavFailed);
+        }
+
+        void wb2_NavigationFailed(object sender, WebViewNavigationFailedEventArgs e)
+        {
+            wb2.NavigateToString(strNavFailed);
         }
 
         private void ShowStats()
@@ -223,7 +258,7 @@ namespace Humidor
             {
                 if (_debug)
                 {
-                    if (this.content == null) this.content = ex.ToString();
+                    //if (this.content == null) this.content = ex.ToString();
                     return;
                 }
                 this.content = null;
@@ -242,8 +277,7 @@ namespace Humidor
             await contentDialog.ShowAsync();
         }
 
-        //save button from config pane
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void btnSave_Click(object sender, RoutedEventArgs e)
         {
             App.settings.uid = txtUserID.Text;
             App.settings.apiKey = txtApiKey.Text;
@@ -273,15 +307,15 @@ namespace Humidor
         private void btnLiveTile_Click(object sender, RoutedEventArgs e)
         {
             setLiveTile(!liveTileEnabled);
+            RegisterTask(liveTileEnabled);
         }
 
         private void Current_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             string CurrentViewState = ApplicationView.GetForCurrentView().Orientation.ToString();
-            //StatusTxtBlck.Text = "Curren Page Orientation is: " + CurrentViewState;
             bool isPortrait = (CurrentViewState == "Portrait"); //VERTICAL
 
-            if (isPortrait) { 
+            /*if (isPortrait) { 
                 wb.Width = Window.Current.Bounds.Width;
                 wb.Height = Window.Current.Bounds.Height;
                 wb2.Width = Window.Current.Bounds.Width;
@@ -293,9 +327,8 @@ namespace Humidor
                 wb.Height = Window.Current.Bounds.Width;
                 wb2.Width = Window.Current.Bounds.Height;
                 wb2.Height = Window.Current.Bounds.Width;
-            }
+            }*/
 
-            //btnSave.VerticalAlignment = VerticalAlignment.Center;
             double newTop = isPortrait ? 354 : 34;
             btnSave.Margin = new Thickness(btnSave.Margin.Left, newTop, btnSave.Margin.Right, btnSave.Margin.Bottom);
             //btnSave.Margin.Top = isPortrait ? 254 : 354; //because this would be to easy..

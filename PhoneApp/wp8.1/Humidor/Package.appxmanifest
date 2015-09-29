@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest" xmlns:m3="http://schemas.microsoft.com/appx/2014/manifest" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest">
-  <Identity Name="41457c23-e785-416c-87a3-711e413a9c19" Publisher="CN=home" Version="1.0.0.0" />
+  <Identity Name="41457c23-e785-416c-87a3-711e413a9c19" Publisher="CN=home" Version="1.2.3.21" />
   <mp:PhoneIdentity PhoneProductId="41457c23-e785-416c-87a3-711e413a9c19" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>Humidor</DisplayName>

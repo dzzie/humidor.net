@@ -30,7 +30,7 @@
                 x:Name="pgStats"
                 CommonNavigationTransitionInfo.IsStaggerElement="True">
                 <Grid>
-                    <WebView x:Name="wb" HorizontalAlignment="Left" Height="439" Margin="-14,10,0,0" VerticalAlignment="Top" Width="385"/>
+                    <WebView x:Name="wb" NavigationFailed="wb_NavigationFailed" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </Grid>
             </PivotItem>
 
@@ -41,7 +41,7 @@
                 x:Name="pgGraph"
                 CommonNavigationTransitionInfo.IsStaggerElement="True">
                 <Grid>
-                    <WebView x:Name="wb2" HorizontalAlignment="Left" Height="312" Margin="10,10,0,0" VerticalAlignment="Top" Width="380"/>
+                    <WebView x:Name="wb2" NavigationFailed="wb2_NavigationFailed"  HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
                 </Grid>
             </PivotItem>
 
@@ -66,7 +66,7 @@
                     <TextBlock HorizontalAlignment="Left" Margin="21,220,0,0" TextWrapping="Wrap" Text="LiveTile" VerticalAlignment="Top" Height="39" FontSize="20"/>
                     <Button x:Name="btnLiveTile" Content="Enable" HorizontalAlignment="Left" Margin="97,204,0,0" VerticalAlignment="Top" Click="btnLiveTile_Click"/>
 
-                    <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="238,354,0,0" VerticalAlignment="Top" Click="Button_Click"/>
+                    <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="238,354,0,0" VerticalAlignment="Top" Click="btnSave_Click"/>
 
                 </Grid>
 
@@ -92,11 +92,12 @@
                 Header="About"
                 >
                 <Grid Margin="0,0,-0.167,0.333">
-                    <TextBlock HorizontalAlignment="Left" Margin="21,54,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="221" FontSize="20" Width="326">
+                    <TextBlock HorizontalAlignment="Left" Margin="21,54,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="330" FontSize="20" Width="326">
                         This IoT Humidor App is designed to integrate with the open source humidor project developed by David Zimmer.
                         <LineBreak/><LineBreak/>
                         This app can be used with the free hosting on Sandsprite or with your own server. For more details please visit:  
                     </TextBlock>
+                    <TextBlock x:Name="txtVersion" HorizontalAlignment="Left" Margin="21,415,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="330" FontSize="20" Width="326">Version:</TextBlock>
                     <Button x:Name="LinkButton" Click="btnAbout_Click" Content="More Information" Margin="85,317,0,139" />
                 </Grid>
 

@@ -30,12 +30,29 @@ namespace MyTask
             catch (Exception ex)
             {
                 if (_debug) {
-                    if (this.content == null) this.content = ex.ToString();
+                    if (this.content == null) this.content = "Exception in webReq";
                     return;
                 }
                 this.content = null;
             }
 
+        }
+
+        private string getXML(string msg)
+        {
+
+            if (msg == null) msg = "[null]";
+            if (msg.Length == 0) msg = "[Empty]";
+
+            string xml = String.Format(@"<tile>
+                                          <visual>
+                                            <binding template='TileSquareText04'>
+                                              <text id='1'>{0}</text>
+                                            </binding>  
+                                          </visual>
+                                        </tile>", msg);
+
+            return xml;
         }
 
         async private Task UpdateTile()
@@ -51,13 +68,7 @@ namespace MyTask
 
             if (content == null || content.Length == 0) return;
 
-            string xml = String.Format(@"<tile>
-                                          <visual>
-                                            <binding template='TileSquareText04'>
-                                              <text id='1'>{0}</text>
-                                            </binding>  
-                                          </visual>
-                                        </tile>", content);
+            string xml = getXML(content);
 
             XmlDocument x = new XmlDocument();
             try
@@ -67,7 +78,7 @@ namespace MyTask
             catch (Exception ex)
             {
                 if (!_debug) return;
-                x.LoadXml("Error Parsing WebXml");
+                x.LoadXml(getXML("Error Parsing WebXml"));
             }
 
             var tileNotification = new TileNotification(x);
