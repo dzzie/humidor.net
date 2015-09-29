@@ -75,7 +75,7 @@ namespace Humidor
             txtServer.Text = App.settings.server;
 
             setLiveTile(App.settings.liveTile == "true" ? true : false);
-            
+
             var myPackage = Windows.ApplicationModel.Package.Current;
             PackageVersion ver = myPackage.Id.Version;
             txtVersion.Text = "Version: " + ver.Major.ToString() + "." + ver.Minor.ToString() + "." + ver.Build.ToString() + "." + ver.Revision.ToString();
@@ -92,12 +92,13 @@ namespace Humidor
 
         private void setLiveTile(bool enabled)
         {
-            if (liveTileEnabled && enabled) return;
-            if (!liveTileEnabled && !enabled) return;
+            //if (liveTileEnabled && enabled) return;
+            //if (!liveTileEnabled && !enabled) return;
             if (!liveTileEnabled && enabled) justEnabledTile = true;
             liveTileEnabled = enabled;
             App.settings.liveTile = liveTileEnabled ? "true" : "";
             btnLiveTile.Content = liveTileEnabled ? "disable" : "enable";
+            RegisterTask(liveTileEnabled);
         }
 
         private string getXML(string msg)
@@ -179,7 +180,7 @@ namespace Humidor
             }
            
             await BackgroundExecutionManager.RequestAccessAsync();
-            BackgroundTaskBuilder taskBuilder = new BackgroundTaskBuilder { Name = "First Task", TaskEntryPoint = "MyTask.FirstTask" };
+            BackgroundTaskBuilder taskBuilder = new BackgroundTaskBuilder { Name = myTaskName, TaskEntryPoint = "MyTask.FirstTask" };
             taskBuilder.SetTrigger(new TimeTrigger(30,false));
             BackgroundTaskRegistration myFirstTask = taskBuilder.Register();
         }
@@ -220,7 +221,6 @@ namespace Humidor
             wb.Navigate(new Uri(url));
             wb2.Navigate(new Uri(url + "&page=2"));
             App.settings.LastUpdate = DateTime.Now;
-            RegisterTask(liveTileEnabled);
             if (!timer.IsEnabled) Start_timer();
         }
 
@@ -307,7 +307,6 @@ namespace Humidor
         private void btnLiveTile_Click(object sender, RoutedEventArgs e)
         {
             setLiveTile(!liveTileEnabled);
-            RegisterTask(liveTileEnabled);
         }
 
         private void Current_SizeChanged(object sender, SizeChangedEventArgs e)
