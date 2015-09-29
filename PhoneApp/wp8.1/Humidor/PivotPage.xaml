@@ -63,8 +63,11 @@
                     <TextBlock HorizontalAlignment="Left" Margin="21,168,0,0" TextWrapping="Wrap" Text="Server" VerticalAlignment="Top" Height="39" FontSize="20"/>
                     <TextBox x:Name="txtServer" HorizontalAlignment="Left" Margin="97,160,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="180"/>
 
+                    <TextBlock HorizontalAlignment="Left" Margin="21,220,0,0" TextWrapping="Wrap" Text="LiveTile" VerticalAlignment="Top" Height="39" FontSize="20"/>
+                    <Button x:Name="btnLiveTile" Content="Enable" HorizontalAlignment="Left" Margin="97,204,0,0" VerticalAlignment="Top" Click="btnLiveTile_Click"/>
+
                     <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="238,354,0,0" VerticalAlignment="Top" Click="Button_Click"/>
-                   
+
                 </Grid>
 
             </PivotItem>
@@ -89,13 +92,12 @@
                 Header="About"
                 >
                 <Grid Margin="0,0,-0.167,0.333">
-                    <TextBlock HorizontalAlignment="Left" Margin="21,54,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="338" FontSize="20" Width="326">
+                    <TextBlock HorizontalAlignment="Left" Margin="21,54,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="221" FontSize="20" Width="326">
                         This IoT Humidor App is designed to integrate with the open source humidor project developed by David Zimmer.
                         <LineBreak/><LineBreak/>
-                        This app can be used with the free hosting on Sandsprite or with your own server. For more details please visit:
-                        <LineBreak/><LineBreak/>
-                        http://sandsprite.com/blogs/index.php?uid=10&amp;pid=315
+                        This app can be used with the free hosting on Sandsprite or with your own server. For more details please visit:  
                     </TextBlock>
+                    <Button x:Name="LinkButton" Click="btnAbout_Click" Content="More Information" Margin="85,317,0,139" />
                 </Grid>
 
             </PivotItem>

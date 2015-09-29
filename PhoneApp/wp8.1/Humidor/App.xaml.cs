@@ -16,6 +16,7 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Animation;
 using Windows.UI.Xaml.Navigation;
 
+
 // The Pivot Application template is documented at http://go.microsoft.com/fwlink/?LinkID=391641
 
 namespace Humidor
@@ -27,7 +28,7 @@ namespace Humidor
     {
         private TransitionCollection transitions;
         public static MySettings settings = new MySettings();
-
+        
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -36,7 +37,21 @@ namespace Humidor
         {
             this.InitializeComponent();
             this.Suspending += this.OnSuspending;
+            
+            
         }
+
+        // Code to execute when the application is launching (eg, from Start)
+        // This code will not execute when the application is reactivated
+        /*private void Application_Launching(object sender, LaunchingEventArgs e)
+        {
+        }
+
+        // Code to execute when the application is activated (brought to foreground)
+        // This code will not execute when the application is first launched
+        private void Application_Activated(object sender, ActivatedEventArgs e)
+        {
+        }*/
 
         /// <summary>
         /// Invoked when the application is launched normally by the end user.  Other entry points

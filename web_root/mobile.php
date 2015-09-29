@@ -35,8 +35,8 @@
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where clientid=$clientid order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
     $lastUpdate = date("m.d.y - g:i a",$rr['int_tstamp']);
-	
-    if($page==0){
+	    
+    if($page==0 || $page==3){
 	    
 	    	$clearAlert = '';
 	
@@ -48,23 +48,40 @@
     	   $rr = mysql_fetch_assoc($r);
     	   $h  = $rr['humidity'];
 		   $t  = $rr['temp'];
-	       $report = "
-	       			 <html>
-	       			 <body bgcolor=black>
-	       			 <br>
-	       			 <font style='font-family: Segoe WP; font-size:80px; color: gray'>
-	       			 Humi: <font color=white> $h </font><br>
-	       			 Temp: <font color=white> $t </font><br>
-	       			 <br>
-	       			 Updated:<br>
-	       			 <font color=white style='position:relative;left:100px;font-size:60px;'>$lastUpdate</font>
-	       			 <br><br>
-	       			 Rebooted: <br>
-	       			 <font color=white style='position:relative;left:100px;font-size:60px;'>$lastPowerEvent</font>
-	       			 <br><br>
-	       			 </font>
-	       			 </body></html>
-	       			";
+		   
+		   $tcolor = 'white';
+		   $hcolor = 'white';
+		   
+		   if($t < 64 || $t > 75) $tcolor = 'red';
+		   if($h < 64 || $h > 75) $hcolor = 'red';
+
+		   if($page==0){
+		       $report = "
+		       			 <html>
+			       			 <head>
+			       			 </head>
+			       			 <body bgcolor=black>
+				       			 <br>
+				       			 <font style='font-family: Segoe WP; font-size:80px; color: gray'>
+				       			 Humi: <font color=$hcolor> $h </font><br>
+				       			 Temp: <font color=$tcolor> $t </font><br>
+				       			 <br>
+				       			 Updated:<br>
+				       			 <font color=white style='position:relative;left:100px;font-size:60px;'>$lastUpdate</font>
+				       			 <br><br>
+				       			 Rebooted: <br>
+				       			 <font color=white style='position:relative;left:100px;font-size:60px;'>$lastPowerEvent</font>
+				       			 <br><br>
+				       			 </font>
+			       			 </body>
+		       			 </html>
+		       			";
+       		}else{
+	       		//page 3 is for live tile
+	       		$report = "Humi: $h\n".
+	       				  "Temp: $t\n\n".
+				       	  "Updated:\n$lastUpdate";
+       		}
 	       			
 	      die($report);
     }

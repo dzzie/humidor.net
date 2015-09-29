@@ -74,18 +74,6 @@ namespace Humidor
             }
         }
 
-        public string liveTile
-        {
-            get
-            {
-                return GetSetting("liveTile");
-            }
-            set
-            {
-                SaveSettings("liveTile", value);
-            }
-        }
-
         public string server
         {
             get
