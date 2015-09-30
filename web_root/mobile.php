@@ -12,6 +12,7 @@
 	$offset        = (int)$_GET['offset'];
 	$clientid      = (int)$_GET['id'];
 	$page          = (int)$_GET['page'];
+	$isDark        = (int)$_GET['isDark'];
 	
 	$lastID        = 0;
 	$one_day = 2 * 24; //30 minute intervals..
@@ -36,6 +37,9 @@
     $rr = mysql_fetch_assoc($r);
     $lastUpdate = date("m.d.y - g:i a",$rr['int_tstamp']);
 	    
+    $bgcolor = $isDark ? 'black' : 'white';
+    $fontColor = $isDark ? 'white' : 'black';
+    
     if($page==0 || $page==3){
 	    
 	    	$clearAlert = '';
@@ -49,8 +53,8 @@
     	   $h  = $rr['humidity'];
 		   $t  = $rr['temp'];
 		   
-		   $tcolor = 'white';
-		   $hcolor = 'white';
+		   $tcolor = $isDark ? 'white' : 'black';
+		   $hcolor = $isDark ? 'white' : 'black';
 		   
 		   if($t < 64 || $t > 75) $tcolor = 'red';
 		   if($h < 64 || $h > 75) $hcolor = 'red';
@@ -60,17 +64,17 @@
 		       			 <html>
 			       			 <head>
 			       			 </head>
-			       			 <body bgcolor=black>
+			       			 <body bgcolor=$bgcolor>
 				       			 <br>
 				       			 <font style='font-family: Segoe WP; font-size:80px; color: gray'>
 				       			 Humi: <font color=$hcolor> $h </font><br>
 				       			 Temp: <font color=$tcolor> $t </font><br>
 				       			 <br>
 				       			 Updated:<br>
-				       			 <font color=white style='position:relative;left:100px;font-size:60px;'>$lastUpdate</font>
+				       			 <font color=$fontColor style='position:relative;left:100px;font-size:60px;'>$lastUpdate</font>
 				       			 <br><br>
 				       			 Rebooted: <br>
-				       			 <font color=white style='position:relative;left:100px;font-size:60px;'>$lastPowerEvent</font>
+				       			 <font color=$fontColor style='position:relative;left:100px;font-size:60px;'>$lastPowerEvent</font>
 				       			 <br><br>
 				       			 </font>
 			       			 </body>
@@ -167,8 +171,8 @@
 				</select>";
 						
 	$links = "<table width=100%><tr><td width=200 align=left>$d1</td><td>$interval</td><td align=center>";
-	$links .= "<a href='mobile.php?limit=$limit&offset=".($offset+$limit)."&id=$clientid&page=2'><font color=white>Previous</font></a>";
-	if( ($offset-$limit) >= 0 ) $links .= " &nbsp; &nbsp; <a href='index.php?limit=$limit&offset=".($offset-$limit)."&id=$clientid'><font color=white>Next</font></a>";
+	$links .= "<a href='mobile.php?limit=$limit&offset=".($offset+$limit)."&id=$clientid&page=2&isDark=$isDark'><font color=$fontColor>Previous</font></a>";
+	if( ($offset-$limit) >= 0 ) $links .= " &nbsp; &nbsp; <a href='mobile.php?limit=$limit&offset=".($offset-$limit)."&id=$clientid&isDark=$isDark&page=2'><font color=$fontColor>Next</font></a>";
 	$links .= "<td width=200>&nbsp;</td></td><td align=right>$d2</td></tr></table>";
 	
 	$mcolor = "#898989";
@@ -182,18 +186,18 @@
 		    .bb td, .bb th {
 		     border-bottom: 1px solid black !important;
 		    }
-		    TABLE{ font-family: verdana; font-size:10px; color: white}
+		    TABLE{ font-family: verdana; font-size:10px; color: $fontColor}
 		</style>
 		<script src='Chart.js'></script>
 		<script src='dropdown.js'></script>
 		<script>
 			Chart.defaults.global.animation = false;
 			function doChange(limit){
-				location = 'mobile.php?limit='+limit+'&offset=$offset&id=$clientid&page=2'
+				location = 'mobile.php?limit='+limit+'&offset=$offset&id=$clientid&page=2&isDark=$isDark'
 			}	
 		</script>
 		</head>
-		<body bgcolor=black>
+		<body bgcolor=$bgcolor>
     	<center>
 			<div style='width:100%; height:100%'>
 				$links
@@ -232,7 +236,6 @@ function generateGraph($index, $t, $h, $d){
 				datasets : [
 					{
 						label: 'Temps',
-						fillColor : 'rgba(255,255,255,0.2)',
 						strokeColor : 'red',
 						pointColor : 'red',
 						pointStrokeColor : '#fff',
@@ -242,7 +245,6 @@ function generateGraph($index, $t, $h, $d){
 					},
 					{
 						label: 'Humis',
-						fillColor : 'rgba(255,255,255,0.2)',
 						strokeColor : 'green',
 						pointColor : 'green',
 						pointStrokeColor : '#fff',
@@ -256,8 +258,8 @@ function generateGraph($index, $t, $h, $d){
 			
 			var ctx = document.getElementById('canvas_$index').getContext('2d');
 			window.myLine_$index = new Chart(ctx).Line(lineChartData_$index, {
-				responsive: true, pointHitDetectionRadius: 1, datasetStrokeWidth: 1,
-				pointDotRadius: 1, pointDot: false 
+				responsive: true, pointHitDetectionRadius: 1, datasetStrokeWidth: 5,
+				pointDotRadius: 1, pointDot: false , datasetFill : false,
 			});
 
 	</script>

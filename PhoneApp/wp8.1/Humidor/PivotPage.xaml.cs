@@ -216,8 +216,11 @@ namespace Humidor
 
         private void ShowStats()
         {
+            
+            string isDark = Application.Current.RequestedTheme == ApplicationTheme.Dark ? "1" : "0"; 
+
             //any why in the world doesnt Navigate accept a string? oghh yeah academics..
-            string url = "http://" + txtServer.Text + "/humidor/mobile.php?id=" + txtUserID.Text;           
+            string url = "http://" + txtServer.Text + "/humidor/mobile.php?id=" + txtUserID.Text + "&isDark=" + isDark;           
             wb.Navigate(new Uri(url));
             wb2.Navigate(new Uri(url + "&page=2"));
             App.settings.LastUpdate = DateTime.Now;
