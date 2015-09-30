@@ -1,0 +1,22 @@
+﻿<Page
+    x:Class="Humidor.About"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Humidor"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <TextBlock HorizontalAlignment="Left" Margin="21,10,0,0" TextWrapping="Wrap" Text="About" VerticalAlignment="Top" Height="50" FontSize="45"/>
+        
+        <TextBlock HorizontalAlignment="Left" Margin="21,74,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="330" FontSize="20" Width="326">
+                        This IoT Humidor App is designed to integrate with the open source humidor project developed by David Zimmer.
+                        <LineBreak/><LineBreak/>
+                        This app can be used with the free hosting on Sandsprite or with your own server. For more details please visit:
+        </TextBlock>
+        <TextBlock x:Name="txtVersion" HorizontalAlignment="Left" Margin="21,415,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="330" FontSize="20" Width="326">Version:</TextBlock>
+        <Button x:Name="LinkButton" Click="btnAbout_Click" Content="More Information" Margin="106,319,0,264" />
+    </Grid>
+</Page>

@@ -13,8 +13,9 @@ namespace MyTask
     public sealed class FirstTask : IBackgroundTask
     {
         private MySettings settings = new MySettings();
-        private bool _debug = true;
+        private bool _debug = false;
         private string content;
+        private bool failed = true;
 
         async private Task doWebReq(string url) 
         {
@@ -26,6 +27,7 @@ namespace MyTask
                 this.content = response.StatusCode.ToString();
                 response.EnsureSuccessStatusCode(); //If Response is not Http 200 then EnsureSuccessStatusCode will throw an exception
                 this.content = await response.Content.ReadAsStringAsync();
+                failed = false;
             }
             catch (Exception ex)
             {
@@ -65,6 +67,7 @@ namespace MyTask
             string url = "http://" + server + "/humidor/mobile.php?id=" + uid + "&page=3";
 
             await doWebReq(url);
+            if (failed) await doWebReq(url);
 
             if (content == null || content.Length == 0) return;
 
@@ -88,7 +91,11 @@ namespace MyTask
         async public void Run(IBackgroundTaskInstance taskInstance)
         {
             BackgroundTaskDeferral deferral = taskInstance.GetDeferral();
-            await UpdateTile();
+            try
+            {
+                await UpdateTile();
+            }
+            catch (Exception ex) { }
             deferral.Complete();
         }
     }

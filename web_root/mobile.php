@@ -17,14 +17,23 @@
 	$lastID        = 0;
 	$one_day = 2 * 24; //30 minute intervals..
 	
+	$bgcolor = $isDark ? 'black' : 'white';
+    $fontColor = $isDark ? 'white' : 'black';
+    
     if($limit < 1 || $limit > 13000) $limit = $one_day;
     if($offset < 1) $offset = 0;
     
     ConnectDB();
     
     $userr = mysql_query("select * from humiusers where autoid=$clientid");
-    if(mysql_num_rows($userr)==0){ //list available users..
-	    die("Invalid userid: " . $id);
+    if(mysql_num_rows($userr)==0){ 
+	    die("
+	    	<html><body bgcolor=$bgcolor><br>
+       		  <font style='font-family: Segoe WP; font-size:80px; color: $fontColor'>
+       			 Invalid user id: $clientid
+       		  </font>
+       		</body></html>
+   			");
     }
     
     $user = mysql_fetch_assoc($userr);
@@ -36,10 +45,7 @@
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where clientid=$clientid order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
     $lastUpdate = date("m.d.y - g:i a",$rr['int_tstamp']);
-	    
-    $bgcolor = $isDark ? 'black' : 'white';
-    $fontColor = $isDark ? 'white' : 'black';
-    
+	        
     if($page==0 || $page==3){
 	    
 	    	$clearAlert = '';

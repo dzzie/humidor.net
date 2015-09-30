@@ -33,9 +33,12 @@ $ALERT_EMAIL = $user['email'];
 
 if( strcmp($key, $API_KEY) !== 0 ) die("Invalid api key!");
 
-if($clear_alert==1 && $user['alertsent']==1){
-	 mysql_query("update humiusers set alertsent=0 where autoid=$clientid");
-	 die("Alert Cleared");
+if($clear_alert==1){
+	 if($user['alertsent']==1){
+	 	mysql_query("update humiusers set alertsent=0 where autoid=$clientid");
+	 	die("Alert Cleared");
+ 	}
+	die("No Alert Set");  
  }
  
  if($wasWatered==1){

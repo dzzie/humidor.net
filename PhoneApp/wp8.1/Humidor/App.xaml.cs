@@ -28,7 +28,8 @@ namespace Humidor
     {
         private TransitionCollection transitions;
         public static MySettings settings = new MySettings();
-        
+        public static bool debug = false;
+
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
@@ -119,7 +120,11 @@ namespace Humidor
                 // When the navigation stack isn't restored navigate to the first page,
                 // configuring the new page by passing required information as a navigation
                 // parameter.
-                if (!rootFrame.Navigate(typeof(PivotPage), e.Arguments))
+                if (App.settings.uid == "")
+                {
+                    rootFrame.Navigate(typeof(Config));
+                }
+                else if (!rootFrame.Navigate(typeof(PivotPage), e.Arguments))
                 {
                     throw new Exception("Failed to create initial page");
                 }

@@ -7,7 +7,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:data="using:Humidor.Data"
     mc:Ignorable="d"
-    SizeChanged="Current_SizeChanged"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
  >
 
@@ -46,33 +45,6 @@
             </PivotItem>
 
             <PivotItem
-                 x:Name="pgConfig"
-                x:Uid="PivotItem3"
-                Margin="19,0,0,14.5"
-                Header="Config"
-                >
-
-                <Grid Margin="0,0,-0.167,0.333">
-                    
-                    <TextBlock HorizontalAlignment="Left" Margin="21,54,0,0" TextWrapping="Wrap" Text="UserID" VerticalAlignment="Top" Height="24" FontSize="20"/>
-                    <TextBox x:Name="txtUserID" HorizontalAlignment="Left" Margin="97,46,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="35"/>
-
-                    <TextBlock HorizontalAlignment="Left" Margin="21,113,0,0" TextWrapping="Wrap" Text="ApiKey" VerticalAlignment="Top" Height="39" FontSize="20"/>
-                    <TextBox x:Name="txtApiKey" HorizontalAlignment="Left" Margin="97,104,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="180"/>
-
-                    <TextBlock HorizontalAlignment="Left" Margin="21,168,0,0" TextWrapping="Wrap" Text="Server" VerticalAlignment="Top" Height="39" FontSize="20"/>
-                    <TextBox x:Name="txtServer" HorizontalAlignment="Left" Margin="97,160,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="180"/>
-
-                    <TextBlock HorizontalAlignment="Left" Margin="21,220,0,0" TextWrapping="Wrap" Text="LiveTile" VerticalAlignment="Top" Height="39" FontSize="20"/>
-                    <Button x:Name="btnLiveTile" Content="Enable" HorizontalAlignment="Left" Margin="97,204,0,0" VerticalAlignment="Top" Click="btnLiveTile_Click"/>
-
-                    <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="238,354,0,0" VerticalAlignment="Top" Click="btnSave_Click"/>
-
-                </Grid>
-
-            </PivotItem>
-
-            <PivotItem
                 x:Name="pgActions"
                 x:Uid="PivotItem4"
                 Margin="19,0,0,14.5"
@@ -85,36 +57,18 @@
                 </Grid>
             </PivotItem>
 
-            <PivotItem
-                 x:Name="pgAbout"
-                x:Uid="PivotItem4"
-                Margin="19,0,0,14.5"
-                Header="About"
-                >
-                <Grid Margin="0,0,-0.167,0.333">
-                    <TextBlock HorizontalAlignment="Left" Margin="21,54,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="330" FontSize="20" Width="326">
-                        This IoT Humidor App is designed to integrate with the open source humidor project developed by David Zimmer.
-                        <LineBreak/><LineBreak/>
-                        This app can be used with the free hosting on Sandsprite or with your own server. For more details please visit:  
-                    </TextBlock>
-                    <TextBlock x:Name="txtVersion" HorizontalAlignment="Left" Margin="21,415,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="330" FontSize="20" Width="326">Version:</TextBlock>
-                    <Button x:Name="LinkButton" Click="btnAbout_Click" Content="More Information" Margin="85,317,0,139" />
-                </Grid>
-
-            </PivotItem>
         </Pivot>
 
     </Grid>
 
-    <!--
+    
     <Page.BottomAppBar>
         <CommandBar>
-            <AppBarButton x:Uid="AddAppBarButton" x:Name="AddAppBarButton" Label="add" Icon="Add" Click="AddAppBarButton_Click" />
-            <CommandBar.SecondaryCommands>
-                <AppBarButton x:Uid="SecondaryButton1" x:Name="SecondaryButton1" Label="secondary command 1" />
-                <AppBarButton x:Uid="SecondaryButton2" x:Name="SecondaryButton2" Label="secondary command 2" />
-            </CommandBar.SecondaryCommands>
+            <!--CommandBar.SecondaryCommands-->
+            <AppBarButton x:Uid="SecondaryButton1" x:Name="About" Label="About" Click="btnAboutPage_Click" Icon="help" />
+            <AppBarButton x:Uid="SecondaryButton2" x:Name="Settings" Label="Settings" Icon="Setting"  Click="btnConfigPage_Click"/>
+            <!--/-->
         </CommandBar>
     </Page.BottomAppBar>
-    -->
+    
 </Page>

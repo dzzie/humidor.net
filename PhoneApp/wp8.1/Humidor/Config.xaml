@@ -1,0 +1,31 @@
+﻿<Page
+    x:Class="Humidor.Config"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Humidor"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    SizeChanged="Current_SizeChanged"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid x:Name="LayoutRoot">
+        <TextBlock HorizontalAlignment="Left" Margin="21,10,0,0" TextWrapping="Wrap" Text="Settings" VerticalAlignment="Top" Height="50" FontSize="45"/>
+        
+        <TextBlock HorizontalAlignment="Left" Margin="21,84,0,0" TextWrapping="Wrap" Text="UserID" VerticalAlignment="Top" Height="24" FontSize="20"/>
+            <TextBox x:Name="txtUserID" HorizontalAlignment="Left" Margin="97,76,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="35"/>
+
+            <TextBlock HorizontalAlignment="Left" Margin="21,143,0,0" TextWrapping="Wrap" Text="ApiKey" VerticalAlignment="Top" Height="39" FontSize="20"/>
+            <TextBox x:Name="txtApiKey" HorizontalAlignment="Left" Margin="97,134,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="180"/>
+
+            <TextBlock HorizontalAlignment="Left" Margin="21,198,0,0" TextWrapping="Wrap" Text="Server" VerticalAlignment="Top" Height="39" FontSize="20"/>
+            <TextBox x:Name="txtServer" HorizontalAlignment="Left" Margin="97,190,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="180"/>
+
+            <TextBlock HorizontalAlignment="Left" Margin="21,250,0,0" TextWrapping="Wrap" Text="LiveTile" VerticalAlignment="Top" Height="39" FontSize="20"/>
+            <Button x:Name="btnLiveTile" Content="Enable" HorizontalAlignment="Left" Margin="97,234,0,0" VerticalAlignment="Top" Click="btnLiveTile_Click"/>
+
+            <Button x:Name="btnSave" Content="Save" HorizontalAlignment="Left" Margin="226,318,0,0" VerticalAlignment="Top" Click="btnSave_Click"/>
+        <Button Content="Cancel" HorizontalAlignment="Left" Margin="97,318,0,0" VerticalAlignment="Top" RenderTransformOrigin="0.483,0.517"  Click="btnCancel_Click"/>
+
+    </Grid>
+</Page>
