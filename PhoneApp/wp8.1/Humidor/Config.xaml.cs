@@ -219,6 +219,7 @@ namespace Humidor
             this.navigationHelper.OnNavigatedFrom(e);
         }
 
+
         public NavigationHelper NavigationHelper
         {
             get { return this.navigationHelper; }

@@ -344,7 +344,11 @@ namespace Humidor.Common
                 // from cache
                 if (this.LoadState != null)
                 {
-                    this.LoadState(this, new LoadStateEventArgs(e.Parameter, (Dictionary<String, Object>)frameState[this._pageKey]));
+                    try
+                    {
+                        this.LoadState(this, new LoadStateEventArgs(e.Parameter, (Dictionary<String, Object>)frameState[this._pageKey]));
+                    }
+                    catch (Exception) { }
                 }
             }
         }
@@ -358,13 +362,17 @@ namespace Humidor.Common
         /// property provides the group to be displayed.</param>
         public void OnNavigatedFrom(NavigationEventArgs e)
         {
-            var frameState = SuspensionManager.SessionStateForFrame(this.Frame);
-            var pageState = new Dictionary<String, Object>();
-            if (this.SaveState != null)
+            try
             {
-                this.SaveState(this, new SaveStateEventArgs(pageState));
+                var frameState = SuspensionManager.SessionStateForFrame(this.Frame);
+                var pageState = new Dictionary<String, Object>();
+                if (this.SaveState != null)
+                {
+                    this.SaveState(this, new SaveStateEventArgs(pageState));
+                }
+                frameState[_pageKey] = pageState;
             }
-            frameState[_pageKey] = pageState;
+            catch (Exception) { }
         }
 
         #endregion
