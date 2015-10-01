@@ -50,8 +50,8 @@ namespace Humidor
 
         DispatcherTimer timer = new DispatcherTimer();
 
-        private string strNavFailed = @"<html><body bgcolor=black><br>
-				       			        <font style='font-family: Segoe WP; font-size:80px; color: gray'>
+        private string strNavFailed = @"<html><body bgcolor=XXXXX><br>
+				       			        <font style='font-family: Segoe WP; font-size:80px; color: ZZZZZ'>
                                         Server not Reachable
                                         </body></html>";
 
@@ -86,12 +86,20 @@ namespace Humidor
         }
 
         void wb_NavigationFailed(object sender,  WebViewNavigationFailedEventArgs e){
-            wb.NavigateToString(strNavFailed);
+            bool isDark = (Application.Current.RequestedTheme == ApplicationTheme.Dark);
+            string bgColor = isDark ? "black" : "white";
+            string fontColor = isDark ? "gray" : "black";
+            string html = strNavFailed.Replace("XXXXX", bgColor).Replace("ZZZZZ", fontColor);
+            wb.NavigateToString(html);
         }
 
         void wb2_NavigationFailed(object sender, WebViewNavigationFailedEventArgs e)
         {
-            wb2.NavigateToString(strNavFailed);
+            bool isDark = (Application.Current.RequestedTheme == ApplicationTheme.Dark);
+            string bgColor = isDark ? "black" : "white";
+            string fontColor = isDark ? "gray" : "black";
+            string html = strNavFailed.Replace("XXXXX", bgColor).Replace("ZZZZZ", fontColor);
+            wb2.NavigateToString(html);
         }
 
         private void ShowStats()
@@ -100,11 +108,19 @@ namespace Humidor
             string isDark = Application.Current.RequestedTheme == ApplicationTheme.Dark ? "1" : "0"; 
 
             //any why in the world doesnt Navigate accept a string? oghh yeah academics..
-            string url = "http://" + App.settings.server + "/humidor/mobile.php?id=" + App.settings.uid + "&isDark=" + isDark;           
-            wb.Navigate(new Uri(url));
-            wb2.Navigate(new Uri(url + "&page=2"));
-            App.settings.LastUpdate = DateTime.Now;
-            if (!timer.IsEnabled) Start_timer();
+            string url = "http://" + App.settings.server + "/humidor/mobile.php?id=" + App.settings.uid + "&isDark=" + isDark;
+            try
+            {
+                wb.Navigate(new Uri(url));
+                wb2.Navigate(new Uri(url + "&page=2"));
+                App.settings.LastUpdate = DateTime.Now;
+                if (!timer.IsEnabled) Start_timer();
+            }
+            catch (Exception)
+            {
+                wb_NavigationFailed(null, null);
+                wb2_NavigationFailed(null, null);
+            }
         }
 
         async private void doWebReq(string url)
