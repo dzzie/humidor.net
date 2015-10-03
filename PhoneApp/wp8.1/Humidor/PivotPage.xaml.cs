@@ -18,7 +18,6 @@ using Windows.UI.Xaml.Navigation;
 using Windows.UI.Popups;
 using Windows.UI.ViewManagement;
 using Windows.Web.Http;
-using Windows.Security.ExchangeActiveSyncProvisioning;
 using Windows.UI.Notifications;
 using Windows.Data.Xml.Dom;
 using Windows.ApplicationModel.Background;
@@ -28,20 +27,6 @@ using Humidor.Common;
  
 namespace Humidor
 {
-    
-    public static class DeviceInfo
-    {
-        // igrali.com/2014/07/17/get-device-information-windows-phone-8-1-winrt/
-        private static EasClientDeviceInformation deviceInfo = new EasClientDeviceInformation();
-        
-        public static bool IsRunningOnEmulator
-        {
-            get
-            {
-                return (deviceInfo.SystemProductName == "Virtual");
-            }
-        }
-    }
 
     public sealed partial class PivotPage : Page
     {
@@ -50,6 +35,7 @@ namespace Humidor
 
         DispatcherTimer timer = new DispatcherTimer();
 
+        //todo: refresh button for this? or meta refresh or js?
         private string strNavFailed = @"<html><body bgcolor=XXXXX><br>
 				       			        <font style='font-family: Segoe WP; font-size:80px; color: ZZZZZ'>
                                         Server not Reachable
@@ -134,25 +120,12 @@ namespace Humidor
                 ret = response.StatusCode.ToString();
                 response.EnsureSuccessStatusCode(); //If Response is not Http 200 then EnsureSuccessStatusCode will throw an exception
                 ret = await response.Content.ReadAsStringAsync();
-                showMessage("Server Response", ret, false);
+                App.showMessage("Server Response", ret, false);
             }
             catch (Exception ex) {
-                showMessage("Exception Caught", ret, false);
+                App.showMessage("Exception Caught", ret, false);
             } 
           
-        }
-
-       
-        public async void showMessage(string title, string msg, bool fullScreen)
-        {
-            //MessageDialog message = new MessageDialog(msg);
-            //await message.ShowAsync();
-            ContentDialog contentDialog = new ContentDialog();
-            contentDialog.FullSizeDesired =fullScreen;
-            contentDialog.Title = title;
-            contentDialog.Content = msg;
-            contentDialog.PrimaryButtonText = "OK";
-            await contentDialog.ShowAsync();
         }
 
         private void btnSmoked_Click(object sender, RoutedEventArgs e)

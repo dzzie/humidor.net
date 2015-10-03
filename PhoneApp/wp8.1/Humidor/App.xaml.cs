@@ -15,12 +15,26 @@ using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Animation;
 using Windows.UI.Xaml.Navigation;
-
+using Windows.Security.ExchangeActiveSyncProvisioning;
 
 // The Pivot Application template is documented at http://go.microsoft.com/fwlink/?LinkID=391641
 
 namespace Humidor
 {
+    public static class DeviceInfo
+    {
+        // igrali.com/2014/07/17/get-device-information-windows-phone-8-1-winrt/
+        private static EasClientDeviceInformation deviceInfo = new EasClientDeviceInformation();
+
+        public static bool IsRunningOnEmulator
+        {
+            get
+            {
+                return (deviceInfo.SystemProductName == "Virtual");
+            }
+        }
+    }
+
     /// <summary>
     /// Provides application-specific behavior to supplement the default Application class.
     /// </summary>
@@ -29,6 +43,18 @@ namespace Humidor
         private TransitionCollection transitions;
         public static MySettings settings = new MySettings();
         public static bool debug = false;
+
+        public static async void showMessage(string title, string msg, bool fullScreen)
+        {
+            //MessageDialog message = new MessageDialog(msg);
+            //await message.ShowAsync();
+            ContentDialog contentDialog = new ContentDialog();
+            contentDialog.FullSizeDesired = fullScreen;
+            contentDialog.Title = title;
+            contentDialog.Content = msg;
+            contentDialog.PrimaryButtonText = "OK";
+            await contentDialog.ShowAsync();
+        }
 
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code

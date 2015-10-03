@@ -24,15 +24,12 @@ using Windows.Web.Http;
 
 namespace Humidor
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
+
     public sealed partial class Config : Page
     {
         private NavigationHelper navigationHelper;
         private ObservableDictionary defaultViewModel = new ObservableDictionary();
         private bool liveTileEnabled = false;
-        private bool justEnabledTile = false;
         private string content;
 
         public Config()
@@ -65,7 +62,14 @@ namespace Humidor
 
         private void btnLiveTile_Click(object sender, RoutedEventArgs e)
         {
-            setLiveTile(!liveTileEnabled);
+            Task<bool> outerTask = RegisterTask(!liveTileEnabled);
+            /*outerTask.ContinueWith(task =>
+            {
+                if (task.Result)
+                {
+                    //we can not update button text here wrong thread error..overly complex bs
+                }
+            });*/
         }
 
         private void btnCancel_Click(object sender, RoutedEventArgs e)
@@ -79,25 +83,16 @@ namespace Humidor
             App.settings.apiKey = txtApiKey.Text;
             App.settings.server = txtServer.Text;
             this.Frame.Navigate(typeof(PivotPage));
-            //ShowStats();
-            //this.pivot.SelectedIndex = 0;
         }
 
-
-
-        private void setLiveTile(bool enabled)
-        {
-            if (!liveTileEnabled && enabled) justEnabledTile = true;
-            liveTileEnabled = enabled;
-            App.settings.liveTile = liveTileEnabled ? "true" : "";
-            btnLiveTile.Content = liveTileEnabled ? "disable" : "enable";
-            RegisterTask(liveTileEnabled);
-        }
-
-        private async void RegisterTask(bool enable)
+        private async Task<bool> RegisterTask(bool enable)
         {
 
             string myTaskName = "FirstTask";
+            bool hadError = false;
+
+            bool justEnabledTile = false;
+            if (!liveTileEnabled && enable) justEnabledTile = true;
 
             if (!enable)
             {
@@ -111,14 +106,32 @@ namespace Humidor
                 if (cur.Value.Name == myTaskName)
                 {
                     if (!enable) cur.Value.Unregister(true);
-                    return;
+                    goto retNow;
                 }
             }
 
-            if (!enable) return;
+            if (!enable) goto retNow; 
+            
+            if (await BackgroundExecutionManager.RequestAccessAsync() == BackgroundAccessStatus.Denied)
+            {
+                App.showMessage("Register Task Failed",
+                    "Access to register a background task failed.\n\n" +
+                    "You can enable access for this app in:\n" +
+                    "   settings -> battery -> usage\n\n" +
+                    "This is required for the live tile to\n" +
+                    "update every 30 minutes.", false);
+                hadError = true;
+                goto retNow;
+            }
 
-            //NotificationSetting ns = TileUpdateManager.CreateTileUpdaterForApplication().Setting;
-            //if (ns != NotificationSetting.Enabled) return; //not pinned or not enabled so dont register..
+            NotificationSetting ns = TileUpdateManager.CreateTileUpdaterForApplication().Setting;
+            if (ns != NotificationSetting.Enabled)
+            {
+                //note this is not a detection if tile was pinned or not..
+                App.showMessage("Tile not updatable", "Tile updating has been disabled?", false);
+                hadError = true;
+                goto retNow;
+            }
 
             if (justEnabledTile)
             {
@@ -126,10 +139,20 @@ namespace Humidor
                 justEnabledTile = false;
             }
 
-            await BackgroundExecutionManager.RequestAccessAsync();
             BackgroundTaskBuilder taskBuilder = new BackgroundTaskBuilder { Name = myTaskName, TaskEntryPoint = "MyTask.FirstTask" };
             taskBuilder.SetTrigger(new TimeTrigger(30, false));
             BackgroundTaskRegistration myFirstTask = taskBuilder.Register();
+        
+     retNow:
+            //we can not update the button from Task.onComplete because wrong thread error..so this is forced..
+            if (!hadError)
+            {
+                liveTileEnabled = enable;
+                App.settings.liveTile = liveTileEnabled ? "true" : "";
+                btnLiveTile.Content = liveTileEnabled ? "disable" : "enable";
+            }
+            return !hadError;
+
         }
 
         private string getXML(string msg)
