@@ -1,3 +1,14 @@
+
+/*before fast string conv:
+
+    Binary sketch size: 27,166 bytes (used 84% of a 32,256 byte maximum) (1.14 secs)
+    Minimum Memory Usage: 1521 bytes (74% of a 2048 byte maximum)
+
+ now:
+    Binary sketch size: 27,252 bytes (used 84% of a 32,256 byte maximum) (0.91 secs)
+    Minimum Memory Usage: 1127 bytes (55% of a 2048 byte maximum)
+*/
+
 #include <Adafruit_CC3000.h>
 #include <SPI.h>
 #include <Wire.h>
@@ -25,6 +36,8 @@ All rights reserved, no portion of this code is authorized for sale or redistrib
 #define WEBPAGE       "/humidor/logData.php" 
 #define firmware_ver  "v1.3 " __DATE__  
 #define MAX_TICKS 1000
+
+char *DFAIL = "DHT22 Fail";
 
 volatile int counter;      // Count number of times ISR is called.
 volatile int countmax = 8; // Timer expires after about 64 secs (using 8 sec interval)
@@ -83,11 +96,11 @@ void setup(void)
   lcd.begin(16, 2);     // set LCD columns and rows
   lcd.setBacklight(WHITE);
   
-  lcd_out("Daves WebHumidor");
+  lcd_outp(F("Daves WebHumidor"));
   lcd_out(firmware_ver,1);
   delay(2000);  
   
-  lcd_out("Init Wifi...");
+  lcd_outp(F("Init Wifi..."));
 
   if (!cc3000.begin()) while(1);
   
@@ -115,7 +128,7 @@ void loop(void)
    if(debug_local){
        temp = 66; humi = 66;
    }else{
-	   lcd_out("Reading sensor",1);
+	   lcd_outp(F("Reading sensor"),1);
 	   for(int i=0; i <= 10; i++){
 			if( ReadSensor() ) break;
 			delay(1000);
@@ -124,7 +137,7 @@ void loop(void)
 				watchdogEnable();
 				PostData();
 				watchdogDisable();
-				lcd_out("DHT22 FailMode");
+				lcd_out(DFAIL);
 				while(1);
 		   }
        }
@@ -141,7 +154,7 @@ void loop(void)
 	   powerevt = 0;
    }
    else{
-		lcd_out("Upload failed",1);
+		lcd_outp(F("Upload failed"),1);
 		delay(1200);
 		fail_cnt++;
    }
@@ -151,7 +164,7 @@ void loop(void)
    show_readings();
    
    if(fail_cnt > 2){
-		sprintf(tmp, "%d Fails", fail_cnt);
+		sprintf_P(tmp, PSTR("%d Fails"), fail_cnt);
    }
    else{//track # successful uploads since last reset (watch watchdog)
 		sprintf(tmp, "%d", uploads);
@@ -247,10 +260,10 @@ void watchdogEnable()
 #endif
 
 void show_readings(){
-     sprintf(tmp, "Temp: %d", (int)temp);
+     sprintf_P(tmp, PSTR("Temp: %d"), (int)temp);
      lcd_out(tmp);
    
-     sprintf(tmp, "Humi: %d", (int)humi);
+     sprintf_P(tmp, PSTR("Humi: %d"), (int)humi);
      lcd_out(tmp,1);
 }
 
@@ -262,9 +275,19 @@ void lcd_out(char* s, int row){
     lcd.print(s);
 }
 
+void lcd_outp(const __FlashStringHelper *s){lcd_outp(s,0); }
+
+void lcd_outp(const __FlashStringHelper *s, int row){
+    if(row==0) lcd.clear();
+    lcd.setCursor(0,row); 
+    uint8_t c;
+	const char PROGMEM *p = (const char PROGMEM *)s;
+    while ((c = pgm_read_byte_near(p++)) != 0) lcd.print((char)c);
+}
+
 void lcd_ip_out(uint32_t ip, int row){
   uint8_t* b = (uint8_t*)&ip;
-  sprintf(tmp,"%d.%d.%d.%d", b[3], b[2], b[1], b[0] );
+  sprintf_P(tmp,PSTR("%d.%d.%d.%d"), b[3], b[2], b[1], b[0] );
   lcd_out(tmp, row);
 }
 
@@ -275,8 +298,8 @@ void delay_x_min(int minutes){
 void displayFlags(){
 	lcd.setCursor(12,1); 
     lcd.print("    "); //overwrite uploads count
-	if(watered){ lcd.setCursor(15,1); lcd.print("W"); }
-    if(smoked){  lcd.setCursor(14,1); lcd.print("S"); }
+	if(watered){ lcd.setCursor(15,1); lcd.print('W'); }
+    if(smoked){  lcd.setCursor(14,1); lcd.print('S'); }
 }
 
 void delay_x_min(int minutes, int silent){
@@ -286,7 +309,7 @@ void delay_x_min(int minutes, int silent){
       //re-read the sensor every minute to update display? thats allot of sensor reads.. whats its lifetime?
       
       if(silent==0){
-          sprintf(tmp, " %d min", minutes - i); //fixed display bug lcd not overwriting tens digit once <= 9
+          sprintf_P(tmp, PSTR(" %d min"), minutes - i); //fixed display bug lcd not overwriting tens digit once <= 9
           lcd.setCursor(16 - strlen(tmp),0); 
           lcd.print(tmp);
       }
@@ -303,17 +326,17 @@ void delay_x_min(int minutes, int silent){
               displayFlags();
           }  
 		  if (buttons && (buttons & BUTTON_UP) ){
-			  if( ReadSensor() ) show_readings(); else lcd_out("Read Fail?");
+			  if( ReadSensor() ) show_readings(); else lcd_outp(F("Read Fail?"));
 		  }
 		  #if debug_local
 				  if (buttons && (buttons & BUTTON_RIGHT) ){ //speed up clock to test 6x pump delay..
 					  lcd.setCursor(14,1); 
 					  if(speedMode==1){
 						  speedMode = 0; 
-						  lcd.print(" ");
+						  lcd.print(' ');
 					  }else{
 						  speedMode = 1;
-						  lcd.print("F");
+						  lcd.print('F');
 					  }     
 					  delay(500); //if you are toggling a field, you NEED the delay..
 				  }
@@ -330,8 +353,7 @@ bool ReadSensor(){
   int chk = dht22_read(dht22_pin); //OK: 0, Bad Chksum: -1, Time Out: -2
 
   if (chk != 0){
-	  sprintf(tmp,"DHT22 Fail: %d", chk);
-	  lcd_out(tmp); 
+	  lcd_out(DFAIL); 
 	  delay(1200);
 	  return false;
   }
@@ -388,10 +410,10 @@ bool PostData()
   unsigned long startTime = 0;
   Adafruit_CC3000_Client www;
 
-  lcd_out("AP Connect");
+  lcd_outp(F("AP Connect"));
   if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) return false;
 
-  lcd_out("DHCP");
+  lcd_outp(F("DHCP"));
   for(ticks=0; ticks < MAX_TICKS; ticks++)
   {
     if( cc3000.checkDHCP() ) break;
@@ -400,24 +422,24 @@ bool PostData()
 
   if(ticks >= MAX_TICKS) goto EXIT_FAIL;
 
-  lcd_out("Submit");
+  lcd_outp(F("Submit"));
   lcd_ip_out(ip,1);  
   delay(2000);
 
   www = cc3000.connectTCP(ip, 80); //have been having occasional hang here...
 
   //breaking this up so no one sprintf takes up to much memory..
-  strcpy(buf, WEBPAGE);
-  sprintf(tmp, "?temp=%d&humi=%d&watered=%d&powerevt=%d", (int)temp, (int)humi, watered, powerevt);
+  strcpy_P(buf, PSTR(WEBPAGE));
+  sprintf_P(tmp, PSTR("?temp=%d&humi=%d&watered=%d&powerevt=%d"), (int)temp, (int)humi, watered, powerevt);
   strcat(buf,tmp);
 
-  sprintf(tmp, "&failure=%d&clientid=%d&smoked=%d&apikey=", failure, client_id, smoked);
+  sprintf_P(tmp, PSTR("&failure=%d&clientid=%d&smoked=%d&apikey="), failure, client_id, smoked);
   strcat(buf,tmp);
-  strcat(buf,APIKEY);
+  strcat_P(buf,PSTR(APIKEY));
   
   if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
   
-  sprintf(tmp, "%d bytes     ", strlen(buf) );
+  sprintf_P(tmp, PSTR("%d bytes     "), strlen(buf) );
   lcd_out(tmp,1);
 
   delay(1200);
@@ -426,7 +448,7 @@ bool PostData()
     www.fastrprint(F("GET "));
     www.fastrprint(buf);
     www.fastrprint(F(" HTTP/1.1\r\n"));
-    www.fastrprint(F("Host: ")); www.fastrprint(DOMAIN); www.fastrprint(F("\r\n"));
+    www.fastrprint(F("Host: ")); www.fastrprint(F(DOMAIN)); www.fastrprint(F("\r\n"));
     www.fastrprint(F("\r\n"));
     if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
     www.println();
@@ -437,8 +459,8 @@ bool PostData()
     goto EXIT_FAIL;
   }
   
-  lcd_out("Reading Response");
-  lcd_out("      Recv: ",1);
+  lcd_outp(F("Reading Response"));
+  lcd_outp(F("      Recv: "),1);
   startTime = millis();
 
    /* Read data until either the connection is closed, or the idle timeout is reached. */ 
@@ -488,22 +510,22 @@ bool PostData()
 	 }
   }
 
-  lcd_out("Closing Connection");
+  lcd_outp(F("Closing"));
   www.close();
   
   pageResp[pr_offset]=0;
   respCode[rc_offset]=0;
  
   if(rLeng <= 1){ 
-	  lcd_out("No response"); 
+	  lcd_outp(F("No response")); 
   }else{
-	  if(rc_offset) lcd_out(respCode); else lcd_out("Bad RespCode ");
+	  if(rc_offset) lcd_out(respCode); else lcd_outp(F("Bad RespCode "));
 	  if(pr_offset){
 		  lcd_out(pageResp,1); 
 		  uploads++;
 		  if(uploads == 999) uploads = 1; //dont take up to much lcd space..
 	  }
-	  else lcd_out("Bad PageResp ",1);
+	  else lcd_outp(F("Bad PageResp "),1);
   }
   
   delay(2500);
@@ -513,7 +535,7 @@ bool PostData()
 EXIT_FAIL:
    cc3000.disconnect(); 
 
-   lcd_out("Exit Fail?", 1);
+   lcd_outp(F("Exit Fail?"), 1);
    delay(800); 
 
    return false;

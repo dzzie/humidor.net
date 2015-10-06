@@ -1,6 +1,10 @@
 
-This code and hardware schmatics are for a
-temperature controlled web enabled humidor.  
+This code and hardware schmatics are for a temperature 
+controlled web enabled humidor. 
+
+This allows you to monitor your investment from anywhere
+in the world, and receive immediate alerts if it requires
+attention.
 
 About:
 ----------------------------------------------
@@ -20,6 +24,10 @@ When you add water, push the select button on the LCD sheild to
 record it. When you have a smoke, press the down button. 
 These will be saved to the database and displayed in the report.
 Power resets will also be recorded to the database.
+
+Some users choose to go headless and omit the lcd shield and buttons.
+This is now even easier now that we have a [Windows Phone app](https://www.microsoft.com/en-us/store/apps/iot-humidor/9nblggh6404f) to keep
+you in sync. 
 
 I already have the web backend setup for multiple users. If you dont have
 a public webserver and would like to use mine just send me an email and a 
@@ -43,7 +51,6 @@ See screen shot for example web report.
 Build Videos:
 ----------------------------------------------
 * Hardware: https://www.youtube.com/watch?v=eM54fs1qsvk&list=UUhIoXVvn4ViA3AL4FJW8Yzw
-* Enclosure: https://www.youtube.com/watch?v=YGUdR5WFM-Q&list=UUhIoXVvn4ViA3AL4FJW8Yzw
 * Haier reset default temp: http://sandsprite.com/blogs/index.php?uid=10&pid=317
 * Vinotemp reset default temp: http://sandsprite.com/blogs/index.php?uid=10&pid=316
 
