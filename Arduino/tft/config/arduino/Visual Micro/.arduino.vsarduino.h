@@ -39,10 +39,12 @@
 typedef unsigned char byte;
 extern "C" void __cxa_pure_virtual() {;}
 
+void readConfig(struct settings *s);
+void showConfig(struct settings *s);
 //
 //
 
 #include "d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\arduino.h"
 #include "d:\arduino-1.5.8\hardware\arduino\avr\variants\standard\pins_arduino.h" 
-#include "c:\Documents and Settings\david\Desktop\CEREAL TEST\arduino\arduino.ino"
+#include "d:\_code\humidor.net\Arduino\tft\config\arduino\arduino.ino"
 #endif

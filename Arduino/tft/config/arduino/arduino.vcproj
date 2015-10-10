@@ -40,7 +40,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino;d:\arduino-1.5.8\hardware\arduino\avr\variants\standard;d:\arduino-1.5.8\libraries;d:\arduino-1.5.8\hardware\arduino\avr\libraries;C:\Program Files\Visual Micro\Visual Micro for Arduino\Micro Platforms\default\debuggers;C:\Documents and Settings\david\My Documents\Arduino\libraries;d:\arduino-1.5.8\hardware\tools\avr\avr\include\;d:\arduino-1.5.8\hardware\tools\avr\avr\include\avr\;d:\arduino-1.5.8\hardware\tools\avr\avr\;d:\arduino-1.5.8\hardware\tools\avr\lib\gcc\avr\4.3.2\include\;"
+				AdditionalIncludeDirectories="d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino;d:\arduino-1.5.8\hardware\arduino\avr\variants\standard;d:\arduino-1.5.8\libraries\EEPROMEx;d:\arduino-1.5.8\libraries\EEPROMEx\utility;d:\arduino-1.5.8\libraries;d:\arduino-1.5.8\hardware\arduino\avr\libraries;C:\Program Files\Visual Micro\Visual Micro for Arduino\Micro Platforms\default\debuggers;C:\Documents and Settings\david\My Documents\Arduino\libraries;d:\arduino-1.5.8\hardware\tools\avr\avr\include\;d:\arduino-1.5.8\hardware\tools\avr\avr\include\avr\;d:\arduino-1.5.8\hardware\tools\avr\avr\;d:\arduino-1.5.8\hardware\tools\avr\lib\gcc\avr\4.3.2\include\;"
 				PreprocessorDefinitions="__AVR_ATmega328p__;__AVR_ATmega328P__;ARDUINO=158;ARDUINO_MAIN;__AVR__;__avr__;F_CPU=16000000L;__cplusplus"
 				IgnoreStandardIncludePath="true"
 				MinimalRebuild="true"
@@ -48,7 +48,7 @@
 				RuntimeLibrary="3"
 				WarningLevel="3"
 				DebugInformationFormat="4"
-				ForcedIncludeFiles="C:\Documents and Settings\david\Desktop\CEREAL TEST\arduino\Visual Micro\.arduino.vsarduino.h"
+				ForcedIncludeFiles="D:\_code\humidor.net\Arduino\tft\config\arduino\Visual Micro\.arduino.vsarduino.h"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

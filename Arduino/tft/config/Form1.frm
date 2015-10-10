@@ -10,10 +10,26 @@ Begin VB.Form Form1
    ScaleHeight     =   5385
    ScaleWidth      =   7470
    StartUpPosition =   2  'CenterScreen
-   Begin VB.CommandButton Command2 
-      Caption         =   "Clear"
+   Begin VB.CommandButton Command4 
+      Caption         =   "show config"
       Height          =   240
-      Left            =   4635
+      Left            =   5715
+      TabIndex        =   25
+      Top             =   3645
+      Width           =   1365
+   End
+   Begin VB.CommandButton Command3 
+      Caption         =   "clear config"
+      Height          =   240
+      Left            =   4005
+      TabIndex        =   24
+      Top             =   3645
+      Width           =   1320
+   End
+   Begin VB.CommandButton Command2 
+      Caption         =   "Clear list"
+      Height          =   240
+      Left            =   2295
       TabIndex        =   23
       Top             =   3645
       Width           =   1320
@@ -175,7 +191,7 @@ Begin VB.Form Form1
    Begin VB.CommandButton Command1 
       Caption         =   "about"
       Height          =   375
-      Left            =   4725
+      Left            =   4815
       TabIndex        =   1
       Top             =   2925
       Width           =   1185
@@ -189,7 +205,7 @@ Begin VB.Form Form1
       Width           =   1185
    End
    Begin MSCommLib.MSComm MSComm1 
-      Left            =   4005
+      Left            =   4095
       Top             =   2790
       _ExtentX        =   1005
       _ExtentY        =   1005
@@ -311,7 +327,7 @@ Function validate() As Boolean
     End If
     
     uid = CLng(txtUID)
-    If uid = 0 Then
+    If uid <= 0 Then
         MsgBox "UserID must be numeric and > 0"
         Exit Function
     End If
@@ -320,6 +336,12 @@ Function validate() As Boolean
         If TypeName(f) = "TextBox" And f.Name <> "txtPasswd" Then
             If Len(f.Text) = 0 Then
                 MsgBox f.Name & " can not be blank."
+                Exit Function
+            End If
+        End If
+        If TypeName(f) = "TextBox" Then
+            If Len(f.Text) > 19 Then
+                MsgBox f.Name & " field must be less than 20 characters"
                 Exit Function
             End If
         End If
@@ -387,9 +409,22 @@ Private Sub Command2_Click()
     List1.Clear
 End Sub
 
+Private Sub Command3_Click()
+    On Error Resume Next
+    List1.AddItem "clear:"
+    MSComm1.Output = "clear:" & vbLf
+End Sub
+
+Private Sub Command4_Click()
+    On Error Resume Next
+    List1.AddItem "showcfg:"
+    MSComm1.Output = "showcfg:" & vbLf
+End Sub
+
 Private Sub Form_Load()
     
-    Me.Height = 3855 'hide debug recv list
+    If Not IsIde() Then Me.Height = 3855 'hide debug recv list
+    
     Set serial = New clsSerial
     serial.Configure MSComm1
     
@@ -461,4 +496,13 @@ Sub push(ary, value) 'this modifies parent ary object
     Exit Sub
 init:     ReDim ary(0): ary(0) = value
 End Sub
+
+
+
+Function IsIde() As Boolean
+' Brad Martinez  http://www.mvps.org/ccrp
+    On Error GoTo out
+    Debug.Print 1 / 0
+out: IsIde = Err
+End Function
 
