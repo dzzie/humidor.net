@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Package xmlns="http://schemas.microsoft.com/appx/2010/manifest" xmlns:m2="http://schemas.microsoft.com/appx/2013/manifest" xmlns:m3="http://schemas.microsoft.com/appx/2014/manifest" xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest">
-  <Identity Name="641Sandsprite.IoTHumidor" Publisher="CN=6DD7BF80-B2D5-4B67-946A-523A8BCD7D44" Version="1.1.0.1" />
+  <Identity Name="641Sandsprite.IoTHumidor" Publisher="CN=6DD7BF80-B2D5-4B67-946A-523A8BCD7D44" Version="1.1.0.2" />
   <mp:PhoneIdentity PhoneProductId="64093afd-4b29-4b3c-ae81-27379a40e191" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
   <Properties>
     <DisplayName>IoT Humidor</DisplayName>

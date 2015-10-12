@@ -35,8 +35,34 @@ namespace Humidor
 
         DispatcherTimer timer = new DispatcherTimer();
 
+        enum urls { uStats = 0, uGraph, uSmoked, uWatered, uClear };
+
+        private string getUrl(urls u)
+        {
+        
+            string isDark = (Application.Current.RequestedTheme == ApplicationTheme.Dark) ? "1" : "0";
+            string x = "http://" + App.settings.server + "/humidor";
+            
+            if(u == urls.uStats || u == urls.uGraph ) 
+                x += "/mobile.php?id=" + App.settings.uid + "&isDark=" + isDark;
+            else
+                x += "/logData.php?clientid=" + App.settings.uid + "&apikey=" + App.settings.apiKey;
+            
+            switch (u)
+            {
+                case urls.uGraph:   x += "&page=2"; break;
+                case urls.uSmoked:  x += "&wasSmoked=1"; break;
+                case urls.uClear:   x += "&clear_alert=1"; break;
+                case urls.uWatered: x += "&wasWatered=1"; break;
+            }
+
+            return x;
+
+        }
+
         //todo: refresh button for this? or meta refresh or js?
-        private string strNavFailed = @"<html><body bgcolor=XXXXX><br>
+        private string strNavFailed = @"<html><meta http-equiv='refresh' content='5; url=YYYYY'><head>
+                                        </head><body bgcolor=XXXXX><br>
 				       			        <font style='font-family: Segoe WP; font-size:80px; color: ZZZZZ'>
                                         Server not Reachable
                                         </body></html>";
@@ -55,9 +81,9 @@ namespace Humidor
         {
             timer.Tick += timer_Tick;
 
-            if (DeviceInfo.IsRunningOnEmulator)
+            /*if (DeviceInfo.IsRunningOnEmulator)
                 timer.Interval = new TimeSpan(00, 0, 10);
-            else 
+            else */
                 timer.Interval = new TimeSpan(00, 30, 00);
 
             bool enabled = timer.IsEnabled;
@@ -76,6 +102,7 @@ namespace Humidor
             string bgColor = isDark ? "black" : "white";
             string fontColor = isDark ? "gray" : "black";
             string html = strNavFailed.Replace("XXXXX", bgColor).Replace("ZZZZZ", fontColor);
+            html = html.Replace("YYYYY", getUrl(urls.uStats));
             wb.NavigateToString(html);
         }
 
@@ -85,20 +112,17 @@ namespace Humidor
             string bgColor = isDark ? "black" : "white";
             string fontColor = isDark ? "gray" : "black";
             string html = strNavFailed.Replace("XXXXX", bgColor).Replace("ZZZZZ", fontColor);
+            html = html.Replace("YYYYY", getUrl(urls.uGraph));
             wb2.NavigateToString(html);
         }
 
         private void ShowStats()
         {
-            
-            string isDark = Application.Current.RequestedTheme == ApplicationTheme.Dark ? "1" : "0"; 
-
-            //any why in the world doesnt Navigate accept a string? oghh yeah academics..
-            string url = "http://" + App.settings.server + "/humidor/mobile.php?id=" + App.settings.uid + "&isDark=" + isDark;
+            //any why in the world doesnt Navigate accept a string? oghh yeah academics..          
             try
             {
-                wb.Navigate(new Uri(url));
-                wb2.Navigate(new Uri(url + "&page=2"));
+                wb.Navigate(new Uri(getUrl(urls.uStats)));
+                wb2.Navigate(new Uri(getUrl(urls.uGraph)));
                 App.settings.LastUpdate = DateTime.Now;
                 if (!timer.IsEnabled) Start_timer();
             }
@@ -130,20 +154,17 @@ namespace Humidor
 
         private void btnSmoked_Click(object sender, RoutedEventArgs e)
         {
-            string url = "http://" + App.settings.server + "/humidor/logData.php?wasSmoked=1&clientid=" + App.settings.uid + "&apikey=" + App.settings.apiKey;
-            doWebReq(url);
+            doWebReq(getUrl(urls.uSmoked));
         }
 
         private void btnWatered_Click(object sender, RoutedEventArgs e)
         {
-            string url = "http://" + App.settings.server + "/humidor/logData.php?wasWatered=1&clientid=" + App.settings.uid  + "&apikey=" + App.settings.apiKey;
-            doWebReq(url);
+            doWebReq(getUrl(urls.uWatered));
         }
 
         private void btnClearAlert_Click(object sender, RoutedEventArgs e)
         {
-            string url = "http://" + App.settings.server + "/humidor/logData.php?clear_alert=1&clientid=" + App.settings.uid + "&apikey=" + App.settings.apiKey;
-            doWebReq(url);
+            doWebReq(getUrl(urls.uClear));
         }
 
         private void btnAboutPage_Click(object sender, RoutedEventArgs e)
