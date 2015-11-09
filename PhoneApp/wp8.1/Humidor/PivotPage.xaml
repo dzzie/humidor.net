@@ -54,6 +54,7 @@
                     <Button Content="Smoked" Click="btnSmoked_Click" HorizontalAlignment="Left" Margin="45,50,0,0" VerticalAlignment="Top" Width="290"/>
                     <Button Content="Watered" Click="btnWatered_Click" HorizontalAlignment="Left" Margin="45,110,0,0" VerticalAlignment="Top" Width="290"/>
                     <Button Content="Clear Alert" Click="btnClearAlert_Click" HorizontalAlignment="Left" Margin="45,170,0,0" VerticalAlignment="Top" Width="290"/>
+                    <Button Content="Web UI" Click="btnWeb_Click"  Margin="45,230,0,0" HorizontalAlignment="Left" VerticalAlignment="Top" Width="290"/>
                 </Grid>
             </PivotItem>
 

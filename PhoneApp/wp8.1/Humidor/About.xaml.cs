@@ -68,6 +68,5 @@ namespace Humidor
             await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
         }
 
-
     }
 }

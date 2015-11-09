@@ -35,24 +35,26 @@ namespace Humidor
 
         DispatcherTimer timer = new DispatcherTimer();
 
-        enum urls { uStats = 0, uGraph, uSmoked, uWatered, uClear };
+        enum urls { uStats = 0, uGraph, uSmoked, uWatered, uClear, uWeb };
 
         private string getUrl(urls u)
         {
-        
+
             string isDark = (Application.Current.RequestedTheme == ApplicationTheme.Dark) ? "1" : "0";
             string x = "http://" + App.settings.server + "/humidor";
-            
-            if(u == urls.uStats || u == urls.uGraph ) 
+
+            if (u == urls.uWeb)
+                x += "/index.php?id=" + App.settings.uid;
+            else if (u == urls.uStats || u == urls.uGraph)
                 x += "/mobile.php?id=" + App.settings.uid + "&isDark=" + isDark;
             else
                 x += "/logData.php?clientid=" + App.settings.uid + "&apikey=" + App.settings.apiKey;
-            
+
             switch (u)
             {
-                case urls.uGraph:   x += "&page=2"; break;
-                case urls.uSmoked:  x += "&wasSmoked=1"; break;
-                case urls.uClear:   x += "&clear_alert=1"; break;
+                case urls.uGraph: x += "&page=2"; break;
+                case urls.uSmoked: x += "&wasSmoked=1"; break;
+                case urls.uClear: x += "&clear_alert=1"; break;
                 case urls.uWatered: x += "&wasWatered=1"; break;
             }
 
@@ -160,6 +162,12 @@ namespace Humidor
         private void btnWatered_Click(object sender, RoutedEventArgs e)
         {
             doWebReq(getUrl(urls.uWatered));
+        }
+
+        async private void btnWeb_Click(object sender, RoutedEventArgs e)
+        {
+            string url = getUrl(urls.uWeb);
+            await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
         }
 
         private void btnClearAlert_Click(object sender, RoutedEventArgs e)
