@@ -1,5 +1,6 @@
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/assembled.jpg)
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/wifi_shield.jpg)
+![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/wiring_points.jpg)
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/sensor wiring.jpg)
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/sensor_connector.jpg)
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/sensor_installed.jpg)

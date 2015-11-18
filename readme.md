@@ -6,6 +6,14 @@ This allows you to monitor your investment from anywhere
 in the world, and receive immediate alerts if it requires
 attention.
 
+A comprehensive help file is now available to walk you through 
+the setup:
+
+http://sandsprite.com/humidor/help/
+
+A compiled html help (CHM) file of this information is also 
+included in this repository.
+
 About:
 ----------------------------------------------
 The Dht22 sensor is installed in the humidor.

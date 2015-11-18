@@ -1,0 +1,26 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=..\IoT_Humidor_Build_Help.chm
+Default topic=index.html
+Display compile progress=Yes
+Enhanced decompilation=Yes
+Language=0x409 English (United States)
+Title=Sandsprite IoT Humidor
+
+
+[FILES]
+index.html
+left.html
+intro.html
+hard.html
+soft.html
+web.html
+top.html
+enc.html
+wp8.html
+adv.html
+alerts.html
+humidor.html
+
+[INFOTYPES]
+

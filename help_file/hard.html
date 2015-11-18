@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Sandsprite.com IoT Humidor</title>
+<link rel="stylesheet" type="text/css" href="style.css" >
+</head>
+<body>
+
+<div style="width:600">
+
+this project makes use of 5 main hardware components. Soldering of the components requires about 20 to 30 minutes work.
+
+<ol>
+<li><a href="http://www.adafruit.com/products/50" target=_blank>Arduino Uno R3 - $24  </a>
+<li><a href="https://www.virtuabotix.com/product/virtuabotix-dht22-temperature-humidity-sensor-arduino-microcontroller-circuits/" target=_blank> DHT22 Temperature/Humidity Sensor - $12</a>
+<li><a href="http://www.adafruit.com/products/772" target=_blank> AdaFruit 16x2 LCD Shield - $20  </a>
+<li><a href="http://www.adafruit.com/products/1491" target=_blank> AdaFruit Wireless Ethernet Shield - $40 </a> &nbsp; (<a href="https://www.adafruit.com/products/85" target=_blank>with pass through headers $2</a>)
+<li><a href="http://www.amazon.com/gp/product/B012C97ODC" target=_blank>9-12v 1 Amp DC center positive power adapter w/ 2.1mm plug - $6</a> <b>*</b>
+</ul>
+<br><br>
+
+I have also prepared a <a href="https://www.youtube.com/watch?v=eM54fs1qsvk&list=UUhIoXVvn4ViA3AL4FJW8Yzw" target=_blank>video walk through of the components</a>
+<br><br>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/eM54fs1qsvk" frameborder="0" allowfullscreen></iframe>
+
+<br><br>
+<img src="./img/sensor wiring.jpg">
+<br><br>
+
+there is actually very little assembly required. The LCD shield is the most complex part, but it only requires basic soldering skills
+and following a <a href="https://learn.adafruit.com/rgb-lcd-shield" target=_blank>very well documented tutorial</a> that includes pictures. 
+<br><br>
+
+Once the shields are complete, you really only have to plug them into each other, there is no way to screw it up.
+<br><br>
+<img src="./img/assembled.jpg">
+<br><br>
+
+The temperature sensor, is also very simple and only has three wires that have to be soldered on. The wires this sensor requires
+are :
+<br><br>
+
+<ul>
+<li> 5V <font color=red>(red)</font> , 
+<li> digital pin #2 <font color=blue>(blue)</font>, 
+<li> GND <font color=green>(green)</font>
+</ul>
+
+<br><br>
+<img src="./img/sensor_connector.jpg">
+<br><br>
+
+these are clearly marked on the wifi shield and back of sensor. 
+
+<br><br>
+<img src="./img/wiring_points.jpg">
+<br><br>
+
+You actually have 3 choice of where to connect the Ground (GND) wire, which is why
+3 spots are marked green in the picture. 
+<br><br>
+
+You may notice that I clipped the unused lead off of the DHT22 sensor and plugged the hole in the
+socket with hot glue. This is so that I can not wire it up backwards which would burn out the sensor.
+<br><br>
+
+While all the components may look intimidating, if you have ever installed a car radio, that was more work than this. 
+<br><br>
+
+<b>*Note: the Wifi card requires allot of power, you will get weird bugs and hangs if you use to small of a power supply
+or one of low quality.</b>
+ 
+</div>
+
+</body>
+</html>

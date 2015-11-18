@@ -1,0 +1,55 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Sandsprite.com IoT Humidor</title>
+<link rel="stylesheet" type="text/css" href="style.css" >
+</head>
+<body>
+
+
+<div style="width:600">
+
+now that you have your hardware, and a UserID + API key from the Web server section, now it is time to upload the code to the Arduino.
+<br><br>
+
+to do this you will have to download and install <a href="http://arduino.cc/en/Main/OldSoftwareReleases" target=_blank>the Arduino software</a>.
+I would recommend using a slightly older 1.5.0 or 1.0.x installer, which adafruit recommends for use with the WiFi library.
+They have downloads available for windows, Macintosh, and Linux.
+<br><br>
+
+Also make sure you have downloaded the <a href="https://github.com/dzzie/humidor.net/archive/master.zip" target=_blank>latest IoT humidor source</a>.
+<br><br>
+
+There are only a couple small changes that you have to make to the source code before uploading.
+<br><br>
+
+first you must install the Arduino libraries from the folder /Arduino/libraries/ to your local /libraries/ folder in the root of your Arduino
+installation directory. Literally this is just a copy and paste operation.
+<br><br>
+
+Next in the /Arduino/humidor/ folder, rename the file public.h to private.h the public file is a template that will hold your private settings
+for connecting to your home Wi-Fi, and your user ID and API key.<a href="https://learn.adafruit.com/adafruit-cc3000-wifi/cc3000-library-software" target=_blank>This document</A>
+will help you set up your Wi-Fi password settings.
+<br><br>
+
+you will also have to set your client_id and APIKEY. Examples are provided in the document.
+<br><br>
+
+The temp_shift and humi_shift settings can be used to adjust the readings in case your sensor is off a bit when tested against a known good
+hygrometer. We will discuss USE_EXT_WATCHDOG setting in the advanced document.
+<br><br>
+
+Once these steps are complete you can double click on the humidor.ino file plug in your arduino to your PC with the USB cable, and upload
+the code.
+<br><br>
+
+Congrats setup is complete and you should see information start to show up on the LCD screen! 
+
+
+
+
+<br><br>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Sandsprite.com IoT Humidor</title>
+<link rel="stylesheet" type="text/css" href="style.css" >
+</head>
+<body>
+
+
+<div style="width:600">
+
+as data is submitted to the web application,  it will check the current humidity and temperature
+to see if they are in a safe range. (these checks occur in the logData.php script)
+ <br><br>
+the current logic is as follows:
+
+<pre>
+if($temp < 60 || $temp > 75) $sendEmail = 1;
+if($humi < 60 || $humi > 75) $sendEmail = 1;
+if($hw_failure==1) $sendEmail = 1;
+</pre>
+
+if any of these conditions is met an alert will be sent to the email address
+registered in the web application user database. 
+<br><br>
+only one alert email will be sent to prevent spamming. when you have taken care of the condition
+and wish to resume receiving alerts,  you can log into the web application or use the phone app
+to clear the alert.  in the web application you will need to enter your API key to modify the database
+record.
+
+<br><br>
+</div>
+
+</body>
+</html>
