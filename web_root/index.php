@@ -20,6 +20,8 @@
     
     ConnectDB();
     
+    $avgs=''; //multidim ary set in eventsfor_last12Months [1-4] for seasons, [0]=smoked, [1]=watered
+    
     $userr = mysql_query("select * from humiusers where autoid=$clientid");
     if(mysql_num_rows($userr)==0){ //list available users..
 	    $r = mysql_query("select * from humiusers");
@@ -138,6 +140,7 @@
 	$d = array_reverse($d);
     $js = generateGraph(0, $t, $h, $d);  	 
 	$event_js = eventsGraph();
+    $avgSmokes = buildAveragesHtml();
     
 	$links = "<table width=100%><tr><td>$d1</td><td align=center>";
 	$links .= "<a href='index.php?limit=$limit&offset=".($offset+$limit)."&id=$clientid'>Previous</a>";
@@ -284,7 +287,7 @@
 	    		<td colspan=2>
 	    			<table>
 						<tr>
-		    				<td colspan=3 align=right>
+		    				<td colspan=4 align=right>
 								<!--
 								<div style='position: relative; width: 0; height: 0;'>
 									<!-- outter div is so doesnt take up any space in document flow -- >
@@ -299,9 +302,10 @@
 							</td>
 		    			</tr>
 						<tr>
-		    				<td width=185> &nbsp; </td>
-		    				<td width=320 valign=top>$waterTable</td>
-		    				<td valign=top>$smokedTable</td>
+						    <td width=100 valign=top> &nbsp; </td>
+		    				<td width=200 valign=top>$avgSmokes</td>
+		    				<td width=200 valign=top>$waterTable</td>
+		    				<td width=200 valign=top>$smokedTable</td>
 		    			</tr>
 					</table>
 	    		</td>
@@ -312,14 +316,14 @@
     ";
     
     echo $report.$js.$event_js;
-       
+    
 
 
 //show rolling stats for last 12 mos, out args by ref 
 // month names csv, smoked events csv, water events csv 
 function eventsfor_last12Months(&$d,&$s,&$w){
 
-    global $clientid;
+    global $clientid, $avgs;
 	
     $mname = array(0, 'Jan','Feb','Mar','Apr','May','June','July','Aug','Sept','Oct','Nov','Dec', 14);
 	$y=0; 
@@ -345,12 +349,38 @@ function eventsfor_last12Months(&$d,&$s,&$w){
 		$rr = mysql_fetch_assoc($r);
 		$w[$i-1] = $rr['c'];
 		
+		$season = getSeason($mi);
+		$avgs[$season][0] += $s[$i-1];
+		$avgs[$season][1] += $w[$i-1];
+		
 		$y+=1;
 	}
+	
 	//echo var_dump($d);
 	$d = arytocsv( $d, 1 );
 	$s = arytocsv( $s );
 	$w = arytocsv( $w );
+	
+}
+
+function getSeason($mi){
+	switch($mi){
+		case 12:
+		case 1:
+		case 2: return 1;
+				  
+		case 3:
+		case 4:
+		case 5: return 2;
+				  
+		case 6:
+		case 7:
+		case 8: return 3;	
+		
+		case 9:
+		case 10:
+		case 11: return 4;	
+	}		
 }
 
 function arytocsv($ary, $isStr = 0){
@@ -467,6 +497,36 @@ function generateGraph($index, $t, $h, $d){
 	return $r;
 	
 }        
-    
+   
+function buildAveragesHtml(){
+	global $avgs;
+	
+	$season = array(0,'Winter','Spring','Summer','Fall',5);
+	$yearSmokes = 0;
+	$r='';
+	
+	for($i=1;$i<5;$i++){
+		$total += $avgs[$i][0];
+		$x = ceil($avgs[$i][0]); // / 3);
+		$x = str_pad($x,3," ",STR_PAD_LEFT);
+		$r .= "		<li> $x ".$season[$i]."\n";
+	}
+	
+	$yearSmokes = ceil($total / 12);
+	$week = ceil($total / 54);
+	$yearSmokes = str_pad($yearSmokes,3," ",STR_PAD_LEFT);
+	$total = str_pad($total,3," ",STR_PAD_LEFT);
+	$week = str_pad($week,3," ",STR_PAD_LEFT);
+	
+	$r = "<b>Smokes Per:</b>\n<ul>\n".
+		 "<li>$total Year\n".
+		 "<li> $yearSmokes Month\n".
+		 "<li> $week Week\n".
+		 $r.
+		 "</ul>";
+		 
+	return str_replace(' ', '&nbsp;', $r);
+	
+} 
  
 ?>
