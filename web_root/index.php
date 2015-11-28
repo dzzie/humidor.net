@@ -45,7 +45,7 @@
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where watered > 0 and clientid=$clientid order by autoid desc limit 10");
     $cnt = mysql_num_rows($r);
     if($cnt > 0){
-	    $waterTable = "<b>Last $cnt Waterings:</b><ul>\r\n";
+	    $waterTable = "\n<b>Last $cnt Waterings:</b><ul>\r\n";
 	    while($rr = mysql_fetch_assoc($r)){
 		    $waterTable.="<li>".date("g:i a - D m.d.y",$rr['int_tstamp'])."\r\n";
 	    }
@@ -55,7 +55,7 @@
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where smoked > 0 and clientid=$clientid order by autoid desc limit 10");
     $cnt = mysql_num_rows($r);
     if($cnt > 0){
-	    $smokedTable = "<b>Last $cnt Smokes:</b><ul>\r\n";
+	    $smokedTable = "\n<b>Last $cnt Smokes:</b><ul>\r\n";
 	    while($rr = mysql_fetch_assoc($r)){
 		    $smokedTable.="<li>".date("g:i a - D m.d.y",$rr['int_tstamp'])."\r\n";
 	    }
@@ -202,7 +202,8 @@
 			    				<ul id='sddm'>
 									<li><a href='#' onmouseover=\"mopen('m1')\" onmouseout='mclosetime()'><font color=$mcolor>Menu</font></a>
 										<div style='visibility:hidden' id='m1' onmouseover='mcancelclosetime()' onmouseout='mclosetime()'>
-											<a href='#' onclick='wasWatered()'>Watered</a>
+											<a href='./help/'>Help</a>
+										    <a href='#' onclick='wasWatered()'>Watered</a>
 											<a href='#' onclick='wasSmoked()'>Smoked</a>
 											$clearAlert
 											<!--a href='#'>Add Note</a>
@@ -499,7 +500,18 @@ function generateGraph($index, $t, $h, $d){
 }        
    
 function buildAveragesHtml(){
-	global $avgs;
+	global $avgs, $clientid;
+	
+	$yrAvgs='';
+	$curYear = date("Y"); 
+ 	for($i=0;$i<4;$i++){
+	 	$yr = $curYear-$i;
+	 	$r = mysql_query("SELECT COUNT(autoid) as c from humidor where smoked > 0 and clientid=$clientid and YEAR(tstamp) = $yr");
+   	    $rr = mysql_fetch_assoc($r);
+		$cnt = $rr['c'];
+		if($cnt==0) break;
+		$yrAvgs .= "<tr><td width=25 align=right> &bull; </td><td> $cnt  </td><td> $yr </td></tr>\n";
+ 	}
 	
 	$season = array(0,'Winter','Spring','Summer','Fall',5);
 	$yearSmokes = 0;
@@ -508,24 +520,22 @@ function buildAveragesHtml(){
 	for($i=1;$i<5;$i++){
 		$total += $avgs[$i][0];
 		$x = ceil($avgs[$i][0]); // / 3);
-		$x = str_pad($x,3," ",STR_PAD_LEFT);
-		$r .= "		<li> $x ".$season[$i]."\n";
+		$r .= "<tr><td width=25 align=right> &bull; </td><td> $x  </td><td> ".$season[$i]." </td></tr>\n";
 	}
 	
 	$yearSmokes = ceil($total / 12);
 	$week = ceil($total / 54);
-	$yearSmokes = str_pad($yearSmokes,3," ",STR_PAD_LEFT);
-	$total = str_pad($total,3," ",STR_PAD_LEFT);
-	$week = str_pad($week,3," ",STR_PAD_LEFT);
 	
-	$r = "<b>Smokes Per:</b>\n<ul>\n".
-		 "<li>$total Year\n".
-		 "<li> $yearSmokes Month\n".
-		 "<li> $week Week\n".
+	$r = "\n<b>Smokes Per:</b>\n".
+		 "<table>\n".
+		 $yrAvgs.
+		 "<tr><td width=25 align=right> &bull; </td><td> $total       </td><td> Last 12mos </td></tr>\n".
+		 "<tr><td width=25 align=right> &bull; </td><td> $yearSmokes  </td><td> Month      </td></tr>\n".
+		 "<tr><td width=25 align=right> &bull; </td><td> $week        </td><td> Week       </td></tr>\n".	 
 		 $r.
-		 "</ul>";
+		 "</table>\n";
 		 
-	return str_replace(' ', '&nbsp;', $r);
+	return $r;
 	
 } 
  
