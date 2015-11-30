@@ -7,6 +7,10 @@
  now:
     Binary sketch size: 27,252 bytes (used 84% of a 32,256 byte maximum) (0.91 secs)
     Minimum Memory Usage: 1127 bytes (55% of a 2048 byte maximum)
+
+ simplified http parsing w/ tft:
+	Binary sketch size: 24,296 bytes (used 85% of a 28,672 byte maximum) (3.41 secs)
+    Minimum Memory Usage: 1190 bytes (46% of a 2560 byte maximum)
 */
 
 #include <Bridge.h>
@@ -85,7 +89,7 @@ double last_humi = 0;
 
 Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
-unsigned long IDLE_TIMEOUT_MS = 7000; // Amount of time to wait (in milliseconds) with no data (7 seconds)
+//unsigned long IDLE_TIMEOUT_MS = 7000; // Amount of time to wait (in milliseconds) with no data (7 seconds)
                                       // received before closing the connection.  If you know the server
                                       // you're accessing is quick to respond, you can reduce this value. 
 
@@ -298,35 +302,19 @@ void show_readings(){
 	  tft.setTextColor(ST7735_WHITE);
 	  tft.setTextSize(1);
 
-	  IFS(Serial.print("X:");Serial.println(tft.getCursorX());)
+	  //IFS(Serial.print("X:");Serial.println(tft.getCursorX());)
 }
 
 void lcd_out(char* s){ lcd_out(s,0); }
-  
-void lcd_out(char* s, int row){
-    //if(row==0) //lcd.clear();
-    //lcd.setCursor(0,row); 
-    //lcd.print(s);
-	/*tft.setTextSize(1);
-	if(tft.getCursorX() >= tft.height()){
-		IFS(Serial.print("_X:");Serial.println(tft.getCursorX());)
-		tft.setCursor(90,0);
-		for(int i=0; i<10;i++) tft.println();
-		tft.setCursor(90,0);
-	}*/
-	tft.println(s);
-}
-
 void lcd_outp(const __FlashStringHelper *s){lcd_outp(s,0); }
+void delay_x_min(int minutes){ delay_x_min(minutes, 0); } 
+void lcd_out(char* s, int row){	tft.println(s); }
 
 void lcd_outp(const __FlashStringHelper *s, int row){
     uint8_t c;
 	const char PROGMEM *p = (const char PROGMEM *)s;
     while ((c = pgm_read_byte_near(p++)) != 0) tft.print((char)c);
-}
-
-void delay_x_min(int minutes){
-    delay_x_min(minutes, 0);
+	tft.print('\n');
 }
 
 void displayFlags(int min){
@@ -421,29 +409,20 @@ bool ReadSensor(){
   
 }
 
+/*
 unsigned long timeDiff(unsigned long startTime){
 	return millis() - startTime;
 }
+*/
 
 bool PostData()
 {
   char buf[150];
-  int ticks = 0;
-
-  //these are for our http parser, since we dont want to store the response in a buffer to parse latter
-  //we will parse it on the fly as its received character by character (limited memory, was glitching other way)
-  int nl_count = 0;
-  int rc_offset = 0;
-  int pr_offset = 0;
-  int recording = 0;
-  char respCode[20];
-  char pageResp[20];
-  uint32_t rLeng=0;
-
-  unsigned long startTime = 0;
+  //int ticks = 0;
+  //unsigned long startTime = 0;
   
   cls();
-  lcd_outp(F("Submit "));
+  lcd_outp(F("Submitting "));
 
   strcpy(buf,"http://");
   strcat(buf,hostname);
@@ -467,78 +446,38 @@ bool PostData()
   delay(1200);
   
   lcd_outp(F("Reading Response"));
-  //lcd_outp(F("Recv: "),1);
-  startTime = millis();
+  //startTime = millis();
 
+  String result;
    /* Read data until either the connection is closed, or the idle timeout is reached. */ 
     while( client.available() ) {
 
         //if( timeDiff(startTime) > IDLE_TIMEOUT_MS ) break;
 		
-        char c = client.read();
-		if(c != 0) rLeng++;
+        char c = client.read(); //appears to only return response body not header...
+		if(c == 0) break;
 
-		/*if(rLeng % 25 == 0){ //(http headers have some length to them..)
-			//lcd.setCursor(13,1); 
-			//lcd.print(rLeng);
-		}*/
-
-        //IFS( Serial.print(c); )
-      
-        //this accounts for \r\n or just \n, (debugged in visual studio..)
-        //we do a crude parse of the http headers to extract response code and first 
-        //16chars of web page response for display on lcd for visual confirmation..
-		if(c == 0x0A){ 
-            nl_count += 1; 
-			recording=0;
-		}else{ 
-			if(c != 0x0D) nl_count = 0; 
-		}
-
-        if(c == 0x20 && rc_offset == 0 && nl_count==0){
-             recording = 1;
-        }else{
-            if(recording == 1 && rc_offset >= 16) recording = 0;
-  			if(recording == 1 && c == 0x0D) recording = 0;
-            if(recording == 1) respCode[rc_offset++] = c;
-        }
-        
-		if(nl_count==2 && pr_offset==0){
-			recording = 2; //end of http headers..turn copy on, starts next iter..
+		if(result.length() < 200){
+			result += c; //protect ram from unexpectedly large responses...
 		}else{
-			if(recording == 2 && pr_offset >= 16) recording = 0;
-			if(recording == 2 && c == 0x0D) recording = 0;
-			if(recording == 2) pageResp[pr_offset++] = c; 
-		}	
+			break;
+		}
+	
   }
-
-  lcd_outp(F("Closing"));
   
-  pageResp[pr_offset]=0;
-  respCode[rc_offset]=0;
- 
-  if(rLeng <= 1){ 
+  bool rv = false;
+
+  if(result.length() == 0){ 
 	  lcd_outp(F("No response")); 
   }else{
-	  if(rc_offset) lcd_out(respCode); else lcd_outp(F("Bad RespCode "));
-	  if(pr_offset){
-		  lcd_out(pageResp,1); 
-		  uploads++;
-		  if(uploads == 999) uploads = 1; //dont take up to much lcd space..
-	  }
-	  else lcd_outp(F("Bad PageResp "),1);
-  }
-  
+	  rv = true;
+	  IFS(Serial.println(result);)
+	  lcd_out( (char*)result.c_str() ); 
+	  uploads++;
+  } 
+
   delay(2500);
-  return true;
-  
-EXIT_FAIL:
-
-   lcd_outp(F("Exit Fail?"), 1);
-   delay(800); 
-
-   return false;
-  
+  return rv; 
 
 }
 
