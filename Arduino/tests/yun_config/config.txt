@@ -1,0 +1,5 @@
+6,0,2,test,sandsprite.com
+
+# sample config file first line must be the config settings
+# the format is userid, deltaT, deltaH, apikey, server  
+# no spaces, this data after doent matter.

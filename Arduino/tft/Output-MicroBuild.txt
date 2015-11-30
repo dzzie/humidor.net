@@ -1,0 +1,363 @@
+Compiling 'tft' for 'Arduino Yún'
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\tft.cpp
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\tft.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\libraries\Bridge\src\Bridge.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\libraries\Bridge\src\Bridge.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\libraries\Bridge\src\Console.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\libraries\Bridge\src\Console.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\libraries\Bridge\src\FileIO.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\libraries\Bridge\src\FileIO.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\libraries\Bridge\src\HttpClient.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\libraries\Bridge\src\HttpClient.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\libraries\Bridge\src\Mailbox.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\libraries\Bridge\src\Mailbox.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\libraries\Bridge\src\Process.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\libraries\Bridge\src\Process.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\libraries\Bridge\src\YunClient.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\libraries\Bridge\src\YunClient.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\libraries\Bridge\src\YunServer.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\libraries\Bridge\src\YunServer.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\hooks.c
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\hooks.c
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\WInterrupts.c
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\WInterrupts.c
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\wiring.c
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\wiring.c
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\wiring_analog.c
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\wiring_analog.c
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\wiring_digital.c
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\wiring_digital.c
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\wiring_pulse.c
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\wiring_pulse.c
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\wiring_shift.c
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\wiring_shift.c
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\abi.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\abi.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\CDC.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\CDC.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HardwareSerial.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HardwareSerial.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HardwareSerial0.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HardwareSerial0.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HardwareSerial1.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HardwareSerial1.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HardwareSerial2.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HardwareSerial2.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HardwareSerial3.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HardwareSerial3.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HID.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\HID.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\IPAddress.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\IPAddress.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\main.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\main.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\new.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\new.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\Print.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\Print.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\Stream.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\Stream.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\Tone.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\Tone.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\USBCore.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\USBCore.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\WMath.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\WMath.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:d:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\WString.cpp
+  Preferred POSIX equivalent is*:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\WString.cpp
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\core.a
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\tft.cpp.o
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\tft.cpp.o
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\tft.elf
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\tft.elf
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+:cygwin warning
+  MS-DOS style path detected*:C:\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\tft.elf
+  Preferred POSIX equivalent is*:\cygdrive\c\Documents and Settings\david\Local Settings\Application Data\VMicro\Arduino\Builds\tft\yun\tft.elf
+:CYGWIN environment variable option "nodosfilewarning" turns off this warning.
+:Consult the user's guide for more details about POSIX paths
+    http*:\\cygwin.com\cygwin-ug-net\using.html#using-pathnames
+Binary sketch size: 21,998 bytes (used 77% of a 28,672 byte maximum) (11.33 secs)
+Minimum Memory Usage: 913 bytes (36% of a 2560 byte maximum)
