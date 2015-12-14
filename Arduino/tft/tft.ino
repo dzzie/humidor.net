@@ -11,26 +11,34 @@
  simplified http parsing w/ tft:
 	Binary sketch size: 24,296 bytes (used 85% of a 28,672 byte maximum) (3.41 secs)
     Minimum Memory Usage: 1190 bytes (46% of a 2560 byte maximum)
+
+	To make new bitmaps, make sure they are less than 240 by 320 pixels and save them in 24-bit BMP format! 
+
+	43wx33h cigar.bmp, water.bmp
 */
 
-#include <Bridge.h>
-#include <HttpClient.h>
 #include <SPI.h>
 #include <Wire.h>
 #include <string.h>
 #include <stdio.h>
 #include <avr/wdt.h>
-#include <Bridge.h>
 #include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_ST7735.h> // Hardware-specific library 
+#include <Adafruit_ILI9341.h>
+#include <Adafruit_FT6206.h>
 #include <SPI.h>
-#include <FileIO.h>
+//#include <FileIO.h>
+#include <Adafruit_CC3000.h>
+#include <SD.h>
+#include "private.h"
 
-#define TFT_DC      8
-#define TFT_RST     9 
-#define TFT_CS     10
-#define TFT_MOSI   11 
-#define TFT_SCLK   12  
+// The FT6206 uses hardware I2C (SCL/SDA)
+Adafruit_FT6206 ctp = Adafruit_FT6206();
+
+#define TFT_CS 10
+#define TFT_DC 9
+#define SD_CS 4
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+
 
 #define WITH_SERIAL 1
 
@@ -56,6 +64,7 @@ All rights reserved, no portion of this code is authorized for sale or redistrib
 #define dht22_pin     2
 #define EXT_WATCHDOG_PIN 6
 
+#define DOMAIN        "sandsprite.com" 
 #define WEBPAGE       "/humidor/logData.php" 
 #define firmware_ver  "v1.3 " __DATE__  
 #define MAX_TICKS 1000
@@ -65,7 +74,8 @@ char *DFAIL = "DHT22 Fail";
 volatile int counter;      // Count number of times ISR is called.
 volatile int countmax = 8; // Timer expires after about 64 secs (using 8 sec interval)
 
-int speedMode = 1;
+uint32_t ip;
+int speedMode = 0;
 uint8_t powerevt  = 1;
 uint8_t watered   = 0;
 uint8_t smoked    = 0;
@@ -87,11 +97,20 @@ double humi      = 0;
 double last_temp = 0;
 double last_humi = 0;
 
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RST);
 
-//unsigned long IDLE_TIMEOUT_MS = 7000; // Amount of time to wait (in milliseconds) with no data (7 seconds)
-                                      // received before closing the connection.  If you know the server
-                                      // you're accessing is quick to respond, you can reduce this value. 
+//------------------ wifi sheild --------------------
+
+// These are the interrupt and control pins // IRQ MUST be an interrupt pin!
+#define ADAFRUIT_CC3000_IRQ   21  
+// These can be any two pins
+#define ADAFRUIT_CC3000_VBAT  41
+#define ADAFRUIT_CC3000_CS    40
+
+Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT, SPI_CLOCK_DIVIDER); 
+
+unsigned long IDLE_TIMEOUT_MS = 7000; // Amount of time to wait (in milliseconds) with no data (7 seconds)
+                                     
+//------------------ END wifi sheild --------------------      
 
 
 
@@ -104,7 +123,7 @@ Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_MOSI, TFT_SCLK, TFT_RS
 #endif
 
 void cls(){
-	tft.fillScreen(ST7735_BLACK);
+	tft.fillScreen(ILI9341_BLACK);
     tft.setCursor(0,0);
 }
 
@@ -112,29 +131,62 @@ void setup(void)
 {
   
   Serial.begin(9600); 
-  tft.initR(INITR_BLACKTAB);   
+  while(!Serial);
+  Serial.println("Init tft..");
+
+  tft.begin();
+  tft.setTextSize(2);
+
+
   cls();
-  tft.println("Starting Bridge...");
-  //todo display graphic for long delay..
-
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW);
-  Bridge.begin();
-  digitalWrite(13, HIGH);
-
-  FileSystem.begin();
-
-  IFS(Serial.begin(9600);)
-  //IFS(while(!Serial);)
-
   lcd_outp(F("Daves WebHumidor"));
   lcd_out(firmware_ver,1);
+
+  lcd_out("Init touch..");
+
+  if ( !ctp.begin(40) ) {  // pass in 'sensitivity' coefficient
+    lcd_out("Failed..");
+    while (1);
+  }
+
+  lcd_out("Init SD card...");
+  if (!SD.begin(SD_CS)) {
+    lcd_out("Failed!");
+  }
+
+  lcd_out("Init Wifi...");
+  if (!cc3000.begin()){
+    lcd_out("Failed!"); 
+	while(1);
+  }
+
+ if(debug_local){
+		ip = cc3000.IP2U32(192,168,0,10);   //test server
+		//speedMode = 1;
+  }
+  else
+		ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
+
+
+  tft.fillScreen(ILI9341_WHITE);
+  //bmpDraw("sir.bmp", 0, 0);
+  //delay(1500);
+  tft.fillScreen(ILI9341_BLACK);
+
+  /*unsigned long aucDHCP = 14400;
+  unsigned long aucARP = 3600;
+  unsigned long aucKeepalive = 10;
+  unsigned long aucInactivity = 20;
+  
+  if (netapp_timeout_values(&aucDHCP, &aucARP, &aucKeepalive, &aucInactivity) != 0) {
+    //IFS( Serial.println("Error setting inactivity timeout!"); )
+  }*/
 
 }
 
 void loop(void)
 {
-   
+
    if(!readConfig()) return;
 
    if(debug_local){
@@ -174,7 +226,9 @@ void loop(void)
    watchdogDisable();
    
    show_readings();
-   
+   bmpDraw("water.bmp", 160, 280); //240w x 320h screen
+   bmpDraw("cigar.bmp", 40, 280); //43w x 33h   images
+
    if(fail_cnt > 2){
 		sprintf_P(tmp, PSTR("%d Fails"), fail_cnt);
    }
@@ -273,34 +327,34 @@ void watchdogEnable()
 
 void show_readings(){
      
-	  uint16_t hColor = ST7735_GREEN;
-	  uint16_t tColor = ST7735_GREEN;
+	  uint16_t hColor = ILI9341_GREEN;
+	  uint16_t tColor = ILI9341_GREEN;
 
-	  if((int)temp < 60 || (int)temp > 75) tColor = ST7735_RED;
-	  if((int)humi < 60 || (int)humi > 75) hColor = ST7735_RED;
+	  if((int)temp < 60 || (int)temp > 75) tColor = ILI9341_RED;
+	  if((int)humi < 60 || (int)humi > 75) hColor = ILI9341_RED;
 
 	  cls();
   
-	  tft.setTextSize(2);
+	  tft.setTextSize(4);
 	  tft.print("Temp:");
 
 	  tft.setTextColor(tColor);
-	  tft.setTextSize(5);
+	  tft.setTextSize(9);
 	  tft.print((int)temp);
 	  
-	  tft.setTextSize(1);
+	  tft.setTextSize(2);
 	  tft.println();
 	  
-	  tft.setTextColor(ST7735_WHITE);
-	  tft.setTextSize(2);
+	  tft.setTextColor(ILI9341_WHITE);
+	  tft.setTextSize(4);
 	  tft.print("Humi:");
 
 	  tft.setTextColor(hColor);
-	  tft.setTextSize(5);
+	  tft.setTextSize(9);
 	  tft.print((int)humi);
 
-	  tft.setTextColor(ST7735_WHITE);
-	  tft.setTextSize(1);
+	  tft.setTextColor(ILI9341_WHITE);
+	  tft.setTextSize(2);
 
 	  //IFS(Serial.print("X:");Serial.println(tft.getCursorX());)
 }
@@ -318,14 +372,14 @@ void lcd_outp(const __FlashStringHelper *s, int row){
 }
 
 void displayFlags(int min){
-	tft.setTextSize(2);
-	sprintf_P(tmp, PSTR("%d min "), min); //fixed display bug lcd not overwriting tens digit once <= 9
-	tft.fillRect(0, tft.width() - 5, tft.width(), 20, ST7735_BLACK);
-	tft.setCursor(0, tft.width() - 5);
+	tft.setTextSize(3);
+	sprintf_P(tmp, PSTR("%d min   "), min); //fixed display bug lcd not overwriting tens digit once <= 9
+	tft.fillRect(0, tft.width() - 7, tft.width(), 30 ,ILI9341_BLACK);
+	tft.setCursor(0, tft.width() - 7);
 	tft.print(tmp);
-	if(watered) tft.print("W "); 
+	if(watered) tft.print('W'); 
     if(smoked)  tft.print('S'); 
-	tft.setTextSize(1);
+	tft.setTextSize(2);
 }
 
 void delay_x_min(int minutes, int silent){
@@ -338,31 +392,32 @@ void delay_x_min(int minutes, int silent){
 
       for(int j=0; j < 240; j++){ //entire j loop = one minute, using small delay so buttons responsive.. 
 		  delay( (speedMode==1 ? 1 : 250) );  
-          //uint8_t buttons = lcd.readButtons();
-          /*if (buttons && (buttons & BUTTON_SELECT) ){
-              watered = 1;        
-              displayFlags();
-          } 
-		  if (buttons && (buttons & BUTTON_DOWN) ){
-              smoked = 1;        
-              displayFlags();
-          }  
+
+		  if ( ctp.touched() ) {
+			    TS_Point p = ctp.getPoint(); 
+				//sprintf(tmp,"\nx:%d\ny:%d", p.x, p.y);
+				//lcd_out(tmp);
+
+				if( p.y < 50){ //its in the lower image bar band.. |__| <-0,0
+					if(p.x > 120){ //its on the left hand cigar half
+						smoked = smoked == 1 ? 0 : 1;      
+					}else{
+						watered = watered == 1 ? 0 : 1;  
+					}
+					displayFlags(minutes - i);
+				}
+
+				delay(500); //software debounce
+		  }
+
+          /*
 		  if (buttons && (buttons & BUTTON_UP) ){
 			  if( ReadSensor() ) show_readings(); else lcd_outp(F("Read Fail?"));
 		  }
-		  #if debug_local
-				  if (buttons && (buttons & BUTTON_RIGHT) ){ //speed up clock to test 6x pump delay..
-			//		  lcd.setCursor(14,1); 
-					  if(speedMode==1){
-						  speedMode = 0; 
-			//			  lcd.print(' ');
-					  }else{
-						  speedMode = 1;
-			//			  lcd.print('F');
-					  }     
-					  delay(500); //if you are toggling a field, you NEED the delay..
-				  }
-		  #endif
+		  if (buttons && (buttons & BUTTON_RIGHT) ){ //speed up clock to test 6x pump delay..
+	          speedMode = speedMode ==1 ? 0 : 1
+			  delay(500); //debounce
+		  }	  
           if(buttons && (buttons & BUTTON_LEFT) ) return; //break delay to do immediate upload test
 		  */
       }
@@ -409,26 +464,57 @@ bool ReadSensor(){
   
 }
 
-/*
+
 unsigned long timeDiff(unsigned long startTime){
 	return millis() - startTime;
 }
-*/
+
 
 bool PostData()
 {
   char buf[150];
-  //int ticks = 0;
-  //unsigned long startTime = 0;
-  
+  int ticks = 0;
+
+  //these are for our http parser, since we dont want to store the response in a buffer to parse latter
+  //we will parse it on the fly as its received character by character (limited memory, was glitching other way)
+  int nl_count = 0;
+  int rc_offset = 0;
+  int pr_offset = 0;
+  int recording = 0;
+  char respCode[20];
+  char pageResp[20];
+  uint32_t rLeng=0;
+  int16_t curY = 0;
+  int16_t curX = 0;
+
   cls();
-  lcd_outp(F("Submitting "));
+  unsigned long startTime = 0;
 
-  strcpy(buf,"http://");
-  strcat(buf,hostname);
+  lcd_out("starting wifi...");
+  cc3000.reboot();
+  cc3000.deleteProfiles();
 
+  Adafruit_CC3000_Client www;
+
+  lcd_outp(F("AP Connect"));
+  if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) goto CLEANUP;
+
+  lcd_outp(F("DHCP"));
+  for(ticks=0; ticks < MAX_TICKS; ticks++)
+  {
+    if( cc3000.checkDHCP() ) break;
+    delay(100); 
+  }  
+
+  if(ticks >= MAX_TICKS) goto EXIT_FAIL;
+
+  www = cc3000.connectTCP(ip, 80); //have been having occasional hang here...
+  if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
+
+  lcd_outp(F("Connected"));
+   
   //breaking this up so no one sprintf takes up to much memory..
-  strcat_P(buf, PSTR(WEBPAGE));
+  strcpy_P(buf, PSTR(WEBPAGE));
   sprintf_P(tmp, PSTR("?temp=%d&humi=%d&watered=%d&powerevt=%d"), (int)temp, (int)humi, watered, powerevt);
   strcat(buf,tmp);
 
@@ -436,49 +522,116 @@ bool PostData()
   strcat(buf,tmp);
   strcat(buf,apikey);
   
-  HttpClient client;
-  client.setTimeout(7000);
-  client.get(buf);
+  lcd_outp(F("Submit"));
 
   sprintf_P(tmp, PSTR("%d bytes "), strlen(buf) );
   lcd_out(tmp,1);
 
   delay(1200);
   
-  lcd_outp(F("Reading Response"));
-  //startTime = millis();
-
-  String result;
-   /* Read data until either the connection is closed, or the idle timeout is reached. */ 
-    while( client.available() ) {
-
-        //if( timeDiff(startTime) > IDLE_TIMEOUT_MS ) break;
-		
-        char c = client.read(); //appears to only return response body not header...
-		if(c == 0) break;
-
-		if(result.length() < 200){
-			result += c; //protect ram from unexpectedly large responses...
-		}else{
-			break;
-		}
-	
+  if( www.connected() ) {
+    www.fastrprint(F("GET "));
+    www.fastrprint(buf);
+    www.fastrprint(F(" HTTP/1.1\r\n"));
+    www.fastrprint(F("Host: ")); www.fastrprint(F(DOMAIN)); www.fastrprint(F("\r\n"));
+    www.fastrprint(F("\r\n"));
+    if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
+    www.println();
+  } 
+  else{
+    //lcd_out("Website Down?", 1);
+    //delay(800); 
+    goto EXIT_FAIL;
   }
   
-  bool rv = false;
+  lcd_outp(F("Reading Response"));
+  tft.print("Recv: ");
+  startTime = millis();
+  
+  curY = tft.getCursorY();
+  curX = tft.getCursorX();
+  
+   /* Read data until either the connection is closed, or the idle timeout is reached. */ 
+  while (www.connected()) {
+    
+    if( timeDiff(startTime) > IDLE_TIMEOUT_MS ) break;
 
-  if(result.length() == 0){ 
+    while (www.available()) {
+
+        if( timeDiff(startTime) > IDLE_TIMEOUT_MS ) break;
+		
+        char c = www.read();
+		if(c != 0) rLeng++;
+		
+		//Serial.print(c);
+
+		if(rLeng % 25 == 0){ //(http headers have some length to them..)
+			tft.fillRect(curX, curY, tft.width(), 30 ,ILI9341_BLACK);
+			tft.setCursor(curX, curY);
+			tft.print(rLeng);
+		}
+
+        //this accounts for \r\n or just \n, (debugged in visual studio..)
+        //we do a crude parse of the http headers to extract response code and first 
+        //16chars of web page response for display on lcd for visual confirmation..
+		if(c == 0x0A){ 
+            nl_count += 1; 
+			recording=0;
+		}else{ 
+			if(c != 0x0D) nl_count = 0; 
+		}
+
+        if(c == 0x20 && rc_offset == 0 && nl_count==0){
+             recording = 1;
+        }else{
+            if(recording == 1 && rc_offset >= 16) recording = 0;
+  			if(recording == 1 && c == 0x0D) recording = 0;
+            if(recording == 1) respCode[rc_offset++] = c;
+        }
+        
+		if(nl_count==2 && pr_offset==0){
+			recording = 2; //end of http headers..turn copy on, starts next iter..
+		}else{
+			if(recording == 2 && pr_offset >= 16) recording = 0;
+			if(recording == 2 && c == 0x0D) recording = 0;
+			if(recording == 2) pageResp[pr_offset++] = c; 
+		}	
+	 }
+  }
+
+  lcd_outp(F("\nClosing"));
+  www.close();
+  
+  pageResp[pr_offset]=0;
+  respCode[rc_offset]=0;
+ 
+  if(rLeng <= 1){ 
 	  lcd_outp(F("No response")); 
   }else{
-	  rv = true;
-	  IFS(Serial.println(result);)
-	  lcd_out( (char*)result.c_str() ); 
-	  uploads++;
-  } 
-
+	  if(rc_offset) lcd_out(respCode); else lcd_outp(F("Bad RespCode "));
+	  if(pr_offset){
+		  lcd_out(pageResp,1); 
+		  uploads++;
+		  if(uploads == 999) uploads = 1; //dont take up to much lcd space..
+	  }
+	  else lcd_outp(F("Bad PageResp "),1);
+  }
+  
   delay(2500);
-  return rv; 
+  cc3000.disconnect(); /* must clean up or CC3000 can freak out next connect */
+  cc3000.stop();
+  return true;
+  
+EXIT_FAIL:
+   cc3000.disconnect(); 
 
+   lcd_outp(F("Exit Fail?"), 1);
+   delay(800); 
+
+CLEANUP:
+   cc3000.stop();
+   return false;
+  
 }
 
 /*  - extracted from DHT22 library and put inline to save space -
@@ -561,9 +714,190 @@ int dht22_read(uint8_t pin)
 }
 
 
+// This function opens a Windows Bitmap (BMP) file and
+// displays it at the given coordinates.  It's sped up
+// by reading many pixels worth of data at a time
+// (rather than pixel by pixel).  Increasing the buffer
+// size takes more of the Arduino's precious RAM but
+// makes loading a little faster.  20 pixels seems a
+// good balance.
+
+#define BUFFPIXEL 20
+
+void bmpDraw(char *filename, uint8_t x, uint16_t y) {
+
+  File     bmpFile;
+  int      bmpWidth, bmpHeight;   // W+H in pixels
+  uint8_t  bmpDepth;              // Bit depth (currently must be 24)
+  uint32_t bmpImageoffset;        // Start of image data in file
+  uint32_t rowSize;               // Not always = bmpWidth; may have padding
+  uint8_t  sdbuffer[3*BUFFPIXEL]; // pixel buffer (R+G+B per pixel)
+  uint8_t  buffidx = sizeof(sdbuffer); // Current position in sdbuffer
+  boolean  goodBmp = false;       // Set to true on valid header parse
+  boolean  flip    = true;        // BMP is stored bottom-to-top
+  int      w, h, row, col;
+  uint8_t  r, g, b;
+  uint32_t pos = 0, startTime = millis();
+
+  if((x >= tft.width()) || (y >= tft.height())) return;
+
+  Serial.println();
+  Serial.print(F("Loading image '"));
+  Serial.print(filename);
+  Serial.println('\'');
+
+  // Open requested file on SD card
+  if ((bmpFile = SD.open(filename)) == NULL) {
+    Serial.print(F("File not found"));
+    return;
+  }
+
+  // Parse BMP header
+  if(read16(bmpFile) == 0x4D42) { // BMP signature
+    Serial.print(F("File size: ")); Serial.println(read32(bmpFile));
+    (void)read32(bmpFile); // Read & ignore creator bytes
+    bmpImageoffset = read32(bmpFile); // Start of image data
+    Serial.print(F("Image Offset: ")); Serial.println(bmpImageoffset, DEC);
+    // Read DIB header
+    Serial.print(F("Header size: ")); Serial.println(read32(bmpFile));
+    bmpWidth  = read32(bmpFile);
+    bmpHeight = read32(bmpFile);
+    if(read16(bmpFile) == 1) { // # planes -- must be '1'
+      bmpDepth = read16(bmpFile); // bits per pixel
+      Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
+      if((bmpDepth == 24) && (read32(bmpFile) == 0)) { // 0 = uncompressed
+
+        goodBmp = true; // Supported BMP format -- proceed!
+        Serial.print(F("Image size: "));
+        Serial.print(bmpWidth);
+        Serial.print('x');
+        Serial.println(bmpHeight);
+
+        // BMP rows are padded (if needed) to 4-byte boundary
+        rowSize = (bmpWidth * 3 + 3) & ~3;
+
+        // If bmpHeight is negative, image is in top-down order.
+        // This is not canon but has been observed in the wild.
+        if(bmpHeight < 0) {
+          bmpHeight = -bmpHeight;
+          flip      = false;
+        }
+
+        // Crop area to be loaded
+        w = bmpWidth;
+        h = bmpHeight;
+        if((x+w-1) >= tft.width())  w = tft.width()  - x;
+        if((y+h-1) >= tft.height()) h = tft.height() - y;
+
+        // Set TFT address window to clipped image bounds
+        tft.setAddrWindow(x, y, x+w-1, y+h-1);
+
+        for (row=0; row<h; row++) { // For each scanline...
+
+          // Seek to start of scan line.  It might seem labor-
+          // intensive to be doing this on every line, but this
+          // method covers a lot of gritty details like cropping
+          // and scanline padding.  Also, the seek only takes
+          // place if the file position actually needs to change
+          // (avoids a lot of cluster math in SD library).
+          if(flip) // Bitmap is stored bottom-to-top order (normal BMP)
+            pos = bmpImageoffset + (bmpHeight - 1 - row) * rowSize;
+          else     // Bitmap is stored top-to-bottom
+            pos = bmpImageoffset + row * rowSize;
+          if(bmpFile.position() != pos) { // Need seek?
+            bmpFile.seek(pos);
+            buffidx = sizeof(sdbuffer); // Force buffer reload
+          }
+
+          for (col=0; col<w; col++) { // For each pixel...
+            // Time to read more pixel data?
+            if (buffidx >= sizeof(sdbuffer)) { // Indeed
+              bmpFile.read(sdbuffer, sizeof(sdbuffer));
+              buffidx = 0; // Set index to beginning
+            }
+
+            // Convert pixel from BMP to TFT format, push to display
+            b = sdbuffer[buffidx++];
+            g = sdbuffer[buffidx++];
+            r = sdbuffer[buffidx++];
+            tft.pushColor(tft.color565(r,g,b));
+          } // end pixel
+        } // end scanline
+        Serial.print(F("Loaded in "));
+        Serial.print(millis() - startTime);
+        Serial.println(" ms");
+      } // end goodBmp
+    }
+  }
+
+  bmpFile.close();
+  if(!goodBmp) Serial.println(F("BMP format not recognized."));
+}
+
+// These read 16- and 32-bit types from the SD card file.
+// BMP data is stored little-endian, Arduino is little-endian too.
+// May need to reverse subscript order if porting elsewhere.
+
+uint16_t read16(File &f) {
+  uint16_t result;
+  ((uint8_t *)&result)[0] = f.read(); // LSB
+  ((uint8_t *)&result)[1] = f.read(); // MSB
+  return result;
+}
+
+uint32_t read32(File &f) {
+  uint32_t result;
+  ((uint8_t *)&result)[0] = f.read(); // LSB
+  ((uint8_t *)&result)[1] = f.read();
+  ((uint8_t *)&result)[2] = f.read();
+  ((uint8_t *)&result)[3] = f.read(); // MSB
+  return result;
+}
+
+
+/*
+bool setStatic(void)
+{
+  uint32_t ipAddress, netmask, gateway, dhcpserv, dnsserv;
+  
+  if(!cc3000.getIPAddress(&ipAddress, &netmask, &gateway, &dhcpserv, &dnsserv))
+  {
+	lcd_out("settingStatic");
+    uint32_t ipAddress2 = cc3000.IP2U32(192, 168, 0, 19);
+	  //if (ipAddress != ipAddress2){
+		  uint32_t netMask2 = cc3000.IP2U32(255, 255, 255, 0);
+		  uint32_t defaultGateway = cc3000.IP2U32(192, 168, 0, 1);
+		  uint32_t dns = cc3000.IP2U32(8, 8, 4, 4);
+		  if (!cc3000.setStaticIPAddress(ipAddress2, netMask2, defaultGateway, dns)) {
+			lcd_out("Failed to set static IP!");
+			while(1);
+		  }
+	  //}
+  }
+
+  
+
+
+  
+  /*
+  Serial.print(F("\nIP Addr: ")); cc3000.printIPdotsRev(ipAddress);
+  Serial.print(F("\nNetmask: ")); cc3000.printIPdotsRev(netmask);
+  Serial.print(F("\nGateway: ")); cc3000.printIPdotsRev(gateway);
+  Serial.print(F("\nDHCPsrv: ")); cc3000.printIPdotsRev(dhcpserv);
+  Serial.print(F("\nDNSserv: ")); cc3000.printIPdotsRev(dnsserv);
+  Serial.println();
+  * /
+  
+  return true;
+  
+}*/
+
 //this config mechanism requies 10% memory..
 bool readConfig()
 {
+
+	return true;
+	/*
   bool configOk = false;
   
   if(uid!=0) return true;
@@ -614,7 +948,7 @@ bool readConfig()
 	  delay(1000);
   }
   delay(3000);
-  return configOk;
+  return configOk;*/
 }
 
 

@@ -5,12 +5,17 @@
 	        all non-arduino files created by visual micro and all visual studio project or solution files can be freely deleted and are not required to compile a sketch (do not delete your own code!).
 	        note: debugger breakpoints are stored in '.sln' or '.asln' files, knowledge of last uploaded breakpoints is stored in the upload.vmps.xml file. Both files are required to continue a previous debug session without needing to compile and upload again
 	
-	Hardware: Arduino Mega w/ ATmega2560 (Mega 2560), Platform=avr, Package=arduino
+	Hardware: Arduino Yún, Platform=avr, Package=arduino
 */
 
 #ifndef _VSARDUINO_H_
 #define _VSARDUINO_H_
-#define __AVR_ATmega2560__
+#define __AVR_ATmega32u4__
+#define __AVR_ATmega32U4__
+#define USB_VID 0x2341
+#define USB_PID 0x8041
+#define USB_MANUFACTURER 
+#define USB_PRODUCT "\"Arduino Yun\""
 #define ARDUINO 158
 #define ARDUINO_MAIN
 #define __AVR__
@@ -53,18 +58,12 @@ void lcd_outp(const __FlashStringHelper *s, int row);
 void displayFlags(int min);
 void delay_x_min(int minutes, int silent);
 bool ReadSensor();
-unsigned long timeDiff(unsigned long startTime);
 bool PostData();
 double toFahrenheit(double dCelsius);
 int dht22_read(uint8_t pin);
-void bmpDraw(char *filename, uint8_t x, uint16_t y);
-uint16_t read16(File &f);
-uint32_t read32(File &f);
 bool readConfig();
 
 #include "D:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\arduino.h"
-#include "D:\arduino-1.5.8\hardware\arduino\avr\variants\mega\pins_arduino.h" 
+#include "D:\arduino-1.5.8\hardware\arduino\avr\variants\yun\pins_arduino.h" 
 #include "d:\_code\humidor.net\Arduino\tft\tft.ino"
-#include "d:\_code\humidor.net\Arduino\tft\private.h"
-#include "d:\_code\humidor.net\Arduino\tft\public.h"
 #endif
