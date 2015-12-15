@@ -61,6 +61,7 @@ struct CONFIG{
 	uint16_t client_id;
 	uint16_t ext_watchdog;
 	uint16_t debug_local;
+	uint16_t demoMode;
 	char apikey[30];
 	char server[30];
 	char test_ip[30];
@@ -137,7 +138,7 @@ void setup(void)
 
   loadConfig();
  
-  if(cfg.debug_local==0){
+  if(cfg.debug_local==0 || demoMode==1){
 	  tft.fillScreen(ILI9341_WHITE);
 	  bmpDraw("sir.bmp", 0, 0);
 	  delay(1500);
@@ -926,6 +927,10 @@ bool loadConfig(){
 	  ps("debug_local: ", ini.s_getError());fail++;
   }
 
+  if( !ini.getValue("config", "demo_mode", tmp, sizeof(tmp), cfg.demoMode) ){
+	  //ps("debug_local: ", ini.s_getError());fail++; //optional do nothing if missing..
+  }
+
   if( !ini.getValue("web", "client_id", tmp, sizeof(tmp), cfg.client_id) ){
 	  ps("client_id: ", ini.s_getError());fail++;
   }
@@ -1014,9 +1019,12 @@ void showCfg(bool blockTillTouch){
 	ps("sec: ", cfg.WLAN_SECURITY);
 
 	if(strcmp(cfg.WLAN_SECURITY,"wep")==0){
-		tft.print("pass: "); hexDump(cfg.WLAN_PASS);
+		tft.print("pass: "); 
+		if(demoMode) tft.println("******");
+		else hexDump(cfg.WLAN_PASS);
 	}else{
-		ps("pass: ", cfg.WLAN_PASS);
+		if(demoMode) tft.println("pass: ******");
+		else ps("pass: ", cfg.WLAN_PASS);
 	}
 
 	//tft.println("[config]");
@@ -1027,7 +1035,10 @@ void showCfg(bool blockTillTouch){
 
 	//tft.println("[web]");
 	ps("uid: ", cfg.client_id);
-	ps("key: ", cfg.apikey);
+
+	if(demoMode) tft.println("key: ******");
+	else ps("key: ", cfg.apikey);
+
 	ps("srv: ", cfg.server);
 	ps("testIp: ", cfg.test_ip);
 
