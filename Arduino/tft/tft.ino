@@ -1,7 +1,9 @@
-
 /*
+Copyright David Zimmer <dzzie@yahoo.com>
+WebSite:  http://sandsprite.com
+All rights reserved, no portion of this code is authorized for sale or redistribution
 
-
+ini debug_local = 1 -> use test server, no dht22 required
 */
 
 #include <SPI.h>
@@ -9,11 +11,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <avr/wdt.h>
-#include <Adafruit_GFX.h>    // Core graphics library
+#include <Adafruit_GFX.h>   
 #include <Adafruit_ILI9341.h>
 #include <Adafruit_FT6206.h>
 #include <SPI.h>
-//#include <FileIO.h>
 #include <Adafruit_CC3000.h>
 #include <SD.h>
 #include "IniFile.h"
@@ -26,27 +27,6 @@ Adafruit_FT6206 ctp = Adafruit_FT6206();
 #define SD_CS 4
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
-
-#define WITH_SERIAL 1
-
-/* sample config.txt file 
-
-6,0,2,test,sandsprite.com
-
-# first line must be the config settings
-# the format is userid, deltaT, deltaH, apikey, server  
-# no spaces, this data after doent matter.
-
-*/
-
-
-/*
-Copyright David Zimmer <dzzie@yahoo.com>
-WebSite:  http://sandsprite.com
-All rights reserved, no portion of this code is authorized for sale or redistribution
-*/
-
-//use test server, no dht22 required
 #define dht22_pin     2
 #define EXT_WATCHDOG_PIN 6
 
@@ -111,6 +91,7 @@ unsigned long IDLE_TIMEOUT_MS = 7000; // Amount of time to wait (in milliseconds
 
 //following will allow you to add conditional compilation of serial debugging code 
 //with single line statements. saves space when disabled..
+#define WITH_SERIAL 1
 #ifdef WITH_SERIAL
    #define IFS(x) x
 #else
@@ -156,10 +137,12 @@ void setup(void)
 
   loadConfig();
  
-  tft.fillScreen(ILI9341_WHITE);
-  bmpDraw("sir.bmp", 0, 0);
-  delay(1500);
-  tft.fillScreen(ILI9341_BLACK);
+  if(cfg.debug_local==0){
+	  tft.fillScreen(ILI9341_WHITE);
+	  bmpDraw("sir.bmp", 0, 0);
+	  delay(1500);
+	  tft.fillScreen(ILI9341_BLACK);
+  }
 
   /*unsigned long aucDHCP = 14400;
   unsigned long aucARP = 3600;
@@ -194,7 +177,7 @@ void loop(void)
        }
    }
 
-   show_readings();
+   show_readings(false);
    delay(2500); //time to see immediate readings when I hit the button before submit..
    watchdogEnable();
    
@@ -211,41 +194,28 @@ void loop(void)
    }
 
    watchdogDisable();
-   
-   show_readings();
-   bmpDraw("water.bmp", 160, 280); //240w x 320h screen
-   bmpDraw("cigar.bmp", 40, 280); //43w x 33h   images
+   show_readings(true);
+   delay_x_min(30); //webui expects 30min delay for stat gen
 
-   if(fail_cnt > 2){
-		sprintf_P(tmp, PSTR("%d Fails"), fail_cnt);
-   }
-   else{//track # successful uploads since last reset (watch watchdog)
-		sprintf(tmp, "%d", uploads);
-   }
-
-	//lcd.setCursor(15-strlen(tmp),1); 
-	//lcd.print(tmp);
-	delay_x_min(30); //webui expects 30min delay for stat gen
 }
 
 void watchdogReset()
 {
-#if USE_EXT_WATCHDOG
-	pinMode(EXT_WATCHDOG_PIN, OUTPUT);
-	delay(200);
-	pinMode(EXT_WATCHDOG_PIN, INPUT);
-#else
-	wdt_reset();
-#endif
+	if(cfg.ext_watchdog==1){
+		pinMode(EXT_WATCHDOG_PIN, OUTPUT);
+		delay(200);
+		pinMode(EXT_WATCHDOG_PIN, INPUT);
+	}else
+		wdt_reset();
 }
 
 void watchdogDisable()
 {
-#if USE_EXT_WATCHDOG
-	pinMode(EXT_WATCHDOG_PIN, OUTPUT);
-#else
-	wdt_disable();
-#endif
+	if(cfg.ext_watchdog==1)
+		pinMode(EXT_WATCHDOG_PIN, OUTPUT);
+	else
+		wdt_disable();
+
 }
 
 //updated code to extend watch dog to 24 seconds.
@@ -255,9 +225,10 @@ void watchdogDisable()
 
 void watchdogEnable()
 {
-#if USE_EXT_WATCHDOG
-	watchdogReset();
-#else
+  if(cfg.ext_watchdog==1)
+		watchdogReset();
+  else{
+
 	 counter=0;
 	 wdt_reset();
 	 cli();                              // disable interrupts
@@ -282,13 +253,12 @@ void watchdogEnable()
 	 //  2 seconds: 0b000111
 	 //  4 seconds: 0b100000
 	 //  8 seconds: 0b100001
-#endif
+  }
 
 }
 
-#if USE_EXT_WATCHDOG == 0
-	ISR(WDT_vect) // watchdog timer interrupt service routine
-	{
+ISR(WDT_vect) // watchdog timer interrupt service routine
+{
 		 counter+=1;
 
 		 if (counter < countmax)
@@ -309,10 +279,9 @@ void watchdogEnable()
 
 		   //wdt_reset(); // not needed
 		 }
-	 }
-#endif
+}
 
-void show_readings(){
+void show_readings(bool drawButtons){
      
 	  uint16_t hColor = ILI9341_GREEN;
 	  uint16_t tColor = ILI9341_GREEN;
@@ -342,6 +311,21 @@ void show_readings(){
 
 	  tft.setTextColor(ILI9341_WHITE);
 	  tft.setTextSize(2);
+
+	  if(fail_cnt > 2){
+			sprintf_P(tmp, PSTR("\n\n\n%d Fails"), fail_cnt);
+	  }
+	  else{//track # successful uploads since last reset (watch watchdog)
+			sprintf(tmp, "\n\n\n%d Uploads", uploads);
+	  }
+
+	  tft.println(tmp);
+
+	  if(drawButtons){
+		  bmpDraw("water.bmp", 180, 280); //240w x 320h screen
+		  bmpDraw("cigar.bmp", 20, 280); //43w x 33h   images
+		  bmpDraw("config.bmp", 100, 280);
+	  }
 
 	  //IFS(Serial.print("X:");Serial.println(tft.getCursorX());)
 }
@@ -386,8 +370,15 @@ void delay_x_min(int minutes, int silent){
 				//lcd_out(tmp);
 
 				if( p.y < 50){ //its in the lower image bar band.. |__| <-0,0
-					if(p.x > 120){ //its on the left hand cigar half
+					if(p.x > 140){ //its on the left hand cigar half
 						smoked = smoked == 1 ? 0 : 1;      
+					}else if(p.x > 60){
+						Serial.println("enter config!");
+						cls();
+						showCfg(true); //timer stops until they close screen..
+						cls();
+						show_readings(true);
+						displayFlags( minutes - i );
 					}else{
 						watered = watered == 1 ? 0 : 1;  
 					}
@@ -738,12 +729,12 @@ void bmpDraw(char *filename, uint8_t x, uint16_t y) {
   uint8_t  r, g, b;
   uint32_t pos = 0, startTime = millis();
 
+  bool debugDraw = false;
+
   if((x >= tft.width()) || (y >= tft.height())) return;
 
-  Serial.println();
   Serial.print(F("Loading image '"));
   Serial.print(filename);
-  Serial.println('\'');
 
   // Open requested file on SD card
   if ((bmpFile = SD.open(filename)) == NULL) {
@@ -753,24 +744,24 @@ void bmpDraw(char *filename, uint8_t x, uint16_t y) {
 
   // Parse BMP header
   if(read16(bmpFile) == 0x4D42) { // BMP signature
-    Serial.print(F("File size: ")); Serial.println(read32(bmpFile));
+    if(debugDraw) Serial.print(F("File size: ")); Serial.println(read32(bmpFile));
     (void)read32(bmpFile); // Read & ignore creator bytes
     bmpImageoffset = read32(bmpFile); // Start of image data
-    Serial.print(F("Image Offset: ")); Serial.println(bmpImageoffset, DEC);
+    if(debugDraw) Serial.print(F("Image Offset: ")); Serial.println(bmpImageoffset, DEC);
     // Read DIB header
-    Serial.print(F("Header size: ")); Serial.println(read32(bmpFile));
+    if(debugDraw) Serial.print(F("Header size: ")); Serial.println(read32(bmpFile));
     bmpWidth  = read32(bmpFile);
     bmpHeight = read32(bmpFile);
     if(read16(bmpFile) == 1) { // # planes -- must be '1'
       bmpDepth = read16(bmpFile); // bits per pixel
-      Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
+      if(debugDraw) Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
       if((bmpDepth == 24) && (read32(bmpFile) == 0)) { // 0 = uncompressed
 
         goodBmp = true; // Supported BMP format -- proceed!
-        Serial.print(F("Image size: "));
-        Serial.print(bmpWidth);
-        Serial.print('x');
-        Serial.println(bmpHeight);
+        if(debugDraw) Serial.print(F("Image size: "));
+        if(debugDraw) Serial.print(bmpWidth);
+        if(debugDraw) Serial.print('x');
+        if(debugDraw) Serial.println(bmpHeight);
 
         // BMP rows are padded (if needed) to 4-byte boundary
         rowSize = (bmpWidth * 3 + 3) & ~3;
@@ -822,9 +813,9 @@ void bmpDraw(char *filename, uint8_t x, uint16_t y) {
             tft.pushColor(tft.color565(r,g,b));
           } // end pixel
         } // end scanline
-        Serial.print(F("Loaded in "));
-        Serial.print(millis() - startTime);
-        Serial.println(" ms");
+        if(debugDraw) Serial.print(F("Loaded in "));
+        if(debugDraw) Serial.print(millis() - startTime);
+        if(debugDraw) Serial.println(" ms");
       } // end goodBmp
     }
   }
@@ -970,7 +961,7 @@ bool loadConfig(){
 	  while(1);
   }
 
-  showCfg();
+  showCfg(false);
   delay(1500);
 
   return true;
@@ -1016,7 +1007,7 @@ int HexToBin(char* input){
 		
 }
 
-void showCfg(){
+void showCfg(bool blockTillTouch){
 
 	//tft.println("[wifi]");
 	ps("ssid: ", cfg.WLAN_SSID);
@@ -1039,6 +1030,12 @@ void showCfg(){
 	ps("key: ", cfg.apikey);
 	ps("srv: ", cfg.server);
 	ps("testIp: ", cfg.test_ip);
+
+	if(blockTillTouch){
+		tft.println("Touch to exit..");
+		while(!ctp.touched());
+	}
+
 }
 
 void ps(char* name, char* value){ tft.print(name); tft.println(value);}

@@ -327,41 +327,26 @@ char* IniFile::s_getError()
 }
 
 
-IniFile::error_t IniFile::readUntilNewLine(File &file, char *buffer, size_t len, uint32_t &pos){
+IniFile::error_t IniFile::skipTillEOL(File &file, char *buffer, size_t len, uint32_t &pos){
 
-	char *b=buffer;
+	char b;
+
+	//first check to see if a new line already exists in our buffer..
+	for(int i=0; i<len; i++){
+		if(buffer[i]=='\n') return errorNoError;
+		pos++;
+	}
+
+	memset(buffer, 0, len); //we wont be using this..
+	
+	//no newline found in buffer..now we read ahead until we find it..
 	while(1){
-		  size_t bytesRead = file.read(b, len);
-		  if (!bytesRead) {
-			buffer[0] = '\0';
-			return errorEndOfFile;
-		  }
-
-		  for (size_t i = 0; i < bytesRead && i < len-1; ++i) {
-			// Test for '\n' with optional '\r' too
-			// if (endOfLineTest(buffer, len, i, '\n', '\r')
-			
-			if (buffer[i] == '\n' || buffer[i] == '\r') {
-			  char match = buffer[i];
-			  char otherNewline = (match == '\n' ? '\r' : '\n'); 
-			  // end of line, discard any trailing character of the other sort
-			  // of newline
-			  buffer[i] = '\0';
-		      
-			  if (buffer[i+1] == otherNewline)
-			++i;
-			  pos += (i + 1); // skip past newline(s)
-			  //return (i+1 == bytesRead && !file.available());
-			  return errorNoError;
-			}
-		  }
-		  if (!file.available()) {
-			// end of file without a newline
-			buffer[bytesRead] = '\0';
-			// return 1; //done
-			return errorEndOfFile;
-		  }
-		  *b+=len;
+		  size_t bytesRead = file.read(&b, 1);
+		  if (!bytesRead) return errorEndOfFile;
+		  if (b == '\n') return errorNoError; //new line - \r\n format still ok..
+		  pos++;
+		  if (!file.available()) return errorEndOfFile;
+		  
 	}
 
 }
@@ -385,29 +370,31 @@ IniFile::error_t IniFile::readLine(File &file, char *buffer, size_t len, uint32_
     return errorEndOfFile;
   }
  
-  //dzzie:old code had a bug. buffer had to be max line size in the file
-  //      or else it would abort so long comments caused a problem. 
-  //      this is a quick fix.
-  if (isCommentChar(buffer[0]))return readUntilNewLine(file, buffer,len, pos);
+  bool inBody = false;
 
   for (size_t i = 0; i < bytesRead && i < len-1; ++i) {
-    // Test for '\n' with optional '\r' too
-    // if (endOfLineTest(buffer, len, i, '\n', '\r')
-	
-    if (buffer[i] == '\n' || buffer[i] == '\r') {
-      char match = buffer[i];
-      char otherNewline = (match == '\n' ? '\r' : '\n'); 
-      // end of line, discard any trailing character of the other sort
-      // of newline
-      buffer[i] = '\0';
-      
-      if (buffer[i+1] == otherNewline)
-	++i;
-      pos += (i + 1); // skip past newline(s)
-      //return (i+1 == bytesRead && !file.available());
-      return errorNoError;
-    }
+	    // Test for '\n' with optional '\r' too
+	    // if (endOfLineTest(buffer, len, i, '\n', '\r')
+		
+	    if (buffer[i] == '\n' || buffer[i] == '\r') {
+		      char match = buffer[i];
+		      char otherNewline = (match == '\n' ? '\r' : '\n'); 
+		      // end of line, discard any trailing character of the other sort
+		      // of newline
+		      buffer[i] = '\0';
+		      
+		      if (buffer[i+1] == otherNewline)
+			++i;
+		      pos += (i + 1); // skip past newline(s)
+		      //return (i+1 == bytesRead && !file.available());
+		      return errorNoError;
+	    }
+	    
+	    //dzzie: if its a comment line, just skip it to avoid errorBufferTooSmall
+		if(!inBody && isCommentChar(buffer[i])) return skipTillEOL(file, buffer,len, pos);
+		if(!isspace(buffer[i])) inBody = true; 
   }
+  
   if (!file.available()) {
     // end of file without a newline
     buffer[bytesRead] = '\0';

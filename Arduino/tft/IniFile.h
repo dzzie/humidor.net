@@ -103,7 +103,6 @@ public:
 
   // Utility function to read a line from a file, make available to all
   //static int8_t readLine(File &file, char *buffer, size_t len, uint32_t &pos);
-  static error_t readUntilNewLine(File &file, char *buffer, size_t len, uint32_t &pos);
   static error_t readLine(File &file, char *buffer, size_t len, uint32_t &pos);
   static bool isCommentChar(char c);
   static char* skipWhiteSpace(char* str);
@@ -113,6 +112,7 @@ public:
   void setCaseSensitive(bool cs);
   
   protected:
+  static error_t skipTillEOL(File &file, char *buffer, size_t len, uint32_t &pos);
   // True means stop looking, false means not yet found
   bool findSection(const char* section, char* buffer, size_t len, IniFileState &state) const;
   bool findKey(const char* section, const char* key, char* buffer, size_t len, char** keyptr, IniFileState &state) const;
