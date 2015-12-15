@@ -5,6 +5,7 @@
 *.suo
 private_db.php
 private.h
+private.ini
 *web_root/images/*
 *web_root/reports/*
 /Arduino/humidor/Visual Micro/*

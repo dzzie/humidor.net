@@ -39,38 +39,17 @@ typedef unsigned char byte;
 extern "C" void __cxa_pure_virtual() {;}
 
 void cls();
-void setup(void);
 void loop(void);
-void watchdogReset();
-void watchdogDisable();
-void watchdogEnable();
-void show_readings();
-void lcd_out(char* s);
-void lcd_outp(const __FlashStringHelper *s);
-void delay_x_min(int minutes);
-void lcd_out(char* s, int row);
-void lcd_outp(const __FlashStringHelper *s, int row);
-void displayFlags(int min);
-void delay_x_min(int minutes, int silent);
-bool ReadSensor();
-unsigned long timeDiff(unsigned long startTime);
-bool PostData();
-double toFahrenheit(double dCelsius);
-int dht22_read(uint8_t pin);
-void bmpDraw(char *filename, uint8_t x, uint16_t y);
-uint16_t read16(File &f);
-uint32_t read32(File &f);
-bool loadConfig();
+void setup(void);
 void hexDump(char* input);
 int HexToBin(char* input);
 void showCfg();
 void ps(char* name, char* value);
 void ps(char* name, uint16_t value);
-uint32_t ips2ip(char* ips);
 
 #include "D:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\arduino.h"
 #include "D:\arduino-1.5.8\hardware\arduino\avr\variants\mega\pins_arduino.h" 
-#include "d:\_code\humidor.net\Arduino\tft\tft.ino"
-#include "d:\_code\humidor.net\Arduino\tft\IniFile.cpp"
-#include "d:\_code\humidor.net\Arduino\tft\IniFile.h"
+#include "d:\_code\humidor.net\Arduino\tests\ini_config\ini_config.ino"
+#include "d:\_code\humidor.net\Arduino\tests\ini_config\IniFile.cpp"
+#include "d:\_code\humidor.net\Arduino\tests\ini_config\IniFile.h"
 #endif

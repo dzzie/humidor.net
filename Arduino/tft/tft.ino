@@ -1,20 +1,7 @@
 
-/*before fast string conv:
+/*
 
-    Binary sketch size: 27,166 bytes (used 84% of a 32,256 byte maximum) (1.14 secs)
-    Minimum Memory Usage: 1521 bytes (74% of a 2048 byte maximum)
 
- now:
-    Binary sketch size: 27,252 bytes (used 84% of a 32,256 byte maximum) (0.91 secs)
-    Minimum Memory Usage: 1127 bytes (55% of a 2048 byte maximum)
-
- simplified http parsing w/ tft:
-	Binary sketch size: 24,296 bytes (used 85% of a 28,672 byte maximum) (3.41 secs)
-    Minimum Memory Usage: 1190 bytes (46% of a 2560 byte maximum)
-
-	To make new bitmaps, make sure they are less than 240 by 320 pixels and save them in 24-bit BMP format! 
-
-	43wx33h cigar.bmp, water.bmp
 */
 
 #include <SPI.h>
@@ -29,7 +16,7 @@
 //#include <FileIO.h>
 #include <Adafruit_CC3000.h>
 #include <SD.h>
-#include "private.h"
+#include "IniFile.h"
 
 // The FT6206 uses hardware I2C (SCL/SDA)
 Adafruit_FT6206 ctp = Adafruit_FT6206();
@@ -60,11 +47,9 @@ All rights reserved, no portion of this code is authorized for sale or redistrib
 */
 
 //use test server, no dht22 required
-#define debug_local   1    
 #define dht22_pin     2
 #define EXT_WATCHDOG_PIN 6
 
-#define DOMAIN        "sandsprite.com" 
 #define WEBPAGE       "/humidor/logData.php" 
 #define firmware_ver  "v1.3 " __DATE__  
 #define MAX_TICKS 1000
@@ -74,7 +59,6 @@ char *DFAIL = "DHT22 Fail";
 volatile int counter;      // Count number of times ISR is called.
 volatile int countmax = 8; // Timer expires after about 64 secs (using 8 sec interval)
 
-uint32_t ip;
 int speedMode = 0;
 uint8_t powerevt  = 1;
 uint8_t watered   = 0;
@@ -84,19 +68,30 @@ uint8_t inReadSensor  = 0;
 int uploads  = 0;
 int fail_cnt = 0;
 
-uint8_t uid = 0;
-char apikey[20]={0};
-char hostname[30]={0};
-char localIP[25] = {0};
 char tmp[55] = {0};
 
-uint8_t delta_t = 0;
-uint8_t delta_h = 0;
 double temp      = 0;
 double humi      = 0;
 double last_temp = 0;
 double last_humi = 0;
 
+struct CONFIG{
+	uint16_t temp_shift;   
+	uint16_t humi_shift;
+	uint16_t client_id;
+	uint16_t ext_watchdog;
+	uint16_t debug_local;
+	char apikey[30];
+	char server[30];
+	char test_ip[30];
+	char WLAN_SSID[30]; // cannot be longer than 32 characters!
+	char WLAN_SECURITY[30]; // Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
+	char WLAN_PASS[30];
+	uint32_t activeIP; //filled out at runtime from string either dns lookup or from ip string..
+	uint8_t secMode;
+};
+
+CONFIG cfg;
 
 //------------------ wifi sheild --------------------
 
@@ -137,7 +132,6 @@ void setup(void)
   tft.begin();
   tft.setTextSize(2);
 
-
   cls();
   lcd_outp(F("Daves WebHumidor"));
   lcd_out(firmware_ver,1);
@@ -160,17 +154,11 @@ void setup(void)
 	while(1);
   }
 
- if(debug_local){
-		ip = cc3000.IP2U32(192,168,0,10);   //test server
-		//speedMode = 1;
-  }
-  else
-		ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
-
-
+  loadConfig();
+ 
   tft.fillScreen(ILI9341_WHITE);
-  //bmpDraw("sir.bmp", 0, 0);
-  //delay(1500);
+  bmpDraw("sir.bmp", 0, 0);
+  delay(1500);
   tft.fillScreen(ILI9341_BLACK);
 
   /*unsigned long aucDHCP = 14400;
@@ -187,11 +175,10 @@ void setup(void)
 void loop(void)
 {
 
-   if(!readConfig()) return;
-
-   if(debug_local){
+   if(cfg.debug_local){
        temp = 66; humi = 66;
    }else{
+	   cls();
 	   lcd_outp(F("Reading sensor"),1);
 	   for(int i=0; i <= 10; i++){
 			if( ReadSensor() ) break;
@@ -436,8 +423,8 @@ bool ReadSensor(){
 	  return false;
   }
 
-  humi += delta_h;
-  temp += delta_t;
+  humi += cfg.humi_shift;
+  temp += cfg.temp_shift;
 
   if(last_humi == 0) last_humi = humi;
   if(last_temp == 0) last_temp = temp;
@@ -497,7 +484,7 @@ bool PostData()
   Adafruit_CC3000_Client www;
 
   lcd_outp(F("AP Connect"));
-  if (!cc3000.connectToAP(WLAN_SSID, WLAN_PASS, WLAN_SECURITY)) goto CLEANUP;
+  if (!cc3000.connectToAP(cfg.WLAN_SSID, cfg.WLAN_PASS, cfg.secMode)) goto CLEANUP;
 
   lcd_outp(F("DHCP"));
   for(ticks=0; ticks < MAX_TICKS; ticks++)
@@ -508,7 +495,19 @@ bool PostData()
 
   if(ticks >= MAX_TICKS) goto EXIT_FAIL;
 
-  www = cc3000.connectTCP(ip, 80); //have been having occasional hang here...
+  if(cfg.activeIP==0){
+		if(cfg.debug_local==1) cfg.activeIP=ips2ip(cfg.test_ip);
+		else{
+			while  (cfg.activeIP  ==  0)  {
+				if  (!  cc3000.getHostByName(cfg.server, &cfg.activeIP))  {
+					Serial.println(F("Couldn't resolve!"));
+				}
+				delay(500);
+			  }  
+		}
+  }
+
+  www = cc3000.connectTCP(cfg.activeIP, 80); //have been having occasional hang here...
   if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
 
   lcd_outp(F("Connected"));
@@ -518,9 +517,9 @@ bool PostData()
   sprintf_P(tmp, PSTR("?temp=%d&humi=%d&watered=%d&powerevt=%d"), (int)temp, (int)humi, watered, powerevt);
   strcat(buf,tmp);
 
-  sprintf_P(tmp, PSTR("&failure=%d&clientid=%d&smoked=%d&apikey="), failure, uid, smoked);
+  sprintf_P(tmp, PSTR("&failure=%d&clientid=%d&smoked=%d&apikey="), failure, cfg.client_id, smoked);
   strcat(buf,tmp);
-  strcat(buf,apikey);
+  strcat(buf,cfg.apikey);
   
   lcd_outp(F("Submit"));
 
@@ -533,7 +532,7 @@ bool PostData()
     www.fastrprint(F("GET "));
     www.fastrprint(buf);
     www.fastrprint(F(" HTTP/1.1\r\n"));
-    www.fastrprint(F("Host: ")); www.fastrprint(F(DOMAIN)); www.fastrprint(F("\r\n"));
+    www.fastrprint(F("Host: ")); www.fastrprint(cfg.server); www.fastrprint(F("\r\n"));
     www.fastrprint(F("\r\n"));
     if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
     www.println();
@@ -892,64 +891,180 @@ bool setStatic(void)
   
 }*/
 
-//this config mechanism requies 10% memory..
-bool readConfig()
-{
 
-	return true;
-	/*
-  bool configOk = false;
+bool loadConfig(){
+
+  tft.println("Loading config");
+
+  IniFile ini("private.ini");
+  memset(&cfg,0, sizeof(cfg));
   
-  if(uid!=0) return true;
-
-  tft.println("Reading Config...");
-  delay(5000);
-  File dataFile = FileSystem.open("/mnt/sd/config.txt", FILE_READ);
-  if (dataFile) {
-	  size_t sz = dataFile.readBytesUntil(',', &tmp[0],32);
-	  if(sz > 0){
-			uid = atoi(tmp) & 0x000000FF;
-			tft.print("Uid: ");
-			tft.println(uid);
-			sz = dataFile.readBytesUntil(',', &tmp[0],32);
-			if(sz > 0){
-				delta_t = atoi(tmp) & 0x000000FF;
-				tft.print("DeltaT: ");
-				tft.println(delta_t);
-				sz = dataFile.readBytesUntil(',', &tmp[0],32);
-				if(sz > 0){
-					delta_h = atoi(tmp) & 0x000000FF;
-					tft.print("DeltaH: ");
-					tft.println(delta_h);
-					sz = dataFile.readBytesUntil(',', &tmp[0],32);
-					if(sz > 0){
-						strcpy(apikey,tmp);
-						tft.print("ApiKey: ");
-						tft.println(apikey);
-						sz = dataFile.readBytesUntil(',', &tmp[0],32);
-						if(sz > 0){
-							strcpy(hostname,tmp);
-							tft.print("Host: ");
-							tft.println(hostname);
-							configOk = true;
-						}
-					}
-				}
-			}
-	  }
-	  if(uid==0) configOk = false;
-	  dataFile.close();
-  }else{
-	  tft.println("cant open config.txt?");
-	  delay(1000);
-  } 
-  if(!configOk){
-	  tft.println("Invalid config.");
-	  delay(1000);
+  if (!ini.open()) {
+    tft.println("No Ini file");
+    tft.print(ini.getFilename());
+    while(1);
   }
-  delay(3000);
-  return configOk;*/
+
+  int fail=0;
+
+  if( !ini.getValue("wifi","ssid" , cfg.WLAN_SSID, 30) ){
+	  ps("ssid: ", ini.s_getError());fail++;
+  }
+
+  if( !ini.getValue("wifi", "security", cfg.WLAN_SECURITY, 30) ){
+	  ps("security: ", ini.s_getError());fail++;
+  }
+
+  if( !ini.getValue("wifi", "pass", cfg.WLAN_PASS, 30) ){
+	  ps("pass: ", ini.s_getError());fail++;
+  }
+ 
+  if( !ini.getValue("config", "ext_watchdog", tmp, sizeof(tmp), cfg.ext_watchdog) ){
+	  ps("ext_watchdog: ", ini.s_getError());fail++;
+  }
+
+  if( !ini.getValue("config", "temp_shift", tmp, sizeof(tmp), cfg.temp_shift) ){
+	  ps("temp_shift: ", ini.s_getError());fail++;
+  }
+
+  if( !ini.getValue("config", "humi_shift", tmp, sizeof(tmp), cfg.humi_shift) ){
+	  ps("humi_shift: ", ini.s_getError());fail++;
+  }
+
+  if( !ini.getValue("config", "debug_local", tmp, sizeof(tmp), cfg.debug_local) ){
+	  ps("debug_local: ", ini.s_getError());fail++;
+  }
+
+  if( !ini.getValue("web", "client_id", tmp, sizeof(tmp), cfg.client_id) ){
+	  ps("client_id: ", ini.s_getError());fail++;
+  }
+
+  if( !ini.getValue("web", "apikey", cfg.apikey, 30) ){
+	  ps("apikey: ", ini.s_getError());fail++;
+  }
+
+  if( !ini.getValue("web", "server", cfg.server, 30) ){
+	  ps("server: ", ini.s_getError());fail++;
+  }
+
+  if( !ini.getValue("web", "test_ip", cfg.test_ip, 30) ){
+	  ps("test_ip: ", ini.s_getError());fail++;
+  }
+
+  ini.close();
+
+  if(cfg.debug_local==1) speedMode=1;
+
+  if(strcmp(cfg.WLAN_SECURITY,"wep")==0){
+	  HexToBin(cfg.WLAN_PASS);
+	  cfg.secMode=WLAN_SEC_WEP;
+  }
+
+  if(strcmp(cfg.WLAN_SECURITY,"none")==0) cfg.secMode=WLAN_SEC_UNSEC;
+  if(strcmp(cfg.WLAN_SECURITY,"wpa")==0)  cfg.secMode=WLAN_SEC_WPA;
+  if(strcmp(cfg.WLAN_SECURITY,"wpa2")==0) cfg.secMode=WLAN_SEC_WPA2;
+
+  if(fail!=0){
+	  tft.print("Ini Errors: "); 
+	  tft.println(fail);
+	  while(1);
+  }
+
+  showCfg();
+  delay(1500);
+
+  return true;
+
 }
 
+void hexDump(char* input){
 
+	char tmp[5];
+	uint8_t *p = (uint8_t*)input;
+	for(int i=0;i<strlen(input);i++){
+		sprintf(tmp, "%02x ", p[i]);
+		tft.print(tmp);
+	}
 
+	tft.println();
+
+}
+
+int HexToBin(char* input){
+
+	char buf[30];
+	char *h = input;
+	unsigned char *b = (unsigned char*)buf; /* point inside the buffer */
+    int cnt=0;
+	int sz=strlen(input);
+
+	/* offset into this string is the numeric value */
+	char xlate[] = "0123456789abcdef";
+
+	//printf("translating..\n");
+	for ( ; *h; h += 2){ /* go by twos through the hex string multiply leading digit by 16 */
+	    if(isupper(*h)) *h = tolower(*h);
+		if(isupper(*(h+1))) *(h+1) = tolower(*(h+1));
+		*b = ((strchr(xlate, *h) - xlate) * 16) + ((strchr(xlate, *(h+1)) - xlate));
+	    b++;
+		cnt++;
+	}
+
+	memset(input,0,sz);
+	strncpy(input,buf,cnt);
+	return cnt;
+		
+}
+
+void showCfg(){
+
+	//tft.println("[wifi]");
+	ps("ssid: ", cfg.WLAN_SSID);
+	ps("sec: ", cfg.WLAN_SECURITY);
+
+	if(strcmp(cfg.WLAN_SECURITY,"wep")==0){
+		tft.print("pass: "); hexDump(cfg.WLAN_PASS);
+	}else{
+		ps("pass: ", cfg.WLAN_PASS);
+	}
+
+	//tft.println("[config]");
+	ps("dog: ", cfg.ext_watchdog);
+	ps("tshift: ", cfg.temp_shift);
+	ps("hshift: ", cfg.humi_shift);
+	ps("debug: ", cfg.debug_local);
+
+	//tft.println("[web]");
+	ps("uid: ", cfg.client_id);
+	ps("key: ", cfg.apikey);
+	ps("srv: ", cfg.server);
+	ps("testIp: ", cfg.test_ip);
+}
+
+void ps(char* name, char* value){ tft.print(name); tft.println(value);}
+void ps(char* name, uint16_t value){ tft.print(name); tft.println(value);}
+
+//ip string to ipu32 -  usage:  uint32_t ip = ips2ip("192.168.0.10");
+uint32_t ips2ip(char* ips){
+  int i=0, j=0;
+  uint8_t b[4]={0,0,0,0};
+  char tmp[5]={0,0,0,0,0};
+
+  while(*ips){
+      if(*ips=='.'){
+          b[j++] = atoi(tmp);
+          for(; i>=0; i--) tmp[i]=0; //wipe tmp for next
+          i=0;
+          if(j == 4) break; //max 4 sections
+      }else{
+         tmp[i++] = *ips;
+         if( i > 4 ) break; //max 3 chars per sect
+      }
+      ips++;
+  }
+
+  if(tmp[0] != 0) b[j++] = atoi(tmp);
+  if(j != 4) return 0; //need exactly 4 sections
+  return cc3000.IP2U32(b[0], b[1], b[2], b[3]);
+
+}
