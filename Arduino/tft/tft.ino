@@ -889,6 +889,19 @@ static int myini_handler(void* user, const char* section, const char* name, cons
     return 1;
 }
 
+
+char* my_fgets(char* buf, int len, File* stream){
+
+	if(stream->available()){
+		int i = stream->readBytesUntil('\n',buf,len);
+		if(buf[i-1] == '\r') buf[i-1] = 0;
+		return buf;
+	}
+	else
+		return 0;
+	
+}
+
 bool loadConfig(){
 
 	tft.println("Loading config");
@@ -914,11 +927,16 @@ bool loadConfig(){
 		while(1);
 	}
 
-	if(ini_parse(sCfg.iniFile, myini_handler, 0) < 0) {
+	File file = SD.open(sCfg.iniFile);
+	if(!file) while(1);
+
+	if(ini_parse_stream((ini_reader)my_fgets, &file, myini_handler, 0) < 0) {
 		tft.println("IniParse Failed..");
 		tft.println("Stopped");
 		while(1);
 	}
+	
+	file.close();
 
 	int fail=0;
 	if(cfg.ssid==0){ps(sCfg.missing, sCfg.ssid);fail++;}

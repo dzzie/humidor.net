@@ -1,0 +1,23 @@
+
+
+char* myFgets(char* buf, int len, File* stream){
+
+	if(stream->available()){
+		int i = stream->readBytesUntil('\n',buf,len);
+		if(buf[i-1] == '\r') buf[i-1] = 0;
+		return buf;
+	}
+	else
+		return 0;
+	
+}
+
+
+	File file = SD.open("private.ini");
+
+	if (ini_parse_stream((ini_reader)myFgets, &file, myini_handler, 0) < 0) {
+	   tft.println("No Ini file");
+	   while(1);
+	}
+
+	file.close();
