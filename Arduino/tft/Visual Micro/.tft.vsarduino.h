@@ -60,9 +60,11 @@ int dht22_read(uint8_t pin);
 void bmpDraw(char *filename, uint8_t x, uint16_t y);
 uint16_t read16(File &f);
 uint32_t read32(File &f);
+static int myini_handler(void* user, const char* section, const char* name, const char* value);
 bool loadConfig();
 void hexDump(char* input);
 int HexToBin(char* input);
+void showWifiCfg();
 void showCfg(bool blockTillTouch);
 void ps(char* name, char* value);
 void ps(char* name, uint16_t value);
@@ -71,6 +73,6 @@ uint32_t ips2ip(char* ips);
 #include "D:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\arduino.h"
 #include "D:\arduino-1.5.8\hardware\arduino\avr\variants\mega\pins_arduino.h" 
 #include "d:\_code\humidor.net\Arduino\tft\tft.ino"
-#include "d:\_code\humidor.net\Arduino\tft\IniFile.cpp"
-#include "d:\_code\humidor.net\Arduino\tft\IniFile.h"
+#include "d:\_code\humidor.net\Arduino\tft\ini.cpp"
+#include "d:\_code\humidor.net\Arduino\tft\ini.h"
 #endif

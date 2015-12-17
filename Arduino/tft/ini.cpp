@@ -116,7 +116,7 @@ freshLine:
 		//this is my implementation of .readBytesUntil(\n) it has been customized so
 		//that if first line character is a comment, then it will ignore the line
 		//so comments can be longer than INI_MAX_LINE without error..
-		while( file.available() ){
+		while(1){
 			
 			if(cnt == INI_MAX_LINE){ //buffer full up, skip file pointer to end and process partial line? (visible error in output)
 				readTillNewLine(file);
@@ -133,6 +133,7 @@ freshLine:
 				line[cnt] = b;
 				if (b == '\n') break;
 				cnt++;
+				if (!file.available()) break; //eof, process last line
 			}
 
 		}

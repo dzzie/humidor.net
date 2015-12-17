@@ -1,6 +1,8 @@
 #ifndef _FILE_H
 #define _FILE_H
 
+// taken from https://github.com/stevemarple/IniFile
+
 #include "arduino_compat.h"
 
 class File {

@@ -4,6 +4,9 @@ WebSite:  http://sandsprite.com
 All rights reserved, no portion of this code is authorized for sale or redistribution
 
 ini debug_local = 1 -> use test server, no dht22 required
+
+new ini library saves ~500 bytes of both code and ram, and much easier to read...
+
 */
 
 #include <SPI.h>
@@ -17,7 +20,7 @@ ini debug_local = 1 -> use test server, no dht22 required
 #include <SPI.h>
 #include <Adafruit_CC3000.h>
 #include <SD.h>
-#include "IniFile.h"
+#include "ini.h"
 
 // The FT6206 uses hardware I2C (SCL/SDA)
 Adafruit_FT6206 ctp = Adafruit_FT6206();
@@ -39,7 +42,6 @@ char *DFAIL = "DHT22 Fail";
 volatile int counter;      // Count number of times ISR is called.
 volatile int countmax = 8; // Timer expires after about 64 secs (using 8 sec interval)
 
-int speedMode = 0;
 uint8_t powerevt  = 1;
 uint8_t watered   = 0;
 uint8_t smoked    = 0;
@@ -56,23 +58,44 @@ double last_temp = 0;
 double last_humi = 0;
 
 struct CONFIG{
-	uint16_t temp_shift;   
-	uint16_t humi_shift;
-	uint16_t client_id;
-	uint16_t ext_watchdog;
-	uint16_t debug_local;
-	uint16_t demoMode;
-	char apikey[30];
-	char server[30];
-	char test_ip[30];
-	char WLAN_SSID[30]; // cannot be longer than 32 characters!
-	char WLAN_SECURITY[30]; // Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
-	char WLAN_PASS[30];
+	int temp_shift;   
+	int humi_shift;
+	int client_id;
+	int ext_watchdog;
+	int debug_local;
+	int demoMode;
+	int speedMode;
+	char* apikey;      //apikey for web app user specified by client_id
+	char* server;      //domain name of production server (lookup + hostname use)
+	char* test_ip;     //local test server ip (debug_local must be 1 to use)
+	char* ssid;        // cannot be longer than 32 characters!
+	char* security;    // Security can be WLAN_SEC_UNSEC, WLAN_SEC_WEP, WLAN_SEC_WPA or WLAN_SEC_WPA2
+	char* pass;        //wifi password, if wep it will be transformed to binary from hex codes..
 	uint32_t activeIP; //filled out at runtime from string either dns lookup or from ip string..
 	uint8_t secMode;
 };
 
+struct CFG_STRINGS{
+	char* ssid = "ssid";
+	char* security = "security";
+	char* pass = "pass";
+	char* ext_watchdog = "ext_watchdog";
+	char* temp_shift = "temp_shift";
+	char* humi_shift = "humi_shift";
+	char* debug_local = "debug_local";
+	char* demoMode = "demoMode";
+	char* speedMode = "speedMode";
+	char* client_id = "client_id";
+	char* apikey = "apikey";
+	char* server = "server";
+	char* test_ip = "test_ip";
+	char* missing = "Missing ";
+	char* stars = "*******";
+	char* iniFile = "private.ini";
+};
+
 CONFIG cfg;
+CFG_STRINGS sCfg;
 
 //------------------ wifi sheild --------------------
 
@@ -125,11 +148,6 @@ void setup(void)
     while (1);
   }
 
-  lcd_out("Init SD card...");
-  if (!SD.begin(SD_CS)) {
-    lcd_out("Failed!");
-  }
-
   lcd_out("Init Wifi...");
   if (!cc3000.begin()){
     lcd_out("Failed!"); 
@@ -138,7 +156,7 @@ void setup(void)
 
   loadConfig();
  
-  if(cfg.debug_local==0 || demoMode==1){
+  if(cfg.debug_local==0 || cfg.demoMode==1){
 	  tft.fillScreen(ILI9341_WHITE);
 	  bmpDraw("sir.bmp", 0, 0);
 	  delay(1500);
@@ -363,7 +381,7 @@ void delay_x_min(int minutes, int silent){
       if(silent==0) displayFlags( minutes - i );
 
       for(int j=0; j < 240; j++){ //entire j loop = one minute, using small delay so buttons responsive.. 
-		  delay( (speedMode==1 ? 1 : 250) );  
+		  delay( (cfg.speedMode==1 ? 1 : 250) );  
 
 		  if ( ctp.touched() ) {
 			    TS_Point p = ctp.getPoint(); 
@@ -476,7 +494,9 @@ bool PostData()
   Adafruit_CC3000_Client www;
 
   lcd_outp(F("AP Connect"));
-  if (!cc3000.connectToAP(cfg.WLAN_SSID, cfg.WLAN_PASS, cfg.secMode)) goto CLEANUP;
+  showWifiCfg();
+
+  if (!cc3000.connectToAP(cfg.ssid, cfg.pass, cfg.secMode)) goto CLEANUP;
 
   lcd_outp(F("DHCP"));
   for(ticks=0; ticks < MAX_TICKS; ticks++)
@@ -845,127 +865,85 @@ uint32_t read32(File &f) {
   return result;
 }
 
-
-/*
-bool setStatic(void)
+static int myini_handler(void* user, const char* section, const char* name, const char* value)
 {
-  uint32_t ipAddress, netmask, gateway, dhcpserv, dnsserv;
-  
-  if(!cc3000.getIPAddress(&ipAddress, &netmask, &gateway, &dhcpserv, &dnsserv))
-  {
-	lcd_out("settingStatic");
-    uint32_t ipAddress2 = cc3000.IP2U32(192, 168, 0, 19);
-	  //if (ipAddress != ipAddress2){
-		  uint32_t netMask2 = cc3000.IP2U32(255, 255, 255, 0);
-		  uint32_t defaultGateway = cc3000.IP2U32(192, 168, 0, 1);
-		  uint32_t dns = cc3000.IP2U32(8, 8, 4, 4);
-		  if (!cc3000.setStaticIPAddress(ipAddress2, netMask2, defaultGateway, dns)) {
-			lcd_out("Failed to set static IP!");
-			while(1);
-		  }
-	  //}
-  }
+	//we can ignore the section since all names are unique..
+	//should we do a strcpy to local buffer instead? they are never freed so no holes but allocs can be shady..should be ok..
+	if (strcmp(name, sCfg.ssid)    ==0) cfg.ssid = strdup(value);
+	if (strcmp(name, sCfg.security)==0) cfg.security = strdup(value);
+	if (strcmp(name, sCfg.pass)    ==0) cfg.pass = strdup(value);
+	if (strcmp(name, sCfg.apikey)  ==0) cfg.apikey = strdup(value);
+	if (strcmp(name, sCfg.server)  ==0) cfg.server = strdup(value);
+	if (strcmp(name, sCfg.test_ip) ==0) cfg.test_ip = strdup(value);
 
-  
+	if (strcmp(name, sCfg.ext_watchdog) ==0) cfg.ext_watchdog = atoi(value);
+	if (strcmp(name, sCfg.temp_shift)   ==0) cfg.temp_shift = atoi(value);
+	if (strcmp(name, sCfg.humi_shift)   ==0) cfg.humi_shift = atoi(value);
+	if (strcmp(name, sCfg.debug_local)  ==0) cfg.debug_local = atoi(value);
+	if (strcmp(name, sCfg.client_id)    ==0) cfg.client_id = atoi(value);
+	if (strcmp(name, sCfg.demoMode)     ==0) cfg.demoMode = atoi(value);
+	if (strcmp(name, sCfg.speedMode)    ==0) cfg.speedMode = atoi(value);
+    
+//	tft.println(name);
 
-
-  
-  /*
-  Serial.print(F("\nIP Addr: ")); cc3000.printIPdotsRev(ipAddress);
-  Serial.print(F("\nNetmask: ")); cc3000.printIPdotsRev(netmask);
-  Serial.print(F("\nGateway: ")); cc3000.printIPdotsRev(gateway);
-  Serial.print(F("\nDHCPsrv: ")); cc3000.printIPdotsRev(dhcpserv);
-  Serial.print(F("\nDNSserv: ")); cc3000.printIPdotsRev(dnsserv);
-  Serial.println();
-  * /
-  
-  return true;
-  
-}*/
-
+    return 1;
+}
 
 bool loadConfig(){
 
-  tft.println("Loading config");
+	tft.println("Loading config");
 
-  IniFile ini("private.ini");
-  memset(&cfg,0, sizeof(cfg));
+	memset(&cfg,0, sizeof(cfg));
+
+	bool errorDisplayed = false;
+
+	lcd_out("Init SD card...");
+
+	while(!SD.begin(SD_CS)) {
+		if(!errorDisplayed){
+			tft.println("Missing...");
+			tft.println("Insert SD Card.");
+			errorDisplayed = true;
+		}
+		delay(1500);
+	}
+
+	if(!SD.exists(sCfg.iniFile)){
+		tft.println("Stopped, missing");
+		tft.println(sCfg.iniFile);
+		while(1);
+	}
+
+	if(ini_parse(sCfg.iniFile, myini_handler, 0) < 0) {
+		tft.println("IniParse Failed..");
+		tft.println("Stopped");
+		while(1);
+	}
+
+	int fail=0;
+	if(cfg.ssid==0){ps(sCfg.missing, sCfg.ssid);fail++;}
+	if(cfg.security==0){ps(sCfg.missing, sCfg.security);fail++;}
+	if(cfg.pass==0){ps(sCfg.missing, sCfg.pass);fail++;}
+	if(cfg.client_id==0){ps(sCfg.missing, sCfg.client_id);fail++;}
+	if(cfg.apikey==0){ps(sCfg.missing, sCfg.apikey);fail++;}
+	if(cfg.server==0){ps(sCfg.missing, sCfg.server);fail++;}
+
+	if(cfg.debug_local!=0){
+		if(cfg.test_ip==0){ps(sCfg.missing, sCfg.test_ip);fail++;}
+	}
   
-  if (!ini.open()) {
-    tft.println("No Ini file");
-    tft.print(ini.getFilename());
-    while(1);
-  }
+	if(strcmp(cfg.security,"wep")==0){
+		HexToBin(cfg.pass);
+		cfg.secMode=WLAN_SEC_WEP;
+	}
 
-  int fail=0;
+  if(strcmp(cfg.security,"none")==0) cfg.secMode=WLAN_SEC_UNSEC;
+  if(strcmp(cfg.security,"wpa")==0)  cfg.secMode=WLAN_SEC_WPA;
+  if(strcmp(cfg.security,"wpa2")==0) cfg.secMode=WLAN_SEC_WPA2;
+  
+  if(fail!=0){tft.print("Ini Errors: "); tft.println(fail);}
 
-  if( !ini.getValue("wifi","ssid" , cfg.WLAN_SSID, 30) ){
-	  ps("ssid: ", ini.s_getError());fail++;
-  }
-
-  if( !ini.getValue("wifi", "security", cfg.WLAN_SECURITY, 30) ){
-	  ps("security: ", ini.s_getError());fail++;
-  }
-
-  if( !ini.getValue("wifi", "pass", cfg.WLAN_PASS, 30) ){
-	  ps("pass: ", ini.s_getError());fail++;
-  }
- 
-  if( !ini.getValue("config", "ext_watchdog", tmp, sizeof(tmp), cfg.ext_watchdog) ){
-	  ps("ext_watchdog: ", ini.s_getError());fail++;
-  }
-
-  if( !ini.getValue("config", "temp_shift", tmp, sizeof(tmp), cfg.temp_shift) ){
-	  ps("temp_shift: ", ini.s_getError());fail++;
-  }
-
-  if( !ini.getValue("config", "humi_shift", tmp, sizeof(tmp), cfg.humi_shift) ){
-	  ps("humi_shift: ", ini.s_getError());fail++;
-  }
-
-  if( !ini.getValue("config", "debug_local", tmp, sizeof(tmp), cfg.debug_local) ){
-	  ps("debug_local: ", ini.s_getError());fail++;
-  }
-
-  if( !ini.getValue("config", "demo_mode", tmp, sizeof(tmp), cfg.demoMode) ){
-	  //ps("debug_local: ", ini.s_getError());fail++; //optional do nothing if missing..
-  }
-
-  if( !ini.getValue("web", "client_id", tmp, sizeof(tmp), cfg.client_id) ){
-	  ps("client_id: ", ini.s_getError());fail++;
-  }
-
-  if( !ini.getValue("web", "apikey", cfg.apikey, 30) ){
-	  ps("apikey: ", ini.s_getError());fail++;
-  }
-
-  if( !ini.getValue("web", "server", cfg.server, 30) ){
-	  ps("server: ", ini.s_getError());fail++;
-  }
-
-  if( !ini.getValue("web", "test_ip", cfg.test_ip, 30) ){
-	  ps("test_ip: ", ini.s_getError());fail++;
-  }
-
-  ini.close();
-
-  if(cfg.debug_local==1) speedMode=1;
-
-  if(strcmp(cfg.WLAN_SECURITY,"wep")==0){
-	  HexToBin(cfg.WLAN_PASS);
-	  cfg.secMode=WLAN_SEC_WEP;
-  }
-
-  if(strcmp(cfg.WLAN_SECURITY,"none")==0) cfg.secMode=WLAN_SEC_UNSEC;
-  if(strcmp(cfg.WLAN_SECURITY,"wpa")==0)  cfg.secMode=WLAN_SEC_WPA;
-  if(strcmp(cfg.WLAN_SECURITY,"wpa2")==0) cfg.secMode=WLAN_SEC_WPA2;
-
-  if(fail!=0){
-	  tft.print("Ini Errors: "); 
-	  tft.println(fail);
-	  while(1);
-  }
-
+  cls();
   showCfg(false);
   delay(1500);
 
@@ -1012,39 +990,48 @@ int HexToBin(char* input){
 		
 }
 
-void showCfg(bool blockTillTouch){
+void showWifiCfg(){
+    ps("ssid: ", cfg.ssid);
+	ps("sec: ", cfg.security);
 
-	//tft.println("[wifi]");
-	ps("ssid: ", cfg.WLAN_SSID);
-	ps("sec: ", cfg.WLAN_SECURITY);
-
-	if(strcmp(cfg.WLAN_SECURITY,"wep")==0){
-		tft.print("pass: "); 
-		if(demoMode) tft.println("******");
-		else hexDump(cfg.WLAN_PASS);
+	if(strcmp(cfg.security,"wep")==0){
+		tft.print("pass:"); 
+		if(cfg.demoMode) tft.println(sCfg.stars);
+		else hexDump(cfg.pass);
 	}else{
-		if(demoMode) tft.println("pass: ******");
-		else ps("pass: ", cfg.WLAN_PASS);
+		tft.print("pass: "); 
+		if(cfg.demoMode) tft.println(sCfg.stars);
+		else tft.println(cfg.pass);
 	}
+}
 
-	//tft.println("[config]");
+void showCfg(bool blockTillTouch){
+	tft.println("       [wifi]");
+	showWifiCfg();
+
+	tft.println("      [config]");
 	ps("dog: ", cfg.ext_watchdog);
 	ps("tshift: ", cfg.temp_shift);
 	ps("hshift: ", cfg.humi_shift);
 	ps("debug: ", cfg.debug_local);
+	ps("demo: ", cfg.demoMode);
+	ps("speed: ", cfg.speedMode);
 
-	//tft.println("[web]");
+	tft.println("       [web]");
 	ps("uid: ", cfg.client_id);
 
-	if(demoMode) tft.println("key: ******");
-	else ps("key: ", cfg.apikey);
-
+	tft.print("key: ");
+	if(cfg.demoMode) tft.println(sCfg.stars);
+	else tft.println(cfg.apikey);
+	
 	ps("srv: ", cfg.server);
-	ps("testIp: ", cfg.test_ip);
+	ps("tstIp: ", cfg.test_ip);
 
 	if(blockTillTouch){
 		tft.println("Touch to exit..");
 		while(!ctp.touched());
+	}else{
+		delay(2500);
 	}
 
 }

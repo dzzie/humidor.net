@@ -3,6 +3,10 @@
 *.mp4
 *.ncb
 *.suo
+*.obj
+*.pdb
+*.dep
+*.ilk
 private_db.php
 private.h
 private.ini
@@ -13,3 +17,4 @@ private.ini
 /PhoneApp/wp8.1/Humidor/bin/*
 /PhoneApp/wp8.1/MyTask/obj/*
 /PhoneApp/wp8.1/MyTask/bin/*
+/Arduino/tests/ini_config2/vc_test/Debug/*

@@ -122,6 +122,8 @@ void setup(void)
 	}
   
 	if(strcmp(cfg.security,"wep")==0){
+		tft.print("Converting: ");
+		tft.println(cfg.pass);
 		HexToBin(cfg.pass);
 	}
 

@@ -72,8 +72,7 @@ The display is in the vertical orientation (long way vertical)
 Other Credits:
 ------------------------------
 
-uses Steve Marple's IniFile library: 
-
-https://github.com/stevemarple/IniFile
+uses Ben Hoyt's Ini file library: 
+  https://github.com/benhoyt/inih
 
 

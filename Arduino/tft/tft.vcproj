@@ -171,11 +171,11 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath=".\IniFile.cpp"
+			RelativePath=".\ini.cpp"
 			>
 		</File>
 		<File
-			RelativePath=".\IniFile.h"
+			RelativePath=".\ini.h"
 			>
 		</File>
 		<File
