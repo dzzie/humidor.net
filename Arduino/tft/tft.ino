@@ -62,6 +62,7 @@ uint8_t failure   = 0;
 uint8_t inReadSensor  = 0;
 int uploads  = 0;
 int fail_cnt = 0;
+int curTab = 0;
 
 char tmp[100] = {0};
 
@@ -154,8 +155,11 @@ void setup(void)
 	while(1);
   }
 
+  cc3000.disconnect(); /* if we dont do this, touch will lock up */
+  cc3000.stop();
+
   loadConfig();
- 
+
   if(cfg.debug_local==0 || cfg.demoMode==1){
 	  tft.fillScreen(ILI9341_WHITE);
 	  bmpDraw("sir.bmp", 0, 0);
@@ -1035,33 +1039,110 @@ void showWifiCfg(){
 	}
 }
 
-void showCfg(bool blockTillTouch){
-	tft.println("       [wifi]");
-	showWifiCfg();
+void configBanner(int tab){
+	tft.setTextColor( (tab==0 ? ILI9341_WHITE : ILI9341_DARKGREY) );
+	tft.print("Show |");
 
-	tft.println("      [config]");
-	ps("dog: ", cfg.ext_watchdog);
-	ps("tshift: ", cfg.temp_shift);
-	ps("hshift: ", cfg.humi_shift);
-	ps("debug: ", cfg.debug_local);
-	ps("demo: ", cfg.demoMode);
-	ps("speed: ", cfg.speedMode);
+	tft.setTextColor( (tab==1 ? ILI9341_WHITE : ILI9341_DARKGREY));
+	tft.print("  Modify  |");
 
-	tft.println("       [web]");
-	ps("uid: ", cfg.client_id);
+	tft.setTextColor(ILI9341_RED);
+	tft.println("  X");
 
-	tft.print("key: ");
-	if(cfg.demoMode) tft.println(stars);
-	else tft.println(cfg.apikey);
-	
-	ps("srv: ", cfg.server);
-	ps("tstIp: ", cfg.test_ip);
+	tft.setTextColor(ILI9341_WHITE);	
+}
 
-	if(blockTillTouch){
-		tft.println("Touch to exit..");
-		while(!ctp.touched());
-	}else{
-		delay(2500);
+void showCfg(bool block){
+
+	cls();
+	if(block) configBanner(curTab); else curTab=0;
+
+	if(curTab==0){
+		tft.println("       [wifi]");
+		showWifiCfg();
+
+		tft.println("      [config]");
+		ps("dog: ", cfg.ext_watchdog);
+		ps("tshift: ", cfg.temp_shift);
+		ps("hshift: ", cfg.humi_shift);
+		ps("debug: ", cfg.debug_local);
+		ps("demo: ", cfg.demoMode);
+		ps("speed: ", cfg.speedMode);
+
+		tft.println("       [web]");
+		ps("uid: ", cfg.client_id);
+
+		tft.print("key: ");
+		if(cfg.demoMode) tft.println(stars);
+		else tft.println(cfg.apikey);
+		
+		ps("srv: ", cfg.server);
+		ps("tstIp: ", cfg.test_ip);
+	}
+	else{
+		tft.setTextSize(3);
+		tft.print("local = "); tft.println(cfg.debug_local); tft.println();
+		tft.print("demo  = "); tft.println(cfg.demoMode);    tft.println();
+		tft.print("speed = "); tft.println(cfg.speedMode);   tft.println();
+		tft.setTextSize(2);
+	}
+
+	if(block){
+		while(1){
+			//y = > 300 in top menu bar..
+			//x: < 30 = exit, 36-160 = modify, 180+ = show
+			if ( ctp.touched() ) {
+			    TS_Point p = ctp.getPoint(); 
+				//sprintf(tmp,"\nx:%d\ny:%d", p.x, p.y);
+				//tft.println(tmp);
+				delay(500); //software debounce
+
+				if(p.y > 300){ //top tab bar..
+					if(p.x < 30) break; //X pressed
+
+					if(p.x > 180){ //show tab
+						curTab = 0;
+						showCfg(true);
+						break;
+					}else{ //modify tab
+						curTab = 1;
+						showCfg(true);
+						break;
+					}
+
+				}	
+				
+				if(curTab==1){
+					if(p.y > 250){
+						cfg.debug_local = cfg.debug_local == 0 ? 1 : 0;
+						showCfg(true);
+						break;
+					}else if(p.y <= 250 && p.y >= 210){
+						cfg.demoMode = cfg.demoMode == 0 ? 1 : 0;
+						showCfg(true);
+						break;
+					}else if(p.y <= 200 && p.y >= 170){
+						cfg.speedMode = cfg.speedMode == 0 ? 1 : 0;
+						showCfg(true);
+						break;
+					}
+
+				}
+
+			}
+		}
+	}
+
+	if(!block){
+		//hidden option, if they touch the screen during config display 
+		//they can enter config mode (useful at startup)
+		for(int i=0; i <= 10; i++){
+			delay(250);
+			if( ctp.touched() ){
+				showCfg(true);
+				return;
+			}
+		}
 	}
 
 }
