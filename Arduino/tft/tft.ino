@@ -7,6 +7,11 @@ ini debug_local = 1 -> use test server, no dht22 required
 
 new ini library saves ~500 bytes of both code and ram, and much easier to read...
 
+bugnote: apparently www.fastrprint will hang on to long of a string passed to it..
+         this may be why i needed a watchdog in the original version?
+
+ NOTE: compile this with arduino ide 1.5.8
+
 */
 
 #include <SPI.h>
@@ -30,10 +35,18 @@ Adafruit_FT6206 ctp = Adafruit_FT6206();
 #define SD_CS 4
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
-#define dht22_pin     2
-#define EXT_WATCHDOG_PIN 6
+#define dht22_pin     46
+#define EXT_WATCHDOG_PIN 44
 
-#define WEBPAGE       "/humidor/logData.php" 
+//IRQ MUST be an interrupt pin!
+#define ADAFRUIT_CC3000_IRQ   21  
+#define ADAFRUIT_CC3000_VBAT  49
+#define ADAFRUIT_CC3000_CS    48
+Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT, SPI_CLOCK_DIVIDER); 
+unsigned long IDLE_TIMEOUT_MS = 7000; // Amount of time to wait (in milliseconds) with no data (7 seconds)
+
+
+char* WEBPAGE = "/humidor/logData.php"; 
 #define firmware_ver  "v1.3 " __DATE__  
 #define MAX_TICKS 1000
 
@@ -50,7 +63,7 @@ uint8_t inReadSensor  = 0;
 int uploads  = 0;
 int fail_cnt = 0;
 
-char tmp[55] = {0};
+char tmp[100] = {0};
 
 double temp      = 0;
 double humi      = 0;
@@ -75,41 +88,28 @@ struct CONFIG{
 	uint8_t secMode;
 };
 
-struct CFG_STRINGS{
-	char* ssid = "ssid";
-	char* security = "security";
-	char* pass = "pass";
-	char* ext_watchdog = "ext_watchdog";
-	char* temp_shift = "temp_shift";
-	char* humi_shift = "humi_shift";
-	char* debug_local = "debug_local";
-	char* demoMode = "demoMode";
-	char* speedMode = "speedMode";
-	char* client_id = "client_id";
-	char* apikey = "apikey";
-	char* server = "server";
-	char* test_ip = "test_ip";
-	char* missing = "Missing ";
-	char* stars = "*******";
-	char* iniFile = "private.ini";
-};
+
+char* ssid = "ssid";
+char* security = "security";
+char* pass = "pass";
+char* ext_watchdog = "ext_watchdog";
+char* temp_shift = "temp_shift";
+char* humi_shift = "humi_shift";
+char* debug_local = "debug_local";
+char* demoMode = "demoMode";
+char* speedMode = "speedMode";
+char* client_id = "client_id";
+char* apikey = "apikey";
+char* server = "server";
+char* test_ip = "test_ip";
+char* missing = "Missing ";
+char* stars = "*******";
+char* iniFile = "private.ini";
+
 
 CONFIG cfg;
-CFG_STRINGS sCfg;
+//CFG_STRINGS sCfg;
 
-//------------------ wifi sheild --------------------
-
-// These are the interrupt and control pins // IRQ MUST be an interrupt pin!
-#define ADAFRUIT_CC3000_IRQ   21  
-// These can be any two pins
-#define ADAFRUIT_CC3000_VBAT  41
-#define ADAFRUIT_CC3000_CS    40
-
-Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT, SPI_CLOCK_DIVIDER); 
-
-unsigned long IDLE_TIMEOUT_MS = 7000; // Amount of time to wait (in milliseconds) with no data (7 seconds)
-                                     
-//------------------ END wifi sheild --------------------      
 
 
 
@@ -162,15 +162,6 @@ void setup(void)
 	  delay(1500);
 	  tft.fillScreen(ILI9341_BLACK);
   }
-
-  /*unsigned long aucDHCP = 14400;
-  unsigned long aucARP = 3600;
-  unsigned long aucKeepalive = 10;
-  unsigned long aucInactivity = 20;
-  
-  if (netapp_timeout_values(&aucDHCP, &aucARP, &aucKeepalive, &aucInactivity) != 0) {
-    //IFS( Serial.println("Error setting inactivity timeout!"); )
-  }*/
 
 }
 
@@ -466,10 +457,15 @@ unsigned long timeDiff(unsigned long startTime){
 	return millis() - startTime;
 }
 
+void lcd_ip_out(uint32_t ip){
+  uint8_t* b = (uint8_t*)&ip;
+  sprintf_P(tmp,PSTR("%d.%d.%d.%d"), b[3], b[2], b[1], b[0] );
+  tft.println(tmp);
+}
 
 bool PostData()
 {
-  char buf[150];
+  char buf[500];
   int ticks = 0;
 
   //these are for our http parser, since we dont want to store the response in a buffer to parse latter
@@ -515,35 +511,38 @@ bool PostData()
 					Serial.println(F("Couldn't resolve!"));
 				}
 				delay(500);
-			  }  
+			}  
 		}
   }
 
+  lcd_ip_out(cfg.activeIP);
   www = cc3000.connectTCP(cfg.activeIP, 80); //have been having occasional hang here...
   if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
 
   lcd_outp(F("Connected"));
-   
-  //breaking this up so no one sprintf takes up to much memory..
-  strcpy_P(buf, PSTR(WEBPAGE));
-  sprintf_P(tmp, PSTR("?temp=%d&humi=%d&watered=%d&powerevt=%d"), (int)temp, (int)humi, watered, powerevt);
-  strcat(buf,tmp);
-
-  sprintf_P(tmp, PSTR("&failure=%d&clientid=%d&smoked=%d&apikey="), failure, cfg.client_id, smoked);
-  strcat(buf,tmp);
-  strcat(buf,cfg.apikey);
-  
-  lcd_outp(F("Submit"));
-
-  sprintf_P(tmp, PSTR("%d bytes "), strlen(buf) );
-  lcd_out(tmp,1);
-
-  delay(1200);
   
   if( www.connected() ) {
-    www.fastrprint(F("GET "));
+    tft.println("sending request");
+
+	www.fastrprint(F("GET "));
+	//tft.println("1");
+
+	//breaking this up so no one sprintf takes up to much memory..
+	www.fastrprint(WEBPAGE);
+	//tft.println("1a");
+
+	sprintf_P(buf, PSTR("?temp=%d&humi=%d&watered=%d&powerevt=%d"), (int)temp, (int)humi, watered, powerevt);
     www.fastrprint(buf);
+	//tft.println("2");
+
+	sprintf_P(buf, PSTR("&failure=%d&clientid=%d&smoked=%d&apikey="), failure, cfg.client_id, smoked);
+    strcat(buf,cfg.apikey);
+	www.fastrprint(buf);
+	//tft.println("3");
+
     www.fastrprint(F(" HTTP/1.1\r\n"));
+	//tft.println("4");
+
     www.fastrprint(F("Host: ")); www.fastrprint(cfg.server); www.fastrprint(F("\r\n"));
     www.fastrprint(F("\r\n"));
     if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
@@ -574,7 +573,7 @@ bool PostData()
         char c = www.read();
 		if(c != 0) rLeng++;
 		
-		//Serial.print(c);
+		Serial.print(c);
 
 		if(rLeng % 25 == 0){ //(http headers have some length to them..)
 			tft.fillRect(curX, curY, tft.width(), 30 ,ILI9341_BLACK);
@@ -750,12 +749,12 @@ void bmpDraw(char *filename, uint8_t x, uint16_t y) {
   uint8_t  r, g, b;
   uint32_t pos = 0, startTime = millis();
 
-  bool debugDraw = false;
+  bool debugDraw = true;
 
   if((x >= tft.width()) || (y >= tft.height())) return;
 
-  Serial.print(F("Loading image '"));
-  Serial.print(filename);
+  Serial.print(F("Loading image "));
+  Serial.println(filename);
 
   // Open requested file on SD card
   if ((bmpFile = SD.open(filename)) == NULL) {
@@ -765,24 +764,34 @@ void bmpDraw(char *filename, uint8_t x, uint16_t y) {
 
   // Parse BMP header
   if(read16(bmpFile) == 0x4D42) { // BMP signature
-    if(debugDraw) Serial.print(F("File size: ")); Serial.println(read32(bmpFile));
+
+	uint32_t fsize = read32(bmpFile);
     (void)read32(bmpFile); // Read & ignore creator bytes
     bmpImageoffset = read32(bmpFile); // Start of image data
-    if(debugDraw) Serial.print(F("Image Offset: ")); Serial.println(bmpImageoffset, DEC);
-    // Read DIB header
-    if(debugDraw) Serial.print(F("Header size: ")); Serial.println(read32(bmpFile));
+    uint32_t hSize = read32(bmpFile); // Read DIB header
+   
+   if(debugDraw){ 
+		Serial.print(F("File size: ")); Serial.println(fsize); } 
+		Serial.print(F("Image Offset: ")); Serial.println(bmpImageoffset, DEC);
+		Serial.print(F("Header size: ")); Serial.println(hSize);
+    }
+
     bmpWidth  = read32(bmpFile);
     bmpHeight = read32(bmpFile);
     if(read16(bmpFile) == 1) { // # planes -- must be '1'
       bmpDepth = read16(bmpFile); // bits per pixel
-      if(debugDraw) Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
+	  if(debugDraw){ Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
+
       if((bmpDepth == 24) && (read32(bmpFile) == 0)) { // 0 = uncompressed
 
         goodBmp = true; // Supported BMP format -- proceed!
-        if(debugDraw) Serial.print(F("Image size: "));
-        if(debugDraw) Serial.print(bmpWidth);
-        if(debugDraw) Serial.print('x');
-        if(debugDraw) Serial.println(bmpHeight);
+
+		if(debugDraw){
+			Serial.print(F("Image size: "));
+			Serial.print(bmpWidth);
+			Serial.print('x');
+			Serial.println(bmpHeight);
+		}
 
         // BMP rows are padded (if needed) to 4-byte boundary
         rowSize = (bmpWidth * 3 + 3) & ~3;
@@ -834,9 +843,12 @@ void bmpDraw(char *filename, uint8_t x, uint16_t y) {
             tft.pushColor(tft.color565(r,g,b));
           } // end pixel
         } // end scanline
-        if(debugDraw) Serial.print(F("Loaded in "));
-        if(debugDraw) Serial.print(millis() - startTime);
-        if(debugDraw) Serial.println(" ms");
+
+		if(debugDraw){
+			Serial.print(F("Loaded in "));
+			Serial.print(millis() - startTime);
+			Serial.println(" ms");
+		}
       } // end goodBmp
     }
   }
@@ -869,20 +881,20 @@ static int myini_handler(void* user, const char* section, const char* name, cons
 {
 	//we can ignore the section since all names are unique..
 	//should we do a strcpy to local buffer instead? they are never freed so no holes but allocs can be shady..should be ok..
-	if (strcmp(name, sCfg.ssid)    ==0) cfg.ssid = strdup(value);
-	if (strcmp(name, sCfg.security)==0) cfg.security = strdup(value);
-	if (strcmp(name, sCfg.pass)    ==0) cfg.pass = strdup(value);
-	if (strcmp(name, sCfg.apikey)  ==0) cfg.apikey = strdup(value);
-	if (strcmp(name, sCfg.server)  ==0) cfg.server = strdup(value);
-	if (strcmp(name, sCfg.test_ip) ==0) cfg.test_ip = strdup(value);
+	if (strcmp(name, ssid)    ==0) cfg.ssid = strdup(value);
+	if (strcmp(name, security)==0) cfg.security = strdup(value);
+	if (strcmp(name, pass)    ==0) cfg.pass = strdup(value);
+	if (strcmp(name, apikey)  ==0) cfg.apikey = strdup(value);
+	if (strcmp(name, server)  ==0) cfg.server = strdup(value);
+	if (strcmp(name, test_ip) ==0) cfg.test_ip = strdup(value);
 
-	if (strcmp(name, sCfg.ext_watchdog) ==0) cfg.ext_watchdog = atoi(value);
-	if (strcmp(name, sCfg.temp_shift)   ==0) cfg.temp_shift = atoi(value);
-	if (strcmp(name, sCfg.humi_shift)   ==0) cfg.humi_shift = atoi(value);
-	if (strcmp(name, sCfg.debug_local)  ==0) cfg.debug_local = atoi(value);
-	if (strcmp(name, sCfg.client_id)    ==0) cfg.client_id = atoi(value);
-	if (strcmp(name, sCfg.demoMode)     ==0) cfg.demoMode = atoi(value);
-	if (strcmp(name, sCfg.speedMode)    ==0) cfg.speedMode = atoi(value);
+	if (strcmp(name, ext_watchdog) ==0) cfg.ext_watchdog = atoi(value);
+	if (strcmp(name, temp_shift)   ==0) cfg.temp_shift = atoi(value);
+	if (strcmp(name, humi_shift)   ==0) cfg.humi_shift = atoi(value);
+	if (strcmp(name, debug_local)  ==0) cfg.debug_local = atoi(value);
+	if (strcmp(name, client_id)    ==0) cfg.client_id = atoi(value);
+	if (strcmp(name, demoMode)     ==0) cfg.demoMode = atoi(value);
+	if (strcmp(name, speedMode)    ==0) cfg.speedMode = atoi(value);
     
 //	tft.println(name);
 
@@ -921,13 +933,13 @@ bool loadConfig(){
 		delay(1500);
 	}
 
-	if(!SD.exists(sCfg.iniFile)){
+	if(!SD.exists(iniFile)){
 		tft.println("Stopped, missing");
-		tft.println(sCfg.iniFile);
+		tft.println(iniFile);
 		while(1);
 	}
 
-	File file = SD.open(sCfg.iniFile);
+	File file = SD.open(iniFile);
 	if(!file) while(1);
 
 	if(ini_parse_stream((ini_reader)my_fgets, &file, myini_handler, 0) < 0) {
@@ -939,15 +951,15 @@ bool loadConfig(){
 	file.close();
 
 	int fail=0;
-	if(cfg.ssid==0){ps(sCfg.missing, sCfg.ssid);fail++;}
-	if(cfg.security==0){ps(sCfg.missing, sCfg.security);fail++;}
-	if(cfg.pass==0){ps(sCfg.missing, sCfg.pass);fail++;}
-	if(cfg.client_id==0){ps(sCfg.missing, sCfg.client_id);fail++;}
-	if(cfg.apikey==0){ps(sCfg.missing, sCfg.apikey);fail++;}
-	if(cfg.server==0){ps(sCfg.missing, sCfg.server);fail++;}
+	if(cfg.ssid==0){ps(missing, ssid);fail++;}
+	if(cfg.security==0){ps(missing, security);fail++;}
+	if(cfg.pass==0){ps(missing, pass);fail++;}
+	if(cfg.client_id==0){ps(missing, client_id);fail++;}
+	if(cfg.apikey==0){ps(missing, apikey);fail++;}
+	if(cfg.server==0){ps(missing, server);fail++;}
 
 	if(cfg.debug_local!=0){
-		if(cfg.test_ip==0){ps(sCfg.missing, sCfg.test_ip);fail++;}
+		if(cfg.test_ip==0){ps(missing, test_ip);fail++;}
 	}
   
 	if(strcmp(cfg.security,"wep")==0){
@@ -1014,11 +1026,11 @@ void showWifiCfg(){
 
 	if(strcmp(cfg.security,"wep")==0){
 		tft.print("pass:"); 
-		if(cfg.demoMode) tft.println(sCfg.stars);
+		if(cfg.demoMode) tft.println(stars);
 		else hexDump(cfg.pass);
 	}else{
 		tft.print("pass: "); 
-		if(cfg.demoMode) tft.println(sCfg.stars);
+		if(cfg.demoMode) tft.println(stars);
 		else tft.println(cfg.pass);
 	}
 }
@@ -1039,7 +1051,7 @@ void showCfg(bool blockTillTouch){
 	ps("uid: ", cfg.client_id);
 
 	tft.print("key: ");
-	if(cfg.demoMode) tft.println(sCfg.stars);
+	if(cfg.demoMode) tft.println(stars);
 	else tft.println(cfg.apikey);
 	
 	ps("srv: ", cfg.server);

@@ -54,6 +54,7 @@ void displayFlags(int min);
 void delay_x_min(int minutes, int silent);
 bool ReadSensor();
 unsigned long timeDiff(unsigned long startTime);
+void lcd_ip_out(uint32_t ip);
 bool PostData();
 double toFahrenheit(double dCelsius);
 int dht22_read(uint8_t pin);

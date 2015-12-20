@@ -1,0 +1,32 @@
+    /* process file line by line */
+	while( file.available() ){
+		
+freshLine:
+		char b=0;
+		int cnt=0;
+		memset(line,0,INI_MAX_LINE);
+
+		//load a line of text into internal buffer
+		//this is my implementation of .readBytesUntil(\n) it has been customized so
+		//that if first line character is a comment, then it will ignore the line
+		//so comments can be longer than INI_MAX_LINE without error..
+		while( file.available() ){
+			
+			if(cnt == INI_MAX_LINE){ //buffer full up, skip file pointer to end and process partial line? (visible error in output)
+				readTillNewLine(file);
+			    break;
+			}
+
+			size_t bytesRead = file.read(&b, 1);
+			if (!bytesRead) return error;
+
+			if(cnt==0 && (b=='#' || b==';') ){ //comment line, just skip it without impacting buffer length..
+				readTillNewLine(file);
+				goto freshLine;
+			}else{
+				line[cnt] = b;
+				if (b == '\n') break;
+				cnt++;
+			}
+
+		}
