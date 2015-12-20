@@ -392,9 +392,7 @@ unsigned long timeDiff(unsigned long startTime){
 
 bool PostData()
 {
-  
 
-  char buf[150];
   int ticks = 0;
 
   //these are for our http parser, since we dont want to store the response in a buffer to parse latter
@@ -427,26 +425,22 @@ bool PostData()
   delay(2000);
 
   www = cc3000.connectTCP(ip, 80); //have been having occasional hang here...
-
-  //breaking this up so no one sprintf takes up to much memory..
-  strcpy_P(buf, PSTR(WEBPAGE));
-  sprintf_P(tmp, PSTR("?temp=%d&humi=%d&watered=%d&powerevt=%d"), (int)temp, (int)humi, watered, powerevt);
-  strcat(buf,tmp);
-
-  sprintf_P(tmp, PSTR("&failure=%d&clientid=%d&smoked=%d&apikey="), failure, client_id, smoked);
-  strcat(buf,tmp);
-  strcat_P(buf,PSTR(APIKEY));
-  
   if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
-  
-  sprintf_P(tmp, PSTR("%d bytes     "), strlen(buf) );
-  lcd_out(tmp,1);
-
-  delay(1200);
 
   if( www.connected() ) {
-    www.fastrprint(F("GET "));
-    www.fastrprint(buf);
+	www.fastrprint(F("GET "));
+    
+	//breaking this up so no one sprintf takes up to much memory..
+	www.fastrprint(F(WEBPAGE));
+
+	sprintf_P(tmp, PSTR("?temp=%d&humi=%d&watered=%d&powerevt=%d"), (int)temp, (int)humi, watered, powerevt);
+	www.fastrprint(tmp);
+
+	sprintf_P(tmp, PSTR("&failure=%d&clientid=%d&smoked=%d&apikey="), failure, client_id, smoked);
+	www.fastrprint(tmp);
+
+	www.fastrprint(APIKEY);
+
     www.fastrprint(F(" HTTP/1.1\r\n"));
     www.fastrprint(F("Host: ")); www.fastrprint(F(DOMAIN)); www.fastrprint(F("\r\n"));
     www.fastrprint(F("\r\n"));
