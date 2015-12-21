@@ -27,3 +27,10 @@ the data is in the following format:
 
 6,0,2,test,sandsprite.com
 
+due to memory constraints, we can not use a touch screen or get
+fancier with the ini.
+
+I think this build was complete, but I am not going to move
+forward with it. the mega + touchscreen gave me more capabilities
+and no more memory size constraints.
+
