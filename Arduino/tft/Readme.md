@@ -17,22 +17,31 @@ https://www.adafruit.com/products/385
 4GB Blank SD/MicroSD Memory Card $8
 https://www.adafruit.com/product/102
 
-Total: $144 
+male to female jumpers $4
+https://www.adafruit.com/products/826
 
+Total: $150 
 
 Details
 ------------------------
+This build was created for the following reasons:
+
+	* less soldering, just plug parts together
+	* do not need to edit source code with user settings (edit text file on sd card)
+	* better looking display, more features
+	* easier to build an enclosure for
+
 The TFT touch shield just plugs right into the mega, it comes fully
-assembled. You will have to solder 3 jumpers on the back, and cut 3
-traces. The touch screen eliminates the need to mount and wire buttons. 
+assembled. You will have to solder 3 jumpers pads on the back, and cut 3
+traces. (\hardware_picts\tft_solder.jpg) 
 
-This build will cost an additional $40 dollars over the LCD version
-but is much less work, and will be easier to build an enclosure for.
+The touch screen eliminates the need to mount and wire buttons
+greatly simplifying the enclosure fabrication.  
 
-Details here:
-https://learn.adafruit.com/adafruit-2-8-tft-touch-shield-v2/connecting#using-with-a-mega-slash-leonardo
+This build will cost an additional $50 dollars over the LCD version
+but is much less work.
 
-TFT Pins used: (for reference, no wiring required just plug in)
+TFT Touchscreen Pins used: (for reference, no wiring required just plug in)
 
     *Touch:   I2C  SDA, SCL 
     *TFT:     ICSP SCLK/MISO/MOSI, Digital #10 (CS), Digital #9 (DC)
@@ -58,6 +67,22 @@ The DHT22 sensor requires 3 wires:
 
 If your counting, there are only 7 wires to hookup, (and
 two sets of power/ground connections)
+
+If you want to get up and running quickly, buy a pack
+of the male to female jumpers. 
+
+All of the connections can be a simple matter of just 
+plugging parts together. 
+
+There is very little soldering required in this build. 
+(just the 8 pins on the wifi board header, and the 3 pads on
+the tft shield)
+
+In the build pictures (\hardware_picts\tft) you can see I 
+decided to use a scrap of circuit board and solder the wires
+on. This was just my preference for a compact layout. The
+jumpers approach will work fine as well. Just be aware a wire may
+come loose if it gets jostled around allot.
 
 Next edit public.ini and then save as private.ini. 
 Now copy the files from the SDCard_Files folder

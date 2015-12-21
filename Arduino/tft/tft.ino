@@ -209,7 +209,7 @@ void loop(void)
 
    watchdogDisable();
    show_readings(true);
-   delay_x_min(30); //webui expects 30min delay for stat gen
+   delay_x_min( (fail_cnt == 0 ? 30 : 5) ); //webui expects 30min delay for stat gen
 
 }
 

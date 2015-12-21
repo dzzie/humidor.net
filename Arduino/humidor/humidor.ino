@@ -172,7 +172,7 @@ void loop(void)
 
 	lcd.setCursor(15-strlen(tmp),1); 
 	lcd.print(tmp);
-	delay_x_min(30); //webui expects 30min delay for stat gen
+	delay_x_min( (fail_cnt == 0 ? 30 : 5) ); //webui expects 30min delay for stat gen
 }
 
 void watchdogReset()

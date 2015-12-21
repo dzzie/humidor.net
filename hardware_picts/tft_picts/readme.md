@@ -7,4 +7,9 @@
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/WP_20151220_010.jpg)
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/WP_20151220_017.jpg)
 
-
+![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/tft_solder.jpg)
+![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/WP_20151221_001.jpg)
+![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/WP_20151221_002.jpg)
+![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/WP_20151221_003.jpg)
+![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/WP_20151221_004.jpg)
+![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/WP_20151221_009.jpg)
