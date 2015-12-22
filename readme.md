@@ -72,9 +72,9 @@ Materials:
   * [4] AdaFruit Wireless Ethernet Shield - $40 
   * [5] Haier 8 bottle thermoelectric wine cooler - $100
   * [6] External Watchdog (optional) - $16
+  * [7] 9 volt 1 Amp DC center positive power adapter w/ 2.1mm plug - $7
   * WebServer with Php and MySql support
-  * 9-12v 1 Amp DC center positive power adapter w/ 2.1mm plug 
-  * Total Cost: $200
+  * Total Cost: $200 (including thermoelectric cooler as humidor)
 
 Note: Make sure your Arduino is powered by a 1 amp or higher rated external power supply
 when using with the CC3000! Less will lead to unstable behavior and lockups!
@@ -112,7 +112,7 @@ external watchdog (optional [6])
 
 	* digital pin 6      
       
-autowater removed see [7]
+autowater removed see [8]
 
 Note: The dht22 sensor will burn out if you hook it up backwards. 
     It is a 4 pin component with one pin unused. I cut off the unused 
@@ -140,7 +140,10 @@ http://www.amazon.com/Haier-8-Bottle-Bottle-Electronic-Controls/dp/B00DNSO2BO/re
 [6] SwitchDoc Labs Dual WatchDog Timer (optional)
 http://www.amazon.com/SwitchDoc-Labs-WatchDog-Arduino-Raspberry/dp/B00OL1N7R2/ref=sr_1_2?ie=UTF8&qid=1442439681&sr=8-2&keywords=dual+watchdog
 
-[7] auto water feature 
+[7] Power supply
+https://www.adafruit.com/product/63
+
+[8] auto water feature 
 This feature was removed in commit 9b07772. For my humidor I added 5 large boveda packs
 and a pound of beads just for use as a buffer. I would be lucky if I went through 5 packs a year.
 These give rock solid stability and no more ups and downs with watering. If you are spending this much

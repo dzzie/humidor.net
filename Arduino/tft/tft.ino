@@ -12,6 +12,9 @@ bugnote: apparently www.fastrprint will hang on to long of a string passed to it
 
  NOTE: compile this with arduino ide 1.5.8
 
+ Binary sketch size: 52,678 bytes (used 21% of a 253,952 byte maximum) (3.05 secs)
+Minimum Memory Usage: 2601 bytes (32% of a 8192 byte maximum)
+
 */
 
 #include <SPI.h>
@@ -27,6 +30,10 @@ bugnote: apparently www.fastrprint will hang on to long of a string passed to it
 #include <SD.h>
 #include "ini.h"
 
+//so apparently if you send serial data without a pc attached it can bug out the arduino.
+//I found a couple references online specifically when using I2C devices in conjunction..
+#define WITH_SERIAL 0
+
 // The FT6206 uses hardware I2C (SCL/SDA)
 Adafruit_FT6206 ctp = Adafruit_FT6206();
 
@@ -39,12 +46,15 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 #define EXT_WATCHDOG_PIN 44
 
 //IRQ MUST be an interrupt pin!
-#define ADAFRUIT_CC3000_IRQ   21  
+//note: the CC3000 IRQQ pin had to be moved from 21 since it was causing lockups
+//      with the touch screen. There was a work around of calling cc3000.stop() and reboot,
+//      but it was not stable and causing problems.. IRQ on pin 19 seems ok so far..
+//      just note the hardware pictures may be wrong
+#define ADAFRUIT_CC3000_IRQ   19  
 #define ADAFRUIT_CC3000_VBAT  49
 #define ADAFRUIT_CC3000_CS    48
 Adafruit_CC3000 cc3000 = Adafruit_CC3000(ADAFRUIT_CC3000_CS, ADAFRUIT_CC3000_IRQ, ADAFRUIT_CC3000_VBAT, SPI_CLOCK_DIVIDER); 
 unsigned long IDLE_TIMEOUT_MS = 7000; // Amount of time to wait (in milliseconds) with no data (7 seconds)
-
 
 char* WEBPAGE = "/humidor/logData.php"; 
 #define firmware_ver  "v1.3 " __DATE__  
@@ -111,17 +121,13 @@ char* iniFile = "private.ini";
 CONFIG cfg;
 //CFG_STRINGS sCfg;
 
-
-
-
 //following will allow you to add conditional compilation of serial debugging code 
 //with single line statements. saves space when disabled..
-#define WITH_SERIAL 1
-#ifdef WITH_SERIAL
+/*#ifdef WITH_SERIAL
    #define IFS(x) x
 #else
    #define IFS(x)
-#endif
+#endif*/
 
 void cls(){
 	tft.fillScreen(ILI9341_BLACK);
@@ -131,9 +137,11 @@ void cls(){
 void setup(void)
 {
   
-  Serial.begin(9600); 
-  while(!Serial);
-  Serial.println("Init tft..");
+  if(WITH_SERIAL){
+	  Serial.begin(9600); 
+	  while(!Serial);
+	  Serial.println("Init tft..");
+  }
 
   tft.begin();
   tft.setTextSize(2);
@@ -148,18 +156,15 @@ void setup(void)
     lcd_out("Failed..");
     while (1);
   }
-
+  
   lcd_out("Init Wifi...");
   if (!cc3000.begin()){
     lcd_out("Failed!"); 
 	while(1);
   }
-
-  cc3000.disconnect(); /* if we dont do this, touch will lock up */
-  cc3000.stop();
-
+  
   loadConfig();
-
+  
   if(cfg.debug_local==0 || cfg.demoMode==1){
 	  tft.fillScreen(ILI9341_WHITE);
 	  bmpDraw("sir.bmp", 0, 0);
@@ -387,7 +392,7 @@ void delay_x_min(int minutes, int silent){
 					if(p.x > 140){ //its on the left hand cigar half
 						smoked = smoked == 1 ? 0 : 1;      
 					}else if(p.x > 60){
-						Serial.println("enter config!");
+						if(WITH_SERIAL) Serial.println("enter config!");
 						cls();
 						showCfg(true); //timer stops until they close screen..
 						cls();
@@ -488,8 +493,8 @@ bool PostData()
   unsigned long startTime = 0;
 
   lcd_out("starting wifi...");
-  cc3000.reboot();
-  cc3000.deleteProfiles();
+  //cc3000.reboot();
+  //cc3000.deleteProfiles();
 
   Adafruit_CC3000_Client www;
 
@@ -512,7 +517,7 @@ bool PostData()
 		else{
 			while  (cfg.activeIP  ==  0)  {
 				if  (!  cc3000.getHostByName(cfg.server, &cfg.activeIP))  {
-					Serial.println(F("Couldn't resolve!"));
+					if(WITH_SERIAL) Serial.println(F("Couldn't resolve!"));
 				}
 				delay(500);
 			}  
@@ -577,7 +582,7 @@ bool PostData()
         char c = www.read();
 		if(c != 0) rLeng++;
 		
-		Serial.print(c);
+		if(WITH_SERIAL) Serial.print(c);
 
 		if(rLeng % 25 == 0){ //(http headers have some length to them..)
 			tft.fillRect(curX, curY, tft.width(), 30 ,ILI9341_BLACK);
@@ -633,7 +638,7 @@ bool PostData()
   
   delay(2500);
   cc3000.disconnect(); /* must clean up or CC3000 can freak out next connect */
-  cc3000.stop();
+  //cc3000.stop();
   return true;
   
 EXIT_FAIL:
@@ -643,7 +648,7 @@ EXIT_FAIL:
    delay(800); 
 
 CLEANUP:
-   cc3000.stop();
+   //cc3000.stop();
    return false;
   
 }
@@ -740,125 +745,133 @@ int dht22_read(uint8_t pin)
 
 void bmpDraw(char *filename, uint8_t x, uint16_t y) {
 
-  File     bmpFile;
-  int      bmpWidth, bmpHeight;   // W+H in pixels
-  uint8_t  bmpDepth;              // Bit depth (currently must be 24)
-  uint32_t bmpImageoffset;        // Start of image data in file
-  uint32_t rowSize;               // Not always = bmpWidth; may have padding
-  uint8_t  sdbuffer[3*BUFFPIXEL]; // pixel buffer (R+G+B per pixel)
-  uint8_t  buffidx = sizeof(sdbuffer); // Current position in sdbuffer
-  boolean  goodBmp = false;       // Set to true on valid header parse
-  boolean  flip    = true;        // BMP is stored bottom-to-top
-  int      w, h, row, col;
-  uint8_t  r, g, b;
-  uint32_t pos = 0, startTime = millis();
+	File     bmpFile;
+	int      bmpWidth, bmpHeight;   // W+H in pixels
+	uint8_t  bmpDepth;              // Bit depth (currently must be 24)
+	uint32_t bmpImageoffset;        // Start of image data in file
+	uint32_t rowSize;               // Not always = bmpWidth; may have padding
+	uint8_t  sdbuffer[3*BUFFPIXEL]; // pixel buffer (R+G+B per pixel)
+	uint8_t  buffidx = sizeof(sdbuffer); // Current position in sdbuffer
+	boolean  flip    = true;        // BMP is stored bottom-to-top
+	int      w, h, row, col;
+	uint8_t  r, g, b;
+	uint32_t pos = 0, startTime = millis();
 
-  bool debugDraw = true;
+	bool debugDraw = true;
+	if(WITH_SERIAL==0) debugDraw = false;
 
-  if((x >= tft.width()) || (y >= tft.height())) return;
+	if( (x >= tft.width()) || (y >= tft.height()) ) return;
 
-  Serial.print(F("Loading image "));
-  Serial.println(filename);
+	if(WITH_SERIAL) Serial.print("Loading image ");
+	if(WITH_SERIAL) Serial.println(filename);
 
-  // Open requested file on SD card
-  if ((bmpFile = SD.open(filename)) == NULL) {
-    Serial.print(F("File not found"));
-    return;
-  }
+	// Open requested file on SD card
+	bmpFile = SD.open(filename);
+	if(bmpFile == NULL) {
+		if(WITH_SERIAL) Serial.print("File not found");
+		return;
+	}
 
-  // Parse BMP header
-  if(read16(bmpFile) == 0x4D42) { // BMP signature
-
+	// Parse BMP header
+	uint16_t signature = read16(bmpFile);// BMP signature
 	uint32_t fsize = read32(bmpFile);
-    (void)read32(bmpFile); // Read & ignore creator bytes
-    bmpImageoffset = read32(bmpFile); // Start of image data
-    uint32_t hSize = read32(bmpFile); // Read DIB header
-   
-   if(debugDraw){ 
-		Serial.print(F("File size: ")); Serial.println(fsize); } 
+	read32(bmpFile);                  // Read & ignore creator bytes
+	bmpImageoffset = read32(bmpFile); // Start of image data
+	uint32_t hSize = read32(bmpFile); // Read DIB header
+	bmpWidth  = read32(bmpFile);
+	bmpHeight = read32(bmpFile);
+    uint16_t planes = read16(bmpFile);
+	bmpDepth = read16(bmpFile); // bits per pixel
+	uint32_t compressed = read32(bmpFile);
+	uint8_t errorCode = 0;
+
+	if(signature != 0x4D42)                  { errorCode=1; goto CLEANUP;}
+	if(planes != 1)                          { errorCode=2; goto CLEANUP;} // # planes -- must be '1'
+	if((bmpDepth != 24) && (compressed != 0)){ errorCode=3; goto CLEANUP;} // 0 = uncompressed
+
+	if(debugDraw){ 
+		Serial.print(F("File size: ")); Serial.println(fsize); 
 		Serial.print(F("Image Offset: ")); Serial.println(bmpImageoffset, DEC);
 		Serial.print(F("Header size: ")); Serial.println(hSize);
-    }
+		Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
+		Serial.print(F("Image size: "));
+		Serial.print(bmpWidth);
+		Serial.print('x');
+		Serial.println(bmpHeight);
+	}
 
-    bmpWidth  = read32(bmpFile);
-    bmpHeight = read32(bmpFile);
-    if(read16(bmpFile) == 1) { // # planes -- must be '1'
-      bmpDepth = read16(bmpFile); // bits per pixel
-	  if(debugDraw){ Serial.print(F("Bit Depth: ")); Serial.println(bmpDepth);
+	// BMP rows are padded (if needed) to 4-byte boundary
+	rowSize = (bmpWidth * 3 + 3) & ~3;
 
-      if((bmpDepth == 24) && (read32(bmpFile) == 0)) { // 0 = uncompressed
+	// If bmpHeight is negative, image is in top-down order.
+	// This is not canon but has been observed in the wild.
+	if(bmpHeight < 0) {
+		  bmpHeight = -bmpHeight;
+		  flip      = false;
+	}
 
-        goodBmp = true; // Supported BMP format -- proceed!
+	// Crop area to be loaded
+	w = bmpWidth;
+	h = bmpHeight;
+	if((x+w-1) >= tft.width())  w = tft.width()  - x;
+	if((y+h-1) >= tft.height()) h = tft.height() - y;
 
-		if(debugDraw){
-			Serial.print(F("Image size: "));
-			Serial.print(bmpWidth);
-			Serial.print('x');
-			Serial.println(bmpHeight);
-		}
+	// Set TFT address window to clipped image bounds
+	tft.setAddrWindow(x, y, x+w-1, y+h-1);
 
-        // BMP rows are padded (if needed) to 4-byte boundary
-        rowSize = (bmpWidth * 3 + 3) & ~3;
+	for (row=0; row<h; row++) { // For each scanline...
+		  // Seek to start of scan line.  It might seem labor-
+		  // intensive to be doing this on every line, but this
+		  // method covers a lot of gritty details like cropping
+		  // and scanline padding.  Also, the seek only takes
+		  // place if the file position actually needs to change
+		  // (avoids a lot of cluster math in SD library).
 
-        // If bmpHeight is negative, image is in top-down order.
-        // This is not canon but has been observed in the wild.
-        if(bmpHeight < 0) {
-          bmpHeight = -bmpHeight;
-          flip      = false;
-        }
+		  if(flip) // Bitmap is stored bottom-to-top order (normal BMP)
+				pos = bmpImageoffset + (bmpHeight - 1 - row) * rowSize;
+		  else     // Bitmap is stored top-to-bottom
+				pos = bmpImageoffset + row * rowSize;
 
-        // Crop area to be loaded
-        w = bmpWidth;
-        h = bmpHeight;
-        if((x+w-1) >= tft.width())  w = tft.width()  - x;
-        if((y+h-1) >= tft.height()) h = tft.height() - y;
+		  if(bmpFile.position() != pos) { // Need seek?
+				bmpFile.seek(pos);
+				buffidx = sizeof(sdbuffer); // Force buffer reload
+		  }
 
-        // Set TFT address window to clipped image bounds
-        tft.setAddrWindow(x, y, x+w-1, y+h-1);
+		  for (col=0; col<w; col++) { // For each pixel...
+				// Time to read more pixel data?
+				if (buffidx >= sizeof(sdbuffer)) { // Indeed
+					  bmpFile.read(sdbuffer, sizeof(sdbuffer));
+					  buffidx = 0; // Set index to beginning
+				}
 
-        for (row=0; row<h; row++) { // For each scanline...
+				// Convert pixel from BMP to TFT format, push to display
+				b = sdbuffer[buffidx++];
+				g = sdbuffer[buffidx++];
+				r = sdbuffer[buffidx++];
+				tft.pushColor(tft.color565(r,g,b));
+		  } // end pixel
 
-          // Seek to start of scan line.  It might seem labor-
-          // intensive to be doing this on every line, but this
-          // method covers a lot of gritty details like cropping
-          // and scanline padding.  Also, the seek only takes
-          // place if the file position actually needs to change
-          // (avoids a lot of cluster math in SD library).
-          if(flip) // Bitmap is stored bottom-to-top order (normal BMP)
-            pos = bmpImageoffset + (bmpHeight - 1 - row) * rowSize;
-          else     // Bitmap is stored top-to-bottom
-            pos = bmpImageoffset + row * rowSize;
-          if(bmpFile.position() != pos) { // Need seek?
-            bmpFile.seek(pos);
-            buffidx = sizeof(sdbuffer); // Force buffer reload
-          }
+	} // end scanline
 
-          for (col=0; col<w; col++) { // For each pixel...
-            // Time to read more pixel data?
-            if (buffidx >= sizeof(sdbuffer)) { // Indeed
-              bmpFile.read(sdbuffer, sizeof(sdbuffer));
-              buffidx = 0; // Set index to beginning
-            }
+	if(debugDraw){
+		Serial.print(F("Loaded in "));
+		Serial.print(millis() - startTime);
+		Serial.println(" ms");
+	}
+   
+ 
+CLEANUP:
+  bmpFile.close();
 
-            // Convert pixel from BMP to TFT format, push to display
-            b = sdbuffer[buffidx++];
-            g = sdbuffer[buffidx++];
-            r = sdbuffer[buffidx++];
-            tft.pushColor(tft.color565(r,g,b));
-          } // end pixel
-        } // end scanline
-
-		if(debugDraw){
-			Serial.print(F("Loaded in "));
-			Serial.print(millis() - startTime);
-			Serial.println(" ms");
-		}
-      } // end goodBmp
-    }
+  if(WITH_SERIAL && errorCode > 0){
+	  switch(errorCode){
+		  case 1: Serial.println(F("Bad BMP signature")); break;
+		  case 2: Serial.println(F("Planes must be 1")); break;
+		  case 3: Serial.println(F("Must be 24bit and uncompressed.")); break;
+		  default: Serial.println(F("BMP format not recognized."));
+	  }
   }
 
-  bmpFile.close();
-  if(!goodBmp) Serial.println(F("BMP format not recognized."));
 }
 
 // These read 16- and 32-bit types from the SD card file.
@@ -1115,6 +1128,7 @@ void showCfg(bool block){
 				if(curTab==1){
 					if(p.y > 250){
 						cfg.debug_local = cfg.debug_local == 0 ? 1 : 0;
+						cfg.activeIP = 0; //force lookup next cycle (ip gets cached)
 						showCfg(true);
 						break;
 					}else if(p.y <= 250 && p.y >= 210){

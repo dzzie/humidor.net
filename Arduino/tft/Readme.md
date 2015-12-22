@@ -17,10 +17,16 @@ https://www.adafruit.com/products/385
 4GB Blank SD/MicroSD Memory Card $8
 https://www.adafruit.com/product/102
 
-male to female jumpers $4
+male to female jumpers - $4
 https://www.adafruit.com/products/826
 
-Total: $150 
+Power supply - $7
+https://www.adafruit.com/product/63
+
+stacking headers (optional) - $2
+https://www.adafruit.com/products/85
+
+Total: $160 
 
 Details
 ------------------------
@@ -57,7 +63,7 @@ actually requires less soldering. Just wire as follows:
     *MISO to Digital 50
     *MOSI to Digital 51
     *CLK to Digital 52
-    *IRQ   21  
+    *IRQ   19  (changed since pictures taken)
 
 The DHT22 sensor requires 3 wires:
 
@@ -131,6 +137,10 @@ the interactive config mode so you can change settings at startup before any upl
 
 This mode is mostly for development, testing, and demo purposes. (touch screens gives you so much
 flexibility I just had to add it)
+
+One other bug I noticed, I was using a 12v power supply for a while in testing. The regulator chip
+got pretty hot and within an hour the arduino just kept rebooting. Probably a hot glitch. If you
+run into problems like this try a lower voltage power supply.
 
 
 Other Credits:
