@@ -12,15 +12,18 @@ Title=Sandsprite IoT Humidor
 index.html
 left.html
 intro.html
-hard.html
-soft.html
+v1_hard.html
+v1_soft.html
+v1_enc.html
 web.html
 top.html
-enc.html
 wp8.html
 adv.html
 alerts.html
 humidor.html
+v2_enc.html
+v2_hard.html
+v2_soft.html
 
 [INFOTYPES]
 

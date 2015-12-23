@@ -54,7 +54,7 @@ TFT Touchscreen Pins used: (for reference, no wiring required just plug in)
     *MicroSD: ICSP SCLK/MISO/MOSI  Digital #4 (CS)
 
 You can not use the CC3000 Shield due to pin conflicts. The cc3000 breakout
-actually requires less soldering. Just wire as follows:
+actually requires less soldering. Just wire the breakout as follows:
 
     *Connect GND to one of the Arduino GND pins:
     *Connect Vin to Arduino +5V
@@ -64,6 +64,9 @@ actually requires less soldering. Just wire as follows:
     *MOSI to Digital 51
     *CLK to Digital 52
     *IRQ   19  (changed since pictures taken)
+
+(Technically you can probably use a shield version if you wire it as a 
+breakout, or cut a trace and rewire it as is but your own your own there :)
 
 The DHT22 sensor requires 3 wires:
 
@@ -95,10 +98,6 @@ Now copy the files from the SDCard_Files folder
 to the root of the sd card and insert it into the tft shield.
 
 You will additionally need the following libraries installed:
-
-#include <Adafruit_GFX.h>    // Core graphics library
-#include <Adafruit_FT6206.h> // capacitive touch library
-#include <Adafruit_ILI9341.h>// Hardware-specific library 
 
 https://github.com/adafruit/Adafruit-GFX-Library
 https://github.com/adafruit/Adafruit_FT6206_Library
@@ -141,6 +140,11 @@ flexibility I just had to add it)
 One other bug I noticed, I was using a 12v power supply for a while in testing. The regulator chip
 got pretty hot and within an hour the arduino just kept rebooting. Probably a hot glitch. If you
 run into problems like this try a lower voltage power supply.
+
+todo:
+------------------------------
+modify screen: reload config
+
 
 
 Other Credits:

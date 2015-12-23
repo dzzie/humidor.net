@@ -1,0 +1,72 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Sandsprite.com IoT Humidor</title>
+<link rel="stylesheet" type="text/css" href="style.css" >
+</head>
+<body>
+
+
+<div style="width:600">
+
+now that you have your hardware, and a UserID + API key from the Web server section, now it is time to upload the code to the Arduino.
+<br><br>
+
+to do this you will have to download and install <a href="http://arduino.cc/en/Main/OldSoftwareReleases" target=_blank>the Arduino software</a>.
+I would recommend using a slightly older 1.5.x installer, which adafruit recommends for use with the WiFi library.
+They have downloads available for windows, Macintosh, and Linux.
+<br><br>
+
+Also make sure you have downloaded the <a href="https://github.com/dzzie/humidor.net/archive/master.zip" target=_blank>latest IoT humidor source</a>.
+<br><br>
+
+first you must install the Arduino libraries from the folder <b>/Arduino/libraries/</b> to your local /libraries/ folder in the root of your Arduino
+installation directory. Literally this is just a copy and paste operation.
+<br><br>
+
+The source code for the version 2 touch screen project are in the /Arduino/tft folder.
+There are no source code modifications required for the version 2 build. Open the tft.ino file, connect your arduino to the PC using the USB cable, and
+upload the code.
+<br><br>
+
+All of the settings for this build are stored on an SD card. Copy the files from the /tft/SDCard_Files folder onto your Micro SD card.
+Open public.ini, edit it with your settings, and then save it as private.ini. Thats it!
+<br><br>
+
+An example file is below:
+<br><br>
+
+<pre>
+# edit this file and save as private.ini
+# place a copy of it in the root of your sdcard
+# valid values for security = wep, none, wpa, wpa2
+# note wep keys must be valid hex chars lowercase only! 
+
+[wifi]
+ssid     = mywifiname
+security = wep
+pass     = baadf00d11
+
+[config]
+ext_watchdog = 1
+temp_shift   = 0
+humi_shift   = 2
+debug_local  = 0
+demoMode     = 1
+speedMode    = 0
+
+[web]
+client_id = 1
+apikey    = password
+server    = sandsprite.com
+test_ip   = 192.168.0.10
+</pre>
+
+Congrats setup is complete and you should see information start to show up on the TFT screen! 
+
+
+<br><br>
+</div>
+
+</body>
+</html>

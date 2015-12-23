@@ -25,7 +25,8 @@ now that you are up and running there are a couple more advanced topics we can d
 <hr wid-th=75%>
 The first is the use of an external watchdog circuit. The Wi-Fi card has an awful lot of magic going on in the background.
 It is doing an extremely complex task, and can get hung up on occasion. I've been running this for about a year, and I was having to
-reset my Arduino manually several times a month. 
+reset my Arduino manually several times a month. (Note: I may have fixed the bug that was giving me grief it will take a couple months
+to find out for sure)
 <br><br>
 
 the easiest way to have rocksolid stability without having to be around to reset it once in a while
@@ -86,7 +87,7 @@ perfect fix for $1.50.
 <hr wid-th=75%>
 for a cleaner look on your installation you could actually mount the Arduino and the Wi-Fi card on the back case of your humidor and only have the LCD screen mounted to the side. Looking at the LCD shield
 you see quite a number of connectors, in reality only four of these are being used. Using the pin chart at the bottom of this document you could connect wires instead and then just mount the small display on the side of the humidor
-for a cleaner look.
+for a cleaner look. The LCD only requires 4 pins Analog 4 & 5, and a power and ground connection. The TFT from v2 can also be remoted, I think it will require about 12 wires though.  
 
 <br><br>
 <br><br>
@@ -117,7 +118,7 @@ it's actually much easier just to switch over to the boveda packs which maintain
 <h2> pins used </h2>
 <hr wid-th=75%>
 generally you will not need the below information unless you are adding new capabilities to your humidor. For completeness I've included the below 
-listing which shows what pins are currently utilized:
+listing which shows what pins are currently utilized: (version 1 build)
 <br><br>
 <img src=./img/pins_used.png>
 <br><br>

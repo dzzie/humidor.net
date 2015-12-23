@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Sandsprite.com IoT Humidor</title>
+<link rel="stylesheet" type="text/css" href="style.css" >
+</head>
+<body>
+
+<div style="width:600">
+
+<img src="./img/v2/main_screen.png">
+<img src="./img/v2/config_show.jpg">
+<br><br>
+
+This build was created for the following reasons:
+
+<ul>
+<li> less soldering, just plug parts together
+<li> do not need to edit source code with user settings 
+<li> config settings stored in text file on sd card
+<li> better looking display, more features
+<li> easier to build an enclosure for
+</ul>
+
+This build will cost an additional $50 dollars over the LCD version
+but is much less work. The touch screen eliminates the need to mount and wire buttons
+greatly simplifying the enclosure fabrication. 
+<br><br>
+
+this project makes use of 5 main hardware components. There is almost no soldering involved and only 7 wires to plug in. (+4 power and ground connections)
+
+<ol>
+<li><a href="https://www.adafruit.com/products/1947" target=_blank>2.8 TFT Touch Shield - $45  </a> &nbsp; (<a href="https://www.adafruit.com/products/85" target=_blank>with pass through headers $2</a>)
+<li><a href="https://www.adafruit.com/products/385" target=_blank> DHT22 Temperature/Humidity Sensor - $10</a>
+<li><a href="https://www.adafruit.com/products/191" target=_blank>  Arduino Mega - $46  </a>
+<li><a href="https://www.adafruit.com/product/102" target=_blank> Micro Sd card - $8 </a> 
+<li><a href="https://www.adafruit.com/product/63" target=_blank>9v 1 Amp DC center positive power adapter w/ 2.1mm plug - $7</a> <b>*</b>
+<li><a href="https://www.adafruit.com/products/826" target=_blank> male to female jumpers - $4 </a> 
+</ul>
+<br><br>
+
+I have also prepared a <a href="https://www.youtube.com/watch?v=AG-n2_Xa-qk" target=_blank>video walk through of the components</a>
+<br><br>
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AG-n2_Xa-qk" frameborder="0" allowfullscreen></iframe>
+<br><br>
+
+The TFT touch shield just plugs right into the mega, it comes fully
+assembled. I used a set of stacking headers in between just to give myself some more space in the enclosure. This is optional.
+
+You will have to solder 3 jumpers pads on the back, and cut 3
+traces. 
+
+<br><br>
+<img src="./img/v2/tft_solder.jpg" width=600>
+<br><br>
+
+<pre>
+Wire the cc3000 breakout as follows:
+
+    *Connect GND to one of the Arduino GND pins:
+    *Connect Vin to Arduino +5V
+    *CS to Digital 48
+    *VBAT  49
+    *MISO to Digital 50
+    *MOSI to Digital 51
+    *CLK to Digital 52
+    *IRQ   19  (changed since pictures taken)
+
+The DHT22 sensor requires 3 wires:
+
+    *Connect GND to one of the Arduino GND pins:
+    *Connect Vin to Arduino +5V
+    *Digital 46 
+</pre>
+
+If you use the jumper wires, you can literally just plug the components together.
+You will only need to solder the header strip onto the wifi board (or cut the female end
+off of the jumpers and solder those in to the board directly. Its only 8 connections.
+<br><br>
+
+Technically you can probably use a CC3000 shield version if you wire it as a 
+breakout, or cut a trace for the pin in conflict and rewire it in place so you can 
+still stack it, but your on your own there!
+<br><br>
+
+I decided to solder up a small board to make it more compact. Here is how mine looks:
+
+<br><br>
+<img src="./img/v2/WP_20151220_017.jpg">
+<br><br>
+
+<br><br>
+<img src="./img/v2/WP_20151220_009.jpg">
+<br><br>
+
+<br><br>
+<img src="./img/v2/WP_20151220_010.jpg">
+<br><br>
+
+
+
+
+<b>*Note: the Wifi card requires allot of power, you will get weird bugs and hangs if you use to small of a power supply
+or one of low quality. If your power supply is to high of a voltage however, it may cause overheating and weird bugs of its own such as resets due to hot glitching.</b>
+ 
+</div>
+
+</body>
+</html>

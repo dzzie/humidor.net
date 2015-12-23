@@ -235,7 +235,7 @@
 		/>
 		<Global
 			Name="arduino.upload.port"
-			Value="COM3"
+			Value="COM5"
 		/>
 		<Global
 			Name="arduino.upload.protocol"
