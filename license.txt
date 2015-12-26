@@ -1,0 +1,42 @@
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR 
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+-----------------------------------
+
+
+This code is Copyright 2014 David Zimmer.
+
+It is free for personal non-commercial use. If you wish to use it for commercial use
+you must contact me for licensing.
+
+The code is not licensed for redistribution on other sites.
+
+
+-----------------------------------
+
+The software libraries utilized in this code are under seperate license. 
+
+All of the Adafruit libraries 
+
+Copyright (c) 2013-2014 Limor Fried for Adafruit Industries
+
+See the license.txt files in the corrosponding \Arduino\libraries\ directories.
+
+-----------------------------------
+
+The "inih" library is distributed under the New BSD license:
+
+Copyright (c) 2009, Ben Hoyt
+All rights reserved.
+
+see the license.txt file in \Arduino\tests\ini_config2 folder.

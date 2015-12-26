@@ -40,8 +40,32 @@ hygrometer. We will discuss USE_EXT_WATCHDOG setting in the advanced document.
 <br><br>
 
 As a final sanity check, look at the top of humidor.ino and make sure that:
+<br><br>
 
 #define debug_local  0 
+<br><br>
+
+If you plan on using your own web server on the internet you will also have to change the following line:
+<br><br>
+
+#define DOMAIN        "sandsprite.com"      
+<br><br>
+
+if you just want to use a server on your own local network, you can set debug_local 1 and change the test server ip in setup()
+You would also want to comment out the speedMode line as well. (Add two forward slashs at beginning of line)
+
+<pre>
+  if(debug_local){
+		ip = cc3000.IP2U32(192,168,0,10);   //test server
+		speedMode = 1;
+  }
+  //else
+	//	ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded
+</pre>
+
+if for some reason your internet server does not have a domain name, you might be able to just set DOMAIN to the ip
+and it might work. If not, you will also have to uncomment the sandsprite hardcoded line above and change the ip to yours.
+<br><br>
 
 Once these steps are complete you can double click on the humidor.ino file plug in your arduino to your PC with the USB cable, and upload
 the code.
