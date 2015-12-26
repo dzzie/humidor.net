@@ -42,8 +42,8 @@ char *DFAIL = "DHT22 Fail";
 volatile int counter;      // Count number of times ISR is called.
 volatile int countmax = 8; // Timer expires after about 64 secs (using 8 sec interval)
 
-uint32_t ip;
-int speedMode = 0;
+uint32_t ip       = 0;
+int speedMode     = 0;
 uint8_t powerevt  = 1;
 uint8_t watered   = 0;
 uint8_t smoked    = 0;
@@ -108,8 +108,8 @@ void setup(void)
 		ip = cc3000.IP2U32(192,168,0,10);   //test server
 		speedMode = 1;
   }
-  else
-		ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
+  //else
+	//	ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
 
   /*unsigned long aucDHCP = 14400;
   unsigned long aucARP = 3600;
@@ -419,6 +419,18 @@ bool PostData()
   }  
 
   if(ticks >= MAX_TICKS) goto EXIT_FAIL;
+
+  if(ip == 0){
+	  lcd_outp(F("Host lookup:"));
+		lcd_out(DOMAIN,1);
+		delay(700);
+		while  (ip  ==  0)  {
+			if  ( !cc3000.getHostByName(DOMAIN, &ip) ){
+				lcd_out("getHostName fail?");
+			}
+			delay(500);
+		}  
+  }
 
   lcd_outp(F("Submit"));
   lcd_ip_out(ip,1);  
