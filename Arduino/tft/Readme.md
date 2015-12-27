@@ -109,6 +109,14 @@ The display is in the vertical orientation (long way vertical)
 Notes:
 ------------------------------
 
+if you want to be able to use reload cfg and hot swap the sd card while running
+you need to patch your SD.cpp file in your arduino libraries directory.
+
+https://github.com/arduino/Arduino/issues/3607
+
+boolean SDClass::begin(uint8_t csPin) {
+   if (root.isOpen()) root.close();      // allows repeated calls
+   
 At the bottom of the main screen there are three icons. A cigar, gear and water drop.
 Pressing the cigar toggles the smoked flag and an S will appear on the screen.
 Pressing the water drop toggles the watered flag and a W will appear
@@ -143,7 +151,6 @@ run into problems like this try a lower voltage power supply.
 
 todo:
 ------------------------------
-modify screen: reload config
 
 
 

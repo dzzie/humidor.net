@@ -163,7 +163,8 @@ void setup(void)
 	while(1);
   }
   
-  loadConfig();
+  initSDCard();
+  loadConfig(true);
   
   if(cfg.debug_local==0 || cfg.demoMode==1){
 	  tft.fillScreen(ILI9341_WHITE);
@@ -931,16 +932,12 @@ char* my_fgets(char* buf, int len, File* stream){
 	
 }
 
-bool loadConfig(){
-
-	tft.println("Loading config");
-
-	memset(&cfg,0, sizeof(cfg));
+bool initSDCard(){
 
 	bool errorDisplayed = false;
-
+    
 	lcd_out("Init SD card...");
-
+	
 	while(!SD.begin(SD_CS)) {
 		if(!errorDisplayed){
 			tft.println("Missing...");
@@ -950,10 +947,23 @@ bool loadConfig(){
 		delay(1500);
 	}
 
+	return true;
+}
+
+
+bool loadConfig(bool andShow){
+
+	tft.println("Loading config");
+
+	memset(&cfg,0, sizeof(cfg));
+
 	if(!SD.exists(iniFile)){
-		tft.println("Stopped, missing");
-		tft.println(iniFile);
-		while(1);
+		initSDCard();
+		if(!SD.exists(iniFile)){
+			tft.println("Stopped, missing");
+			tft.println(iniFile);
+			while(1);
+		}
 	}
 
 	File file = SD.open(iniFile);
@@ -990,9 +1000,11 @@ bool loadConfig(){
   
   if(fail!=0){tft.print("Ini Errors: "); tft.println(fail);}
 
-  cls();
-  showCfg(false);
-  delay(1500);
+  if(andShow){
+	  cls();
+	  showCfg(false);
+	  delay(1500);
+  }
 
   return true;
 
@@ -1097,6 +1109,7 @@ void showCfg(bool block){
 		tft.print("local = "); tft.println(cfg.debug_local); tft.println();
 		tft.print("demo  = "); tft.println(cfg.demoMode);    tft.println();
 		tft.print("speed = "); tft.println(cfg.speedMode);   tft.println();
+		tft.println("reload cfg");
 		tft.setTextSize(2);
 	}
 
@@ -1135,8 +1148,12 @@ void showCfg(bool block){
 						cfg.demoMode = cfg.demoMode == 0 ? 1 : 0;
 						showCfg(true);
 						break;
-					}else if(p.y <= 200 && p.y >= 170){
+					}else if(p.y <= 200 && p.y >= 160){
 						cfg.speedMode = cfg.speedMode == 0 ? 1 : 0;
+						showCfg(true);
+						break;
+					}else if(p.y <= 159 && p.y >= 110){
+						loadConfig(false);
 						showCfg(true);
 						break;
 					}
