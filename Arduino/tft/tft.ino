@@ -210,6 +210,7 @@ void loop(void)
 		lcd_outp(F("Upload failed"),1);
 		delay(1200);
 		fail_cnt++;
+		if(fail_cnt > 2) cfg.activeIP = 0;
    }
 
    watchdogDisable();

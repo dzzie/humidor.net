@@ -19,7 +19,7 @@ This code is Copyright 2014 David Zimmer.
 It is free for personal non-commercial use. If you wish to use it for commercial use
 you must contact me for licensing.
 
-The code is not licensed for redistribution on other sites.
+The code is not licensed for redistribution or publishing on other sites.
 
 
 -----------------------------------
@@ -36,7 +36,12 @@ See the license.txt files in the corrosponding \Arduino\libraries\ directories.
 
 The "inih" library is distributed under the New BSD license:
 
-Copyright (c) 2009, Ben Hoyt
-All rights reserved.
+Copyright (c) 2009, Ben Hoyt All rights reserved.
 
 see the license.txt file in \Arduino\tests\ini_config2 folder.
+
+------------------------------------
+
+chart.js is Copyright (c) 2013-2015 Nick Downie and used under MIT license
+http://chartjs.org
+

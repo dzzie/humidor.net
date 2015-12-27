@@ -1,6 +1,13 @@
+/*
 
-/*before fast string conv:
+	Copyright David Zimmer <dzzie@yahoo.com>
+	WebSite:  http://sandsprite.com
+	All rights reserved, no portion of this code is authorized for sale or redistribution
 
+*/
+
+/*
+ before fast string conv:
     Binary sketch size: 27,166 bytes (used 84% of a 32,256 byte maximum) (1.14 secs)
     Minimum Memory Usage: 1521 bytes (74% of a 2048 byte maximum)
 
@@ -16,23 +23,18 @@
 #include <string.h>
 #include <stdio.h>
 #include <avr/wdt.h>
- 
 #include "./private.h"   //rename public.h to private.h and change settings to fit your setup 
-
-/*
-Copyright David Zimmer <dzzie@yahoo.com>
-WebSite:  http://sandsprite.com
-All rights reserved, no portion of this code is authorized for sale or redistribution
-*/
 
 //note disabled serial.printlns to save space, seems to get buggy over 28k sketch size?
 
 //use test server, no dht22 required
 //server ip is hardcoded in setup (GetHostName has problems)
-#define debug_local   0    
+uint8_t debug_local = 0;
+uint8_t speedMode   = 0;
+#define DOMAIN        "sandsprite.com" 
+
 #define dht22_pin     2
 #define EXT_WATCHDOG_PIN 6
-#define DOMAIN        "sandsprite.com"      
 #define WEBPAGE       "/humidor/logData.php" 
 #define firmware_ver  "v1.3 " __DATE__  
 #define MAX_TICKS 1000
@@ -43,7 +45,6 @@ volatile int counter;      // Count number of times ISR is called.
 volatile int countmax = 8; // Timer expires after about 64 secs (using 8 sec interval)
 
 uint32_t ip       = 0;
-int speedMode     = 0;
 uint8_t powerevt  = 1;
 uint8_t watered   = 0;
 uint8_t smoked    = 0;
@@ -109,7 +110,7 @@ void setup(void)
 		speedMode = 1;
   }
   //else
-	//	ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
+		//ip = cc3000.IP2U32(67,210,116,230); //sandsprite hardcoded, I am tired of GetHostName problems every startup..
 
   /*unsigned long aucDHCP = 14400;
   unsigned long aucARP = 3600;
@@ -164,13 +165,14 @@ void loop(void)
    show_readings();
    
    if(fail_cnt > 2){
-		sprintf_P(tmp, PSTR("%d Fails"), fail_cnt);
+		sprintf_P(tmp, PSTR("%d Fail"), fail_cnt);
+		if(debug_local==0) ip = 0; //maybe our cached ip lookup is stale, we will do a fresh lookup next time...
    }
    else{//track # successful uploads since last reset (watch watchdog)
 		sprintf(tmp, "%d", uploads);
    }
 
-	lcd.setCursor(15-strlen(tmp),1); 
+	lcd.setCursor(16-strlen(tmp),1); 
 	lcd.print(tmp);
 	delay_x_min( (fail_cnt == 0 ? 30 : 5) ); //webui expects 30min delay for stat gen
 }
@@ -420,17 +422,23 @@ bool PostData()
 
   if(ticks >= MAX_TICKS) goto EXIT_FAIL;
 
-  if(ip == 0){
-	  lcd_outp(F("Host lookup:"));
+   
+  ticks = 0;
+  if(ip == 0){ 
+	    lcd_outp(F("Host lookup:"));
 		lcd_out(DOMAIN,1);
 		delay(700);
+		ip=0;
 		while  (ip  ==  0)  {
-			if  ( !cc3000.getHostByName(DOMAIN, &ip) ){
+			if  ( !cc3000.getHostByName(DOMAIN, &ip) ){ //this can cause hangs, screw it..
 				lcd_out("getHostName fail?");
 			}
+			ticks++;
+			if(ticks >= MAX_TICKS) goto EXIT_FAIL;
 			delay(500);
 		}  
   }
+   
 
   lcd_outp(F("Submit"));
   lcd_ip_out(ip,1);  
