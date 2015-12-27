@@ -342,8 +342,8 @@ void show_readings(bool drawButtons){
 	  tft.println(tmp);
 
 	  if(drawButtons){
-		  bmpDraw("water.bmp", 180, 280); //240w x 320h screen
-		  bmpDraw("cigar.bmp", 20, 280); //43w x 33h   images
+		  bmpDraw("water.bmp", 190, 280); //240w x 320h screen
+		  bmpDraw("cigar.bmp", 10, 280); //43w x 33h   images
 		  bmpDraw("config.bmp", 100, 280);
 	  }
 
@@ -389,8 +389,8 @@ void delay_x_min(int minutes, int silent){
 				//sprintf(tmp,"\nx:%d\ny:%d", p.x, p.y);
 				//lcd_out(tmp);
 
-				if( p.y < 50){ //its in the lower image bar band.. |__| <-0,0
-					if(p.x > 140){ //its on the left hand cigar half
+				if( p.y < 50){ //its in the lower image bar band.. |_|_| <-0,0 width 240/3 = 80
+					if(p.x > 170){ //its on the left hand cigar
 						smoked = smoked == 1 ? 0 : 1;      
 					}else if(p.x > 60){
 						if(WITH_SERIAL) Serial.println("enter config!");
@@ -632,7 +632,6 @@ bool PostData()
 	  if(pr_offset){
 		  lcd_out(pageResp,1); 
 		  uploads++;
-		  if(uploads == 999) uploads = 1; //dont take up to much lcd space..
 	  }
 	  else lcd_outp(F("Bad PageResp "),1);
   }

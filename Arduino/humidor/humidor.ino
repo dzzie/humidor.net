@@ -26,6 +26,7 @@
 #include "./private.h"   //rename public.h to private.h and change settings to fit your setup 
 
 //note disabled serial.printlns to save space, seems to get buggy over 28k sketch size?
+//#define WITH_SERIAL 1
 
 //use test server, no dht22 required
 //server ip is hardcoded in setup (GetHostName has problems)
@@ -494,7 +495,7 @@ bool PostData()
 			lcd.print(rLeng);
 		}
 
-        //IFS( Serial.print(c); )
+        IFS( Serial.print(c); )
       
         //this accounts for \r\n or just \n, (debugged in visual studio..)
         //we do a crude parse of the http headers to extract response code and first 
