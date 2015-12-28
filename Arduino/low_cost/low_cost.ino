@@ -131,6 +131,9 @@ void read_dht22() {
       if (isnan(humi) || isnan(temp)) {
           Serial.println("DHT read fail...");
           humi = 66; temp = 66; //probably not hooked up, just use test data...
+      }else{
+          sprintf(tmp, "Temp=%d   Humi=%d", (int)temp, (int)humi);  
+          Serial.println(tmp);
       }
 
 }

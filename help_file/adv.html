@@ -42,8 +42,7 @@ and solder them. The special crimper tools are bulky and horrible to use in my e
 <hr wid-th=75%>
 The first is the use of an external watchdog circuit. The Wi-Fi card has an awful lot of magic going on in the background.
 It is doing an extremely complex task, and can get hung up on occasion. I've been running this for about a year, and I was having to
-reset my Arduino manually several times a month. (Note: I may have fixed the bug that was giving me grief it will take a couple months
-to find out for sure)
+reset my Arduino manually several times a month. 
 <br><br>
 
 the easiest way to have rocksolid stability without having to be around to reset it once in a while
@@ -55,7 +54,7 @@ the external watchdog that I used is the <a href="http://www.amazon.com/SwitchDo
 Which can be had for $16 US. you can find the vendor <a href="http://www.switchdoc.com/dual-watchdog-timer/" target=_blank>page here.</a> 
 <br><br>
 
-to enable this feature set USE_EXT_WATCHDOG = 1 in your private.h file. 
+to enable this feature set USE_EXT_WATCHDOG = 1 in your private.h file for v1 or ini file for v2. 
 <br><br>
 
 Wiring is very similar to the humidity sensor. It only requires 4 wires. A power, ground, digital pin 6, and a line to the arduino reset pin.

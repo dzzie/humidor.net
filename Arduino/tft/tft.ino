@@ -43,7 +43,7 @@ Adafruit_FT6206 ctp = Adafruit_FT6206();
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 
 #define dht22_pin     46
-#define EXT_WATCHDOG_PIN 44
+#define EXT_WATCHDOG_PIN 47
 
 //IRQ MUST be an interrupt pin!
 //note: the CC3000 IRQQ pin had to be moved from 21 since it was causing lockups
@@ -165,7 +165,15 @@ void setup(void)
   
   initSDCard();
   loadConfig(true);
-  
+ 
+  /* test external watchdog 
+  tft.setTextColor(ILI9341_RED);
+  tft.println("ext dog tst");
+  cfg.ext_watchdog = 1;
+  watchdogEnable();
+  while(1);
+  */
+
   if(cfg.debug_local==0 || cfg.demoMode==1){
 	  tft.fillScreen(ILI9341_WHITE);
 	  bmpDraw("sir.bmp", 0, 0);
@@ -1109,6 +1117,7 @@ void showCfg(bool block){
 		tft.print("local = "); tft.println(cfg.debug_local); tft.println();
 		tft.print("demo  = "); tft.println(cfg.demoMode);    tft.println();
 		tft.print("speed = "); tft.println(cfg.speedMode);   tft.println();
+		tft.print("extdog = "); tft.println(cfg.ext_watchdog);   tft.println();
 		tft.println("reload cfg");
 		tft.setTextSize(2);
 	}
@@ -1153,6 +1162,11 @@ void showCfg(bool block){
 						showCfg(true);
 						break;
 					}else if(p.y <= 159 && p.y >= 110){
+						cfg.ext_watchdog = cfg.ext_watchdog == 0 ? 1 : 0;
+						showCfg(true);
+						break;
+					}else if(p.y <= 110 && p.y >= 70){
+						cls();
 						loadConfig(false);
 						showCfg(true);
 						break;

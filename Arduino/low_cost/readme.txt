@@ -23,9 +23,7 @@ this is a low-cost build that uses the Adafruit HUZZAH ESP8266 breakout
 total cost is about $40.
 
 It does not contain any type of display or buttons and is very easy to put together
-only five wires total and for those our power and ground
-
-not quite complete yet soon to be
+only five wires total and four of those are power and ground
 
 the following link will help you set up your Arduino IDE to use this board
 
@@ -41,12 +39,12 @@ power it while connected to PC
 for standalone you will need to wire VBAT and GND to a 5v power supply such
 as the one listed above.
 
-The DHT22 should be wired to the 3v power and ground pins, and pin 2
-
-grand total of 5 wires (and 4 of those are just power and ground connections)
+The DHT22 should be wired to the 3v power, ground, and pin 2
 
 
 source edits:
 ------------------------------
 
 rename public.h to private.h and edit with wifi name/password and web user id/pass
+
+see the web server page of the help file for how to get a user id/pass setup.
