@@ -3,17 +3,31 @@ Copyright David Zimmer <dzzie@yahoo.com>
 WebSite:  http://sandsprite.com
 All rights reserved, no portion of this code is authorized for sale or redistribution
 
-ini debug_local = 1 -> use test server, no dht22 required
+--------- compile this with arduino ide 1.5.8 ---------------------
+
+ini debug_local = 1 -> use test server, no dht22 required (on sd or set DEBUG_LOCAL_OVERRIDE 1 or config modify on boot)
 
 new ini library saves ~500 bytes of both code and ram, and much easier to read...
+
+Binary sketch size: 52,678 bytes (used 21% of a 253,952 byte maximum) (3.05 secs)
+Minimum Memory Usage: 2601 bytes (32% of a 8192 byte maximum)
+
+notes: 
+
+some wifi access points make it shit with wpa/wpa2 (wgrt54g v8.0.0.6)
+
+touch to pause supported on following displays:
+	showcfg
+	PostData ExitFail 
+	displayConnectionDetails
 
 bugnote: apparently www.fastrprint will hang on to long of a string passed to it..
          this may be why i needed a watchdog in the original version?
 
- NOTE: compile this with arduino ide 1.5.8
+still use watchdog cc3000 is not entirly stable..
 
- Binary sketch size: 52,678 bytes (used 21% of a 253,952 byte maximum) (3.05 secs)
-Minimum Memory Usage: 2601 bytes (32% of a 8192 byte maximum)
+todo:
+      if dht22 not found, try to read a sht11? or set in cfg?
 
 */
 
@@ -33,6 +47,7 @@ Minimum Memory Usage: 2601 bytes (32% of a 8192 byte maximum)
 //so apparently if you send serial data without a pc attached it can bug out the arduino.
 //I found a couple references online specifically when using I2C devices in conjunction..
 #define WITH_SERIAL 0
+#define DEBUG_LOCAL_OVERRIDE 0
 
 // The FT6206 uses hardware I2C (SCL/SDA)
 Adafruit_FT6206 ctp = Adafruit_FT6206();
@@ -62,7 +77,7 @@ char* WEBPAGE = "/humidor/logData.php";
 
 char *DFAIL = "DHT22 Fail";
 
-volatile int counter;      // Count number of times ISR is called.
+volatile int counter;      // Count number of times ISR is called. (internal watchdog)
 volatile int countmax = 8; // Timer expires after about 64 secs (using 8 sec interval)
 
 uint8_t powerevt  = 1;
@@ -119,7 +134,6 @@ char* iniFile = "private.ini";
 
 
 CONFIG cfg;
-//CFG_STRINGS sCfg;
 
 //following will allow you to add conditional compilation of serial debugging code 
 //with single line statements. saves space when disabled..
@@ -166,9 +180,9 @@ void setup(void)
   initSDCard();
   loadConfig(true);
  
-  /* test external watchdog 
+  /* test watchdog 
   tft.setTextColor(ILI9341_RED);
-  tft.println("ext dog tst");
+  tft.println("watchdog tst");
   cfg.ext_watchdog = 1;
   watchdogEnable();
   while(1);
@@ -486,6 +500,7 @@ bool PostData()
 {
   char buf[500];
   int ticks = 0;
+  bool warned = false;
 
   //these are for our http parser, since we dont want to store the response in a buffer to parse latter
   //we will parse it on the fly as its received character by character (limited memory, was glitching other way)
@@ -513,66 +528,82 @@ bool PostData()
 
   if (!cc3000.connectToAP(cfg.ssid, cfg.pass, cfg.secMode)) goto CLEANUP;
 
+  if ( !cc3000.checkConnected() ){
+	  tft.println("Connect Fail!");
+	  goto CLEANUP;
+  }
+
   lcd_outp(F("DHCP"));
   for(ticks=0; ticks < MAX_TICKS; ticks++)
   {
     if( cc3000.checkDHCP() ) break;
     delay(100); 
   }  
-
+  
   if(ticks >= MAX_TICKS) goto EXIT_FAIL;
+
+  if(cfg.speedMode){
+	  cls();
+	  displayConnectionDetails(6);
+	  delay(1000);
+	  cls();
+  }
 
   if(cfg.activeIP==0){
 		if(cfg.debug_local==1) cfg.activeIP=ips2ip(cfg.test_ip);
 		else{
+			ticks = 0;
+			delay(400); 
+			tft.println("Looking up:");
+			tft.println(cfg.server);
 			while  (cfg.activeIP  ==  0)  {
-				if  (!  cc3000.getHostByName(cfg.server, &cfg.activeIP))  {
-					if(WITH_SERIAL) Serial.println(F("Couldn't resolve!"));
+				cc3000.getHostByName(cfg.server, &cfg.activeIP);
+				if(cfg.activeIP == 0){
+					if(!warned){ tft.print("lookup failed "); warned=true;} else tft.print(".");
+					delay(700);
 				}
-				delay(500);
+				ticks++;
+				if(ticks > 5) goto EXIT_FAIL;
 			}  
 		}
   }
 
+  if(warned) tft.println();
   lcd_ip_out(cfg.activeIP);
   www = cc3000.connectTCP(cfg.activeIP, 80); //have been having occasional hang here...
   if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
 
-  lcd_outp(F("Connected"));
-  
-  if( www.connected() ) {
-    tft.println("sending request");
-
-	www.fastrprint(F("GET "));
-	//tft.println("1");
-
-	//breaking this up so no one sprintf takes up to much memory..
-	www.fastrprint(WEBPAGE);
-	//tft.println("1a");
-
-	sprintf_P(buf, PSTR("?temp=%d&humi=%d&watered=%d&powerevt=%d"), (int)temp, (int)humi, watered, powerevt);
-    www.fastrprint(buf);
-	//tft.println("2");
-
-	sprintf_P(buf, PSTR("&failure=%d&clientid=%d&smoked=%d&apikey="), failure, cfg.client_id, smoked);
-    strcat(buf,cfg.apikey);
-	www.fastrprint(buf);
-	//tft.println("3");
-
-    www.fastrprint(F(" HTTP/1.1\r\n"));
-	//tft.println("4");
-
-    www.fastrprint(F("Host: ")); www.fastrprint(cfg.server); www.fastrprint(F("\r\n"));
-    www.fastrprint(F("\r\n"));
-    if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
-    www.println();
-  } 
-  else{
-    //lcd_out("Website Down?", 1);
-    //delay(800); 
+  if( !www.connected() ) {
+	tft.print("www fail");
     goto EXIT_FAIL;
   }
-  
+
+  tft.println("sending request");
+
+  www.fastrprint(F("GET "));
+  //tft.println("1");
+
+  //breaking this up so no one sprintf takes up to much memory..
+  www.fastrprint(WEBPAGE);
+  //tft.println("1a");
+
+  sprintf_P(buf, PSTR("?temp=%d&humi=%d&watered=%d&powerevt=%d"), (int)temp, (int)humi, watered, powerevt);
+  www.fastrprint(buf);
+  //tft.println("2");
+
+  sprintf_P(buf, PSTR("&failure=%d&clientid=%d&smoked=%d&apikey="), failure, cfg.client_id, smoked);
+  strcat(buf,cfg.apikey);
+  www.fastrprint(buf);
+  //tft.println("3");
+
+  www.fastrprint(F(" HTTP/1.1\r\n"));
+  //tft.println("4");
+
+  www.fastrprint(F("Host: ")); www.fastrprint(cfg.server); www.fastrprint(F("\r\n"));
+  www.fastrprint(F("\r\n"));
+  if ( !cc3000.checkConnected() ) goto EXIT_FAIL;
+  www.println();
+ 
   lcd_outp(F("Reading Response"));
   tft.print("Recv: ");
   startTime = millis();
@@ -654,7 +685,13 @@ EXIT_FAIL:
    cc3000.disconnect(); 
 
    lcd_outp(F("Exit Fail?"), 1);
-   delay(800); 
+   delay(3000); 
+
+   if( ctp.touched() ){
+	   tft.println("Touch to exit..");
+	   delay(2000);
+	   while(!ctp.touched()) delay(300);
+   }
 
 CLEANUP:
    //cc3000.stop();
@@ -992,7 +1029,9 @@ bool loadConfig(bool andShow){
 	if(cfg.client_id==0){ps(missing, client_id);fail++;}
 	if(cfg.apikey==0){ps(missing, apikey);fail++;}
 	if(cfg.server==0){ps(missing, server);fail++;}
-
+	
+	if(DEBUG_LOCAL_OVERRIDE==1) cfg.debug_local = 1;
+	
 	if(cfg.debug_local!=0){
 		if(cfg.test_ip==0){ps(missing, test_ip);fail++;}
 	}
@@ -1007,6 +1046,8 @@ bool loadConfig(bool andShow){
   if(strcmp(cfg.security,"wpa2")==0) cfg.secMode=WLAN_SEC_WPA2;
   
   if(fail!=0){tft.print("Ini Errors: "); tft.println(fail);}
+
+  
 
   if(andShow){
 	  cls();
@@ -1059,16 +1100,39 @@ int HexToBin(char* input){
 
 void showWifiCfg(){
     ps("ssid: ", cfg.ssid);
-	ps("sec: ", cfg.security);
+	//ps("sec: ", cfg.security);
+
+	//this way we are certain what value will be used..(we have the space so..)
+	tft.print("sec: ");
+	if(cfg.secMode==WLAN_SEC_UNSEC) tft.println("None");
+	else{
+		if(cfg.secMode==WLAN_SEC_WEP)   tft.println("WEP");
+		else{
+			if(cfg.secMode==WLAN_SEC_WPA)   tft.println("WPA");
+			else{
+				if(cfg.secMode=WLAN_SEC_WPA2)   tft.println("WPA2");
+				else tft.println("Unknown !");
+			}
+		}
+	}
 
 	if(strcmp(cfg.security,"wep")==0){
 		tft.print("pass:"); 
 		if(cfg.demoMode) tft.println(stars);
 		else hexDump(cfg.pass);
+		if(WITH_SERIAL){
+			Serial.print("wep hex pass length: ");
+			Serial.println(strlen(cfg.pass));
+		}
 	}else{
 		tft.print("pass: "); 
 		if(cfg.demoMode) tft.println(stars);
 		else tft.println(cfg.pass);
+		if(WITH_SERIAL){
+			Serial.print("pass: '");
+			Serial.print(cfg.pass);
+			Serial.println("'");
+		}
 	}
 }
 
@@ -1218,4 +1282,30 @@ uint32_t ips2ip(char* ips){
   if(j != 4) return 0; //need exactly 4 sections
   return cc3000.IP2U32(b[0], b[1], b[2], b[3]);
 
+}
+
+bool displayConnectionDetails(int level)
+{
+  uint32_t ipAddress, netmask, gateway, dhcpserv, dnsserv;
+  
+  if(!cc3000.getIPAddress(&ipAddress, &netmask, &gateway, &dhcpserv, &dnsserv))
+  {
+    tft.println("getIPAddr fail");
+    return false;
+  }
+  
+  if(level >= 0){ tft.print(F("ip:")); lcd_ip_out(ipAddress);}
+  if(level >= 1){ tft.print(F("dns:")); lcd_ip_out(dnsserv);}
+  if(level >= 2){ tft.print(F("msk:")); lcd_ip_out(netmask);}
+  if(level >= 3){ tft.print(F("Gate:")); lcd_ip_out(gateway);}
+  if(level >= 4){ tft.print(F("dhcp:")); lcd_ip_out(dhcpserv);}
+
+  if( ctp.touched() ){
+	   tft.println("Touch to exit..");
+	   delay(2000);
+	   while(!ctp.touched()) delay(300);
+   }
+
+  return true;
+  
 }

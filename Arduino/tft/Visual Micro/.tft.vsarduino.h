@@ -73,6 +73,7 @@ void showCfg(bool block);
 void ps(char* name, char* value);
 void ps(char* name, uint16_t value);
 uint32_t ips2ip(char* ips);
+bool displayConnectionDetails(int level);
 
 #include "D:\arduino-1.5.8\hardware\arduino\avr\cores\arduino\arduino.h"
 #include "D:\arduino-1.5.8\hardware\arduino\avr\variants\mega\pins_arduino.h" 
