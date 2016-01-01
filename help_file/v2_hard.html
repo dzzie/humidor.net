@@ -31,7 +31,10 @@ this project makes use of 5 main hardware components. There is almost no solderi
 
 <ol>
 <li><a href="https://www.adafruit.com/products/1947" target=_blank>2.8 TFT Touch Shield - $45  </a> &nbsp; (<a href="https://www.adafruit.com/products/85" target=_blank>with pass through headers $2</a>)
-<li><a href="https://www.adafruit.com/products/385" target=_blank> DHT22 Temperature/Humidity Sensor - $10</a>
+<li> Temp/Humi Sensor: <a href="https://www.adafruit.com/products/385" target=_blank> DHT22  - $10</a>
+	  or 
+	 <a href="https://www.adafruit.com/products/2857" target=_blank>Sensiron SHT31-D - $14</a>
+	 
 <li><a href="https://www.adafruit.com/products/191" target=_blank>  Arduino Mega - $46  </a>
 <li><a href="https://www.adafruit.com/product/102" target=_blank> Micro Sd card - $8 </a> 
 <li><a href="https://www.adafruit.com/product/63" target=_blank>9v 1 Amp DC center positive power adapter w/ 2.1mm plug - $7</a> <b>*</b>
@@ -55,6 +58,11 @@ traces.
 <img src="./img/v2/tft_solder.jpg" width=600>
 <br><br>
 
+For the temperature / humidity sensor you have two choices. Traditionally I have been using the DHT22 sensor
+which has accuracy  within 5% and costs $10. A new sensor has recently come out, the SHT31, which is
+ about the same price but with a much better accuracy of within 2%. The code will automatically detect
+ which one is present and adjust.
+
 <pre>
 Wire the cc3000 breakout as follows:
 
@@ -72,7 +80,16 @@ The DHT22 sensor requires 3 wires:
     *Connect GND to one of the Arduino GND pins:
     *Connect Vin to Arduino +5V
     *Digital 46 
-	
+
+------ or -------- 
+
+The SHT31 sensor requires 4 wires:
+
+    *Connect GND to one of the Arduino GND pins:
+    *Connect Vin to Arduino +5V
+	*SDA to  SDA 20 
+    *SCL to  SCL 21
+
 The optional external watchdog requires 4 wires:
 
     *Connect GND to one of the Arduino GND pins:

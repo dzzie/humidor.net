@@ -2,6 +2,8 @@
 
 
 android & iOS phone apps?
-support multisensors per user
+
+able to switch between dht22 and sht31
+https://learn.adafruit.com/adafruit-sht31-d-temperature-and-humidity-sensor-breakout
 
 

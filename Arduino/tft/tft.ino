@@ -26,8 +26,9 @@ bugnote: apparently www.fastrprint will hang on to long of a string passed to it
 
 still use watchdog cc3000 is not entirly stable..
 
-todo:
-      if dht22 not found, try to read a sht11? or set in cfg?
+this can read two types of sensors..first it will try to detect a sht31 on the i2c bus,
+if that fails it will fall back to using a dht22 on dht22_pin. the sht31 is more accurate ~2%
+while the dht22 is ~5%. The sht31 is only like $5 more now so worth using if you can (used to be $35)
 
 */
 
@@ -41,6 +42,7 @@ todo:
 #include <Adafruit_FT6206.h>
 #include <SPI.h>
 #include <Adafruit_CC3000.h>
+#include <Adafruit_SHT31.h>    //note this library has been modified use the one in included /libraries folder !
 #include <SD.h>
 #include "ini.h"
 
@@ -49,8 +51,11 @@ todo:
 #define WITH_SERIAL 0
 #define DEBUG_LOCAL_OVERRIDE 0
 
-// The FT6206 uses hardware I2C (SCL/SDA)
+//The FT6206 capacitive touch controller uses hardware I2C (SCL/SDA) addr 40
 Adafruit_FT6206 ctp = Adafruit_FT6206();
+
+//The SHT31 temp/humidity sensor uses hardware I2C (SCL/SDA) addr 0x44, (changable to 0x45) - optional component..higher precision than dht22
+Adafruit_SHT31 sht31 = Adafruit_SHT31();
 
 #define TFT_CS 10
 #define TFT_DC 9
@@ -95,6 +100,7 @@ double temp      = 0;
 double humi      = 0;
 double last_temp = 0;
 double last_humi = 0;
+bool   useDHT22  = false;
 
 struct CONFIG{
 	int temp_shift;   
@@ -171,6 +177,12 @@ void setup(void)
     while (1);
   }
   
+  tft.println("Init sht31..");
+  if ( !sht31.begin(0x44) ) { //0x45 possible alternate i2c addr
+    Serial.println("Fail using DHT22");
+	useDHT22 = true;
+  }
+
   lcd_out("Init Wifi...");
   if (!cc3000.begin()){
     lcd_out("Failed!"); 
@@ -449,13 +461,26 @@ void delay_x_min(int minutes, int silent){
 
 bool ReadSensor(){
   
-  int chk = dht22_read(dht22_pin); //OK: 0, Bad Chksum: -1, Time Out: -2
+	int chk =0;
 
-  if (chk != 0){
-	  lcd_out(DFAIL); 
-	  delay(1200);
-	  return false;
-  }
+	if(useDHT22){
+	  chk = dht22_read(dht22_pin); //OK: 0, Bad Chksum: -1, Time Out: -2
+	  if (chk != 0){
+		  lcd_out(DFAIL); 
+		  delay(1200);
+		  return false;
+	  }
+	}else{
+		//previously the library would read the sensor twice, once for each..I have simplified..less delay and maybe sensor life?
+		if( sht31.readSensor() ){
+			temp = toFahrenheit(sht31.temp);
+			humi = sht31.humidity;
+		}else{
+			lcd_out("SHT31 Fail"); 
+		    delay(1200);
+		    return false;
+		}
+	}
 
   humi += cfg.humi_shift;
   temp += cfg.temp_shift;

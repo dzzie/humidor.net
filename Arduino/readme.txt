@@ -3,6 +3,9 @@
 humidor folder contains the version 1 arduino project using the 16x2 lcd
 this is the original stable dev branch. total cost $100
 
+if you have a 3d printer, the following may work for an enclosure:
+  http://www.thingiverse.com/thing:142282/#comments
+
 --------------------------------------------------------------
 
 the tft folder is version 2. I am trying to make it 

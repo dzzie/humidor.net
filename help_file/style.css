@@ -13,5 +13,4 @@ A:link   {  COLOR: #191970;FONT-FAMILY:verdana;font-size:10pt;}
 A:visited{  COLOR: #191970;FONT-FAMILY:verdana;font-size:10pt;}
 A:hover  {  COLOR: #7A7A7A;FONT-FAMILY:verdana;font-size:10pt;}
 .header  {  COLOR:darkblue;FONT-FAMILY:verdana;font-size:14pt;}
-
-
+li{  margin: 8px 0; }
