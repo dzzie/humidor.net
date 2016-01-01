@@ -427,7 +427,7 @@ void delay_x_min(int minutes, int silent){
 				if( p.y < 50){ //its in the lower image bar band.. |_|_| <-0,0 width 240/3 = 80
 					if(p.x > 170){ //its on the left hand cigar
 						smoked = smoked == 1 ? 0 : 1;      
-					}else if(p.x > 60){
+					}else if(p.x > 55){
 						if(WITH_SERIAL) Serial.println("enter config!");
 						cls();
 						showCfg(true); //timer stops until they close screen..
@@ -1207,7 +1207,8 @@ void showCfg(bool block){
 		tft.print("demo  = "); tft.println(cfg.demoMode);    tft.println();
 		tft.print("speed = "); tft.println(cfg.speedMode);   tft.println();
 		tft.print("extdog = "); tft.println(cfg.ext_watchdog);   tft.println();
-		tft.println("reload cfg");
+		tft.println("reload cfg\n");
+		tft.println("read sensor");
 		tft.setTextSize(2);
 	}
 
@@ -1221,8 +1222,8 @@ void showCfg(bool block){
 				//tft.println(tmp);
 				delay(500); //software debounce
 
-				if(p.y > 300){ //top tab bar..
-					if(p.x < 30) break; //X pressed
+				if(p.y > 290){ //top tab bar..
+					if(p.x < 50) break; //X pressed
 
 					if(p.x > 180){ //show tab
 						curTab = 0;
@@ -1257,6 +1258,10 @@ void showCfg(bool block){
 					}else if(p.y <= 110 && p.y >= 70){
 						cls();
 						loadConfig(false);
+						showCfg(true);
+						break;
+					}else if(p.y <= 70 && p.y >= 30){
+						ReadSensor();
 						showCfg(true);
 						break;
 					}
