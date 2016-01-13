@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Sandsprite.com IoT Humidor</title>
+<link rel="stylesheet" type="text/css" href="style.css" >
+</head>
+<body>
+
+
+<div style="width:600">
+
+<img src=./img/low_cost_sm.jpg>
+<br><br>
+
+The low cost build has been stripped down to the bare minimum in terms of features and expense.
+<br><br>
+
+It should be very easy to setup and requires almost no soldering.  It requires the following materials which
+should cost about $40 plus shipping. The files for this build are found in the \Arduino\low_cost\ folder.
+
+<pre>
+Adafruit HUZZAH ESP8266 breakout $10
+https://www.adafruit.com/product/2471
+
+USB to TTL Serial Cable - Debug Cable $10
+https://www.adafruit.com/products/954
+
+DHT22 temperature-humidity sensor $10
+https://www.adafruit.com/product/385
+
+5V 2A (2000mA) switching power supply UL Listed - $8
+https://www.adafruit.com/products/276
+
+Female DC Power adapter 2.1mm jack to screw terminal block $2
+https://www.adafruit.com/products/368
+</pre>
+
+First you will have to setup your computer so you can upload code to the
+device. Adafruit has the process <a href="https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout/using-arduino-ide" target=_blank>documented well here</a>.
+<br><br>
+
+For wiring you will need to hook up the following:
+<br><br>
+
+for programming and serial output wire TTL serial cable as listed in the adafruit page.
+this usb connection can also power it while connected to PC.
+<br><br>
+
+for standalone you will need to wire VBAT and GND to a 5v power supply such
+as the one listed above.
+<br><br>
+
+The DHT22 should be wired to the 3v power, ground, and pin 2
+<br><br>
+
+Before you upload the code to the device you will need to make a few minor source code edits
+to connect to your wifi network, and your own web client ID. (See the webserver link to the left
+on how to get your web client id)
+<br><br>
+
+Basically all you have to do is rename the public.h file to private.h and edit it. A sample file
+is provided below:
+
+<pre>
+const char* ssid     = "my_wifiname";
+const char* password = "my_password";
+const char* host     = "sandsprite.com";
+char* APIKEY = "123456";
+int   client_id = 0 ;
+</pre>
+
+
+<br><br>
+</div>
+
+</body>
+</html>
