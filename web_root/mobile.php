@@ -14,6 +14,26 @@
 	$page          = (int)$_GET['page'];
 	$isDark        = (int)$_GET['isDark'];
 	
+	$tabbedHeader = '';
+	$isIphone = strstr($_SERVER['HTTP_USER_AGENT'],'iPhone') ? 1 : 0;
+	if($isIphone==0) $isIphone = (int)$_GET['iphone'];
+	    	   
+    if($isIphone==1){
+	   $p1 = $page==0 ? "active" : "";
+	   $p2 = $page!=0 ? "active" : "";
+	   
+	   $tabbedHeader = "<link rel='stylesheet' type='text/css' href='tabs.css'>
+						<div class='tabs'>
+						    <ul class='tab-links'>
+						        <li class='$p1'><a href='mobile.php?id=$clientid&page=0&iphone=$isIphone'>Stats</a></li>
+						        <li class='$p2'><a href='mobile.php?id=$clientid&page=2&iphone=$isIphone'>Graph</a></li>
+						        <li class=''><a href='index.php?id=$clientid'>Full</a></li>
+						    </ul>
+						</div>
+						<hr>
+					";
+    }
+    
 	$lastID        = 0;
 	$one_day = 2 * 24; //30 minute intervals..
 	
@@ -45,7 +65,7 @@
     $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where clientid=$clientid order by autoid desc limit 1");
     $rr = mysql_fetch_assoc($r);
     $lastUpdate = date("m.d.y - g:i a",$rr['int_tstamp']);
-	        
+		    
     if($page==0 || $page==3){
 	    
 	    	$clearAlert = '';
@@ -72,6 +92,7 @@
 			       			 </head>
 			       			 <body bgcolor=$bgcolor>
 				       			 <br>
+				       			 $tabbedHeader
 				       			 <font style='font-family: Segoe WP; font-size:80px; color: gray'>
 				       			 Humi: <font color=$hcolor> $h </font><br>
 				       			 Temp: <font color=$tcolor> $t </font><br>
@@ -205,6 +226,7 @@
 		</head>
 		<body bgcolor=$bgcolor>
     	<center>
+    		$tabbedHeader
 			<div style='width:100%; height:100%'>
 				$links
 				<canvas id='canvas_0'></canvas> 

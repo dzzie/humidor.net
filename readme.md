@@ -35,7 +35,12 @@ Power resets will also be recorded to the database.
 
 Some users choose to go headless and omit the lcd shield and buttons.
 This is now even easier now that we have a [Windows Phone app](https://www.microsoft.com/en-us/store/apps/iot-humidor/9nblggh6404f) to keep
-you in sync. 
+you in sync.
+
+If you are on an iPhone from Safari just add an icon to your home 
+screen pointing to mobile.php?id=[your user id]
+
+ex. http://sandsprite.com/humidor/mobile.php?id=6&iphone=1
 
 I already have the web backend setup for multiple users. If you dont have
 a public webserver and would like to use mine just send me an email and a 

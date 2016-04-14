@@ -1,0 +1,62 @@
+/*----- Tabs -----*/
+.tabs {
+    width:100%;
+    display:inline-block;
+}
+ 
+/*----- Tab Links -----*/
+/* Clearfix */
+.tab-links:after {
+    display:block;
+    clear:both;
+    content:'';
+}
+
+.tab-links li {
+    margin:0px 5px;
+    float:left;
+    list-style:none;
+}
+
+.tab-links a {
+    padding:5px 55px;
+    display:inline-block;
+    font-family: Segoe WP; 
+    font-size:60px; 
+    color: gray
+    border-radius:3px 3px 0px 0px;
+    background:#c0c0c0;
+    font-weight:300;
+    color:black;
+    transition:all linear 0.15s;
+    outline: gray outset;
+}
+
+.tab-links a:hover {
+    background:#c0c0c0;
+    text-decoration:none;
+}
+
+li.active a, li.active a:hover {
+    background:white;
+    font-weight: bold;
+    text-decoration: none;
+    outline: gray inset;
+    color:black;
+}
+
+/*----- Content of Tabs -----*/
+.tab-content {
+	padding:15px;
+	border-radius:3px;
+	box-shadow:-1px 1px 1px rgba(0,0,0,0.15);
+	background:#fff;
+}
+
+.tab {
+    display:none;
+}
+
+.tab.active {
+    display:block;
+}
