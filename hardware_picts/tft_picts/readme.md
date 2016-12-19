@@ -18,3 +18,6 @@
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/WP_20151228_003.jpg)
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/WP_20151228_004.jpg)
 ![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/v2_fritzing.png)
+<br><br>
+New case see readme:<br>
+![screenshot](https://raw.githubusercontent.com/dzzie/humidor.net/master/hardware_picts/tft_picts/v2_new_case.jpg)
