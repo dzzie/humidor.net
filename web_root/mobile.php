@@ -16,19 +16,29 @@
 	
 	$tabbedHeader = '';
 	$isIphone = strstr($_SERVER['HTTP_USER_AGENT'],'iPhone') ? 1 : 0;
+	$isLoggedIn = (int)$_SESSION['loggedin'];
+	if($isLoggedIn) $SIMPLE_MODE = 0;
 	if($isIphone==0) $isIphone = (int)$_GET['iphone'];
 	    	   
     if($isIphone==1){
 	   $p1 = $page==0 ? "active" : "";
 	   $p2 = $page!=0 ? "active" : "";
+	   $lnk = $SIMPLE_MODE ? "<a href='#' onclick='noBots()'>Full</a>" : "<a href='index.php?id=$clientid'>Full</a>";
 	   
 	   $tabbedHeader = "<link rel='stylesheet' type='text/css' href='tabs.css'>
+					    <script>
+							function noBots(){
+								var key = prompt('Bots have been blocked from viewing graph mode\\n\\nApikey required to proceed:');
+	    						if(key.length==0) return;
+								location = 'index.php?id=$clientid&apikey='+key
+							}
+						</script>
 						<div class='tabs'>
 						    <ul class='tab-links'>
 						        <li class='$p1'><a href='mobile.php?id=$clientid&page=0&iphone=$isIphone'>Stats</a></li>
 						        <li class='$p2'><a href='mobile.php?id=$clientid&page=2&iphone=$isIphone'>Graph</a></li>
-						        <li class=''><a href='index.php?id=$clientid'>Full</a></li>
-						    </ul>
+						        <li class=''>$lnk</li>
+						   </ul>
 						</div>
 						<hr>
 					";
@@ -45,8 +55,8 @@
     
     ConnectDB();
     
-    $userr = mysql_query("select * from humiusers where autoid=$clientid");
-    if(mysql_num_rows($userr)==0){ 
+    $userr = mysqli_query($dblink,"select * from humiusers where autoid=$clientid");
+    if(mysqli_num_rows($userr)==0){ 
 	    die("
 	    	<html><body bgcolor=$bgcolor><br>
        		  <font style='font-family: Segoe WP; font-size:80px; color: $fontColor'>
@@ -56,14 +66,14 @@
    			");
     }
     
-    $user = mysql_fetch_assoc($userr);
+    $user = mysqli_fetch_assoc($userr);
 	    
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where powerevt > 0 and clientid=$clientid order by autoid desc limit 1");
-    $rr = mysql_fetch_assoc($r);
+    $r = mysqli_query($dblink,"SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humievents where powerevt > 0 and clientid=$clientid order by autoid desc limit 1");
+    $rr = mysqli_fetch_assoc($r);
     $lastPowerEvent = date("m.d.y - g:i a",$rr['int_tstamp']);
     
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where clientid=$clientid order by autoid desc limit 1");
-    $rr = mysql_fetch_assoc($r);
+    $r = mysqli_query($dblink,"SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where clientid=$clientid order by autoid desc limit 1");
+    $rr = mysqli_fetch_assoc($r);
     $lastUpdate = date("m.d.y - g:i a",$rr['int_tstamp']);
 		    
     if($page==0 || $page==3){
@@ -74,8 +84,8 @@
 				//$clearAlert = "<a href='#' onclick='clear_alert()'><font color=red>Clear Alert</font></a>";
 			} 
 	
-	 	   $r  = mysql_query("SELECT * from humidor where clientid=$clientid order by autoid desc limit 1");
-    	   $rr = mysql_fetch_assoc($r);
+	 	   $r  = mysqli_query($dblink,"SELECT * from humidor where clientid=$clientid order by autoid desc limit 1");
+    	   $rr = mysqli_fetch_assoc($r);
     	   $h  = $rr['humidity'];
 		   $t  = $rr['temp'];
 		   
@@ -108,7 +118,7 @@
 		       			 </html>
 		       			";
        		}else{
-	       		//page 3 is for live tile
+	       		//page 3 is for windows phone app live tile
 	       		$report = "Humi: $h\n".
 	       				  "Temp: $t\n\n".
 				       	  "Updated:\n$lastUpdate";
@@ -116,9 +126,11 @@
 	       			
 	      die($report);
     }
+	
+	if($SIMPLE_MODE) die('graphing feature disabled in simple_mode (bots)');
     
     //now we build the temp/humidity value arrays from the database
-    $r = mysql_query("select UNIX_TIMESTAMP(tstamp) as int_tstamp, humidity,temp from humidor where clientid=$clientid order by autoid desc limit $limit offset $offset");
+    $r = mysqli_query($dblink,"select UNIX_TIMESTAMP(tstamp) as int_tstamp, humidity,temp from humidor where clientid=$clientid order by autoid desc limit $limit offset $offset");
 	
     $i=0;
     $lowest  = 200;
@@ -136,9 +148,9 @@
 	$d2 = '';
 	$curday = -1;
 	
-	while($rr = mysql_fetch_assoc($r)){
+	while($rr = mysqli_fetch_assoc($r)){
 		
-		if( $i == (mysql_num_rows($r)-1) ) $d1 = date("D g:i a - m.d.y",$rr['int_tstamp']); //start date (will end at last)
+		if( $i == (mysqli_num_rows($r)-1) ) $d1 = date("D g:i a - m.d.y",$rr['int_tstamp']); //start date (will end at last)
 		if($d2 == '') $d2 = date("D g:i a - m.d.y",$rr['int_tstamp']); //end date (first)
 		
 		$h[$i] = $rr['humidity'];

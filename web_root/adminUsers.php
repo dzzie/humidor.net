@@ -30,34 +30,34 @@ ConnectDB();
 if(strlen($username) > 0 && $edit==0){
 	$sql = "Insert into humiusers(username,email,apikey,img) Values('$username','$email', '$apikey','$img')";	
 	$msg = "Insert successful";
-	if(!mysql_query($sql)) $msg = "Insert failed! ".mysql_error();
+	if(!mysqli_query($dblink,$sql)) $msg = "Insert failed! ".mysqli_error($dblink);
 	echo $msg;
 	$username='';$email='';$apikey='';$img='';
 }else{
 	if($cleardb==1 && $euid > 0){
 		$sql = "Delete from humidor where clientid=$euid";
 		$msg = "Clear Records successful<br>"; 	
-		if(!mysql_query($sql)) $msg = "Clear Records failed! ".mysql_error();
+		if(!mysqli_query($dblink,$sql)) $msg = "Clear Records failed! ".mysqli_error($dblink);
 		echo $msg;	
 		$uid=0;$edit=0;
 	}
 	if($delete==1 && $euid > 0){
 		$sql = "Delete from humiusers where autoid=$euid";
 		$msg = "Delete successful<br>"; 	
-		if(!mysql_query($sql)) $msg = "Update failed! ".mysql_error();
+		if(!mysqli_query($dblink,$sql)) $msg = "Update failed! ".mysqli_error($dblink);
 		echo $msg;	
 		$uid=0;$edit=0;
 	}
 	else if($edit==1 && $euid > 0){ 
 		$sql = "Update humiusers set username='$username', email='$email', apikey='$apikey', img='$img' where autoid=$euid";
 		$msg = "Update successful<br>"; 	
-		if(!mysql_query($sql)) $msg = "Update failed! ".mysql_error();
+		if(!mysqli_query($dblink,$sql)) $msg = "Update failed! ".mysqli_error($dblink);
 		echo $msg;	
 	}
 	
 	if($uid>0){ //starting an edit only from get link load post for edit
-		$r = mysql_query("Select * from humiusers where autoid=$uid");
-		$rr = mysql_fetch_assoc($r);
+		$r = mysqli_query($dblink,"Select * from humiusers where autoid=$uid");
+		$rr = mysqli_fetch_assoc($r);
 		$email = $rr['email'];
 		$apikey = $rr['apikey'];
 		$username = $rr['username'];
@@ -122,10 +122,10 @@ if(strlen($username) > 0 && $edit==0){
 <?
 
 function getUsers($seluid,$onselect=''){
-	$r = mysql_query("Select * from humiusers");
+	$r = mysqli_query($dblink,"Select * from humiusers");
 	echo "<form><select name=users id=users onchange='$onselect'>";
 	echo "<option value=0> </option>";
-	while($rr = mysql_fetch_assoc($r)){
+	while($rr = mysqli_fetch_assoc($r)){
 		$u = $rr['username'];
 		$id = $rr['autoid'];
 		$s = $seluid == $id ? "SELECTED" : "";

@@ -1,4 +1,4 @@
-<?php  
+<? 
 
 	/*
 	Copyright David Zimmer <dzzie@yahoo.com>
@@ -7,71 +7,90 @@
 	*/
 
     include("functions.php");
-    
+        
     $limit         = (int)$_GET['limit'];
 	$offset        = (int)$_GET['offset'];
 	$clientid      = (int)$_GET['id'];
-		
+    $key           = $_GET['apikey'];
+    		
 	$lastID        = 0;
 	$one_day = 2 * 24; //30 minute intervals..
 	
     if($limit < 1 || $limit > 13000) $limit = $one_day;
     if($offset < 1) $offset = 0;
-    
-    ConnectDB();
+	
+	ConnectDB();
     
     $avgs=''; //multidim ary set in eventsfor_last12Months [1-4] for seasons, [0]=smoked, [1]=watered
     
-    $userr = mysql_query("select * from humiusers where autoid=$clientid");
-    if(mysql_num_rows($userr)==0){ //list available users..
-	    $r = mysql_query("select * from humiusers");
-	    if(mysql_num_rows($r)==0) die("Log into <a href=admin.php>control panel</a> and create users..");    
-	    $report = "<b><br><br>Please select a user: <br><ul>\n";
-	    while($rr = mysql_fetch_assoc($r)){
+    $userr = mysqli_query($dblink,"select * from humiusers where autoid=$clientid");
+    if(mysqli_num_rows($userr)==0){ //list available users..
+	    $r = mysqli_query($dblink,"select * from humiusers");
+	    if(mysqli_num_rows($r)==0) die("Log into <a href=admin.php>control panel</a> and create users..");    
+	    $report = "<b><br><br>Please select a user or <a href='./help/'>click here</a> for more info.<br><ul>\n";
+	    while($rr = mysqli_fetch_assoc($r)){
 		     $report .= "<li><a href=index.php?id=".$rr['autoid'].">".$rr['username']."</a>\n";
 	    }
 	    die($report);
     }
     
-    $user = mysql_fetch_assoc($userr);
+    if($SIMPLE_MODE==1 && $_SESSION['loggedin']==0){
+		//i am not even going to give bots the chance to chew up my server resources with graph mode...
+		if(strlen($key) > 0){
+			$userr = mysqli_query($dblink,"select * from humiusers where autoid=$clientid");
+			if(mysqli_num_rows($userr)==0) die("Bad userid: $clientid");
+			$user = mysqli_fetch_assoc($userr);  
+			$API_KEY = $user['apikey'];
+			if( strcmp($key, $API_KEY) !== 0 ){
+				header("Location: mobile.php?id=$clientid");
+	    		die();
+    		}//else we render the full page for the authorized user
+    		$_SESSION['loggedin'] = 1;
+		}else{
+	    	header("Location: mobile.php?id=$clientid");
+	    	die();
+    	}
+    }
+    
+    $user = mysqli_fetch_assoc($userr);
     $humi_img     = "./images/".$user['img'];
     $GRAPH_TITLE  = $user['username']." Humidor";
         
     //get last watered time..
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where watered > 0 and clientid=$clientid order by autoid desc limit 1");
-    $rr = mysql_fetch_assoc($r);
+    $r = mysqli_query($dblink,"SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humievents where watered > 0 and clientid=$clientid order by autoid desc limit 1");
+    $rr = mysqli_fetch_assoc($r);
     $lastWatered = date("g:i a - D m.d.y",$rr['int_tstamp']);
     
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where watered > 0 and clientid=$clientid order by autoid desc limit 10");
-    $cnt = mysql_num_rows($r);
+    $r = mysqli_query($dblink,"SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humievents where watered > 0 and clientid=$clientid order by autoid desc limit 10");
+    $cnt = mysqli_num_rows($r);
     if($cnt > 0){
 	    $waterTable = "\n<b>Last $cnt Waterings:</b><ul>\r\n";
-	    while($rr = mysql_fetch_assoc($r)){
+	    while($rr = mysqli_fetch_assoc($r)){
 		    $waterTable.="<li>".date("g:i a - D m.d.y",$rr['int_tstamp'])."\r\n";
 	    }
 	    $waterTable.="</ul>\r\n";
 	}
 	
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where smoked > 0 and clientid=$clientid order by autoid desc limit 10");
-    $cnt = mysql_num_rows($r);
+    $r = mysqli_query($dblink,"SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humievents where smoked > 0 and clientid=$clientid order by autoid desc limit 10");
+    $cnt = mysqli_num_rows($r);
     if($cnt > 0){
 	    $smokedTable = "\n<b>Last $cnt Smokes:</b><ul>\r\n";
-	    while($rr = mysql_fetch_assoc($r)){
+	    while($rr = mysqli_fetch_assoc($r)){
 		    $smokedTable.="<li>".date("g:i a - D m.d.y",$rr['int_tstamp'])."\r\n";
 	    }
 	    $smokedTable.="</ul>\r\n";
 	}
 	    
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where powerevt > 0 and clientid=$clientid order by autoid desc limit 1");
-    $rr = mysql_fetch_assoc($r);
+    $r = mysqli_query($dblink,"SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humievents where powerevt > 0 and clientid=$clientid order by autoid desc limit 1");
+    $rr = mysqli_fetch_assoc($r);
     $lastPowerEvent = date("g:i a - D m.d.y",$rr['int_tstamp']);
     
-    $r = mysql_query("SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where clientid=$clientid order by autoid desc limit 1");
-    $rr = mysql_fetch_assoc($r);
+    $r = mysqli_query($dblink,"SELECT UNIX_TIMESTAMP(tstamp) as int_tstamp from humidor where clientid=$clientid order by autoid desc limit 1");
+    $rr = mysqli_fetch_assoc($r);
     $lastUpdate = date("g:i a - D m.d.y",$rr['int_tstamp']);
     
     //now we build the temp/humidity value arrays from the database
-    $r = mysql_query("select UNIX_TIMESTAMP(tstamp) as int_tstamp, humidity,temp from humidor where clientid=$clientid order by autoid desc limit $limit offset $offset");
+    $r = mysqli_query($dblink,"select UNIX_TIMESTAMP(tstamp) as int_tstamp, humidity,temp from humidor where clientid=$clientid order by autoid desc limit $limit offset $offset");
 	
     $i=0;
     $lowest  = 200;
@@ -89,9 +108,9 @@
 	$d2 = '';
 	$curday = -1;
 	
-	while($rr = mysql_fetch_assoc($r)){
+	while($rr = mysqli_fetch_assoc($r)){
 		
-		if( $i == (mysql_num_rows($r)-1) ) $d1 = date("D g:i a - m.d.y",$rr['int_tstamp']); //start date (will end at last)
+		if( $i == (mysqli_num_rows($r)-1) ) $d1 = date("D g:i a - m.d.y",$rr['int_tstamp']); //start date (will end at last)
 		if($d2 == '') $d2 = date("D g:i a - m.d.y",$rr['int_tstamp']); //end date (first)
 		
 		$h[$i] = $rr['humidity'];
@@ -187,6 +206,11 @@
 		    		var key = prompt('Enter the apikey to clear the alert:');
 		    		if(key.length==0) return;
 		    		window.open('logData.php?clear_alert=1&clientid=$clientid&apikey='+key, '', 'width=200, height=100');
+    		}	
+			function clear_data(){
+		    		var key = prompt('Enter the apikey to clear temp/humi data (events saved):');
+		    		if(key.length==0) return;
+		    		window.open('logData.php?clear_data=1&clientid=$clientid&apikey='+key, '', 'width=200, height=100');
     		}			
 		</script>
 		</head>
@@ -205,9 +229,9 @@
 											<a href='./help/'>Help</a>
 										    <a href='#' onclick='wasWatered()'>Watered</a>
 											<a href='#' onclick='wasSmoked()'>Smoked</a>
+											<a href='#' onclick='clear_data()'>Clear Data</a>
 											$clearAlert
-											<!--a href='#'>Add Note</a>
-											<a href='#'>Clear db</a-->
+											<!--a href='#'>Add Note</a>-->
 										</div>
 									</li>
 								</ul>
@@ -324,7 +348,7 @@
 // month names csv, smoked events csv, water events csv 
 function eventsfor_last12Months(&$d,&$s,&$w){
 
-    global $clientid, $avgs;
+    global $clientid, $avgs,$dblink;
 	
     $mname = array(0, 'Jan','Feb','Mar','Apr','May','June','July','Aug','Sept','Oct','Nov','Dec', 14);
 	$y=0; 
@@ -342,12 +366,12 @@ function eventsfor_last12Months(&$d,&$s,&$w){
 		//echo $mi. ",";
 		$d[$i-1] = $mname[$mi];
 		
-		$r = mysql_query("SELECT count(autoid) as c FROM humidor WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and smoked=1 and clientid=$clientid");
-		$rr = mysql_fetch_assoc($r);
+		$r = mysqli_query($dblink,"SELECT count(autoid) as c FROM humievents WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and smoked=1 and clientid=$clientid");
+		$rr = mysqli_fetch_assoc($r);
 		$s[$i-1] = $rr['c'];
 		
-		$r = mysql_query("SELECT count(autoid) as c FROM humidor WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and watered=1 and clientid=$clientid");
-		$rr = mysql_fetch_assoc($r);
+		$r = mysqli_query($dblink,"SELECT count(autoid) as c FROM humievents WHERE MONTH(tstamp) = $mi AND YEAR(tstamp) = (YEAR(NOW()) - $year_index) and watered=1 and clientid=$clientid");
+		$rr = mysqli_fetch_assoc($r);
 		$w[$i-1] = $rr['c'];
 		
 		$season = getSeason($mi);
@@ -506,8 +530,8 @@ function buildAveragesHtml(){
 	$curYear = date("Y"); 
  	for($i=0;$i<4;$i++){
 	 	$yr = $curYear-$i;
-	 	$r = mysql_query("SELECT COUNT(autoid) as c from humidor where smoked > 0 and clientid=$clientid and YEAR(tstamp) = $yr");
-   	    $rr = mysql_fetch_assoc($r);
+	 	$r = mysqli_query($dblink,"SELECT COUNT(autoid) as c from humievents where smoked > 0 and clientid=$clientid and YEAR(tstamp) = $yr");
+   	    $rr = mysqli_fetch_assoc($r);
 		$cnt = $rr['c'];
 		if($cnt==0) break;
 		$yrAvgs .= "<tr><td width=25 align=right> &bull; </td><td> $cnt  </td><td> $yr </td></tr>\n";

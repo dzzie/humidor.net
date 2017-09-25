@@ -8,8 +8,16 @@
 
 error_reporting(E_ERROR  /*|  E_PARSE  | E_COMPILE_ERROR  */| E_COMPILE_WARNING);
 
+/*
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+*/
+
+$SIMPLE_MODE = 1; //forces mobile only display with no graph mode to limit bot impact on server..passwd protect 
 $dblink=0;
 $dev_machine_webroot = "D:/_web_root/";
+
 $default_limit = 3 * 24; //1 day (3 updates an hour x 24 hours)
 
 /*---------- public config block -----------------------
@@ -32,8 +40,17 @@ session_start();
 //date_default_timezone_set('America/New_York'); //php5 only
 putenv("TZ=US/Eastern");
 
+register_shutdown_function('shutdown');
 
-if( strcasecmp($_SERVER['DOCUMENT_ROOT'], $dev_machine_webroot)!=0){ //NOT dev machine
+function shutdown(){ 
+	global $dblink;
+	if($dblink) mysqli_close($dblink);  
+	//echo "<script>alert('shutdown')</script>"; //yup it works!
+}
+
+if( stristr($_SERVER['DOCUMENT_ROOT'], $dev_machine_webroot) === FALSE )
+{ //NOT dev machine
+	//echo "document root:".$_SERVER['DOCUMENT_ROOT'].'<br>';
 	if(file_exists("private_db.php")) include_once("private_db.php"); //override public config block settings..
 }
 	
@@ -92,12 +109,12 @@ function ConnectDB($shutdown=0){
 
 	if($shutdown==0){
 		if($dblink==0){
-			$dblink = mysql_connect($DB_IP, $DB_USER, $DB_PASS)
-		    or die('Please try back latter, Could not connect to Database Server'.mysql_error() );
-			mysql_select_db($DB_DB) or die("Could not select database $DB_DB<br><br>".mysql_error());
+			$dblink = mysqli_connect($DB_IP, $DB_USER, $DB_PASS)
+		    or die('Please try back latter, Could not connect to Database Server'.mysqli_error($dblink) );
+			mysqli_select_db($dblink,$DB_DB) or die("Could not select database $DB_DB<br><br>".mysqli_error($dblink));
 		}
 	}else{
-		mysql_close($dblink);
+		mysqli_close($dblink);
 		$dblink=0;
 	}
 

@@ -1,5 +1,7 @@
 <?php
 
+die('dev only');
+
 include("functions.php");
     
 $sql = "insert into humidor(temp,humidity,watered,powerevt,clientid,smoked,sid) values(66,67,0,0,6,0,0)";
