@@ -3,9 +3,10 @@ Copyright David Zimmer <dzzie@yahoo.com>
 WebSite:  http://sandsprite.com
 All rights reserved, no portion of this code is authorized for sale or redistribution
 
---------- compile this with arduino ide 1.5.8 ---------------------
+--------- compile this with arduino ide 1.5.8 (1.8.12 known ok too) ---------------------
 
 ini debug_local = 1 -> use test server, no dht22 required (on sd or set DEBUG_LOCAL_OVERRIDE 1 or config modify on boot)
+ini wifi_enable = 0 -> no need for wifi card or watchdog (5.2.20)
 
 new ini library saves ~500 bytes of both code and ram, and much easier to read...
 
@@ -110,6 +111,7 @@ struct CONFIG{
 	int debug_local;
 	int demoMode;
 	int speedMode;
+	int wifi_enable;
 	char* apikey;      //apikey for web app user specified by client_id
 	char* server;      //domain name of production server (lookup + hostname use)
 	char* test_ip;     //local test server ip (debug_local must be 1 to use)
@@ -120,7 +122,7 @@ struct CONFIG{
 	uint8_t secMode;
 };
 
-
+char* wifi_enable = "wifi_enable";
 char* ssid = "ssid";
 char* security = "security";
 char* pass = "pass";
@@ -182,16 +184,22 @@ void setup(void)
     Serial.println("Fail using DHT22");
 	useDHT22 = true;
   }
-
-  lcd_out("Init Wifi...");
-  if (!cc3000.begin()){
-    lcd_out("Failed!"); 
-	while(1);
-  }
   
   initSDCard();
   loadConfig(true);
  
+  if(cfg.wifi_enable){
+	  lcd_out("Init Wifi...");
+	  if (!cc3000.begin()){
+		lcd_out("Failed!"); 
+		while(1);
+	  }
+  }else{
+	  lcd_out("Wifi disabled...");
+      watchdogDisable();
+  }
+  
+  
   /* test watchdog 
   tft.setTextColor(ILI9341_RED);
   tft.println("watchdog tst");
@@ -220,7 +228,7 @@ void loop(void)
 	   for(int i=0; i <= 10; i++){
 			if( ReadSensor() ) break;
 			delay(1000);
-			if(i == 10){
+			if(i == 10 && cfg.wifi_enable){
 				failure = 1;
 				watchdogEnable();
 				PostData();
@@ -233,22 +241,27 @@ void loop(void)
 
    show_readings(false);
    delay(2500); //time to see immediate readings when I hit the button before submit..
-   watchdogEnable();
    
-   if( PostData() ){
-	   fail_cnt = 0;
-	   watered = 0;
-	   smoked = 0;
-	   powerevt = 0;
+   if(cfg.wifi_enable){
+ 
+  	   watchdogEnable();
+  	   
+  	   if( PostData() ){
+  		   fail_cnt = 0;
+  		   watered = 0;
+  		   smoked = 0;
+  		   powerevt = 0;
+  	   }
+  	   else{
+  			lcd_outp(F("Upload failed"),1);
+  			delay(1200);
+  			fail_cnt++;
+  			if(fail_cnt > 2) cfg.activeIP = 0;
+  	   }
+  
+  	   watchdogDisable();
    }
-   else{
-		lcd_outp(F("Upload failed"),1);
-		delay(1200);
-		fail_cnt++;
-		if(fail_cnt > 2) cfg.activeIP = 0;
-   }
-
-   watchdogDisable();
+   
    show_readings(true);
    delay_x_min( (fail_cnt == 0 ? 30 : 5) ); //webui expects 30min delay for stat gen
 
@@ -983,6 +996,7 @@ static int myini_handler(void* user, const char* section, const char* name, cons
 	if (strcmp(name, client_id)    ==0) cfg.client_id = atoi(value);
 	if (strcmp(name, demoMode)     ==0) cfg.demoMode = atoi(value);
 	if (strcmp(name, speedMode)    ==0) cfg.speedMode = atoi(value);
+	if (strcmp(name, wifi_enable)  ==0) cfg.wifi_enable = atoi(value);
     
 //	tft.println(name);
 
@@ -1184,6 +1198,7 @@ void showCfg(bool block){
 		showWifiCfg();
 
 		tft.println("      [config]");
+        ps("Wifi: ", cfg.wifi_enable);
 		ps("dog: ", cfg.ext_watchdog);
 		ps("tshift: ", cfg.temp_shift);
 		ps("hshift: ", cfg.humi_shift);
